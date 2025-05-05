@@ -1,5 +1,9 @@
 package request
 
+import (
+	"log"
+)
+
 type (
 	Hook struct {
 		//Name string
@@ -14,8 +18,8 @@ type (
 		Validate  HookList
 		Build     HookList
 		Send      HookList
-		Retry     HookList
 		Unmarshal HookList
+		Retry     HookList
 		Complete  HookList
 	}
 )
@@ -30,7 +34,7 @@ func (l *HookList) copy() HookList {
 	return n
 }
 
-// Clear clears the hooks list
+// Clear clears the hook list
 func (l *HookList) Clear() {
 	l.list = l.list[0:0]
 }
@@ -40,29 +44,39 @@ func (l *HookList) Len() int {
 	return len(l.list)
 }
 
-// PushBack pushes hook h to the back of the hooks list.
+// PushBack pushes hook f to the back of the hook list.
 func (l *HookList) PushBack(f func(*Request)) {
+	l.PushBackHook(Hook{Fn: f})
+}
+
+// PushBackHook pushes hook h to the back of the hook list.
+func (l *HookList) PushBackHook(h Hook) {
 	if cap(l.list) == 0 {
 		l.list = make([]Hook, 0, 5)
 	}
-	l.list = append(l.list, Hook{f})
+	l.list = append(l.list, h)
 }
 
-// PushFront pushes hook h to the front of the hook list
 func (l *HookList) PushFront(f func(*Request)) {
+	l.PushFrontHook(Hook{Fn: f})
+}
+
+// PushFrontHook pushes hook h to the front of the hook list
+func (l *HookList) PushFrontHook(h Hook) {
 	if cap(l.list) == len(l.list) {
-		// allocating new list required
-		l.list = append([]Hook{{f}}, l.list...)
+		// allocating a new list required
+		l.list = append([]Hook{h}, l.list...)
 	} else {
-		// enough room to prepend into list
+		// enough room to prepend into a list
 		l.list = append(l.list, Hook{})
 		copy(l.list[1:], l.list)
-		l.list[0] = Hook{f}
+		l.list[0] = h
 	}
 }
 
 // Run executes all handlers in the list with a given request object
 func (l *HookList) Run(r *Request) {
+	log.Println("list length ", l.Len())
 	for _, h := range l.list {
 		h.Fn(r)
 	}
@@ -74,8 +88,8 @@ func (h *Hooks) Copy() Hooks {
 		Validate:  h.Validate.copy(),
 		Build:     h.Build.copy(),
 		Send:      h.Send.copy(),
-		Retry:     h.Retry.copy(),
 		Unmarshal: h.Unmarshal.copy(),
+		Retry:     h.Retry.copy(),
 		Complete:  h.Complete.copy(),
 	}
 }
