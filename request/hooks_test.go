@@ -13,7 +13,7 @@ func TestHookList(t *testing.T) {
 	val := ""
 	h.PushBack(func(r *request.Request) {
 		val += "a"
-		r.Data = val
+		r.Params = val
 	})
 	h.Run(r)
 
@@ -21,7 +21,7 @@ func TestHookList(t *testing.T) {
 	if e, v := "a", val; e != v {
 		t.Errorf("expected %q, got %q", e, v)
 	}
-	if e, v := "a", r.Data.(string); e != v {
+	if e, v := "a", r.Params.(string); e != v {
 		t.Errorf("expected %q, got %q", e, v)
 	}
 }

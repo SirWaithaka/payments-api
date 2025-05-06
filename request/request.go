@@ -7,6 +7,12 @@ import (
 	"net/http"
 )
 
+var (
+	// NoBody is an http.NoBody reader instructing the Go HTTP client to not include
+	// a body in the HTTP request.
+	NoBody = http.NoBody
+)
+
 type (
 	Operation struct {
 		Name   string
@@ -19,29 +25,52 @@ type (
 
 		//BaseUrl string
 
+		// request payload
+		Params any
+
 		// response body
 		Body any
-		// request payload
 		Data any
 
 		Hooks Hooks
 
-		Error error
-		ctx   context.Context
+		Error       error
+		ctx         context.Context
+		RetryConfig *RetryConfig
 
 		operation *Operation
 		Request   *http.Request
-		response  *http.Response
+		Response  *http.Response
 
 		// a boolean to indicate with request is build
 		built bool
 	}
+
+	// An Option is a functional option that can augment or modify a request when
+	// using a WithContext API operation method.
+	Option func(*Request)
 )
+
+// WithRequestHeader builds a request Option which will add an http header to the
+// request.
+func WithRequestHeader(key, val string) Option {
+	return func(r *Request) {
+		r.Hooks.Build.PushBack(func(req *Request) {
+			r.Request.Header.Add(key, val)
+		})
+	}
+}
 
 // New returns a new Request pointer for the api operation and parameters.
 //
-// Data is any value for the request payload.
-func New(hooks Hooks, operation *Operation, data any) *Request {
+// Params is any value for the request payload.
+//
+// Data is for the response payload
+func New(hooks Hooks, operation *Operation, params, data any) *Request {
+
+	if operation == nil {
+		operation = &Operation{Method: http.MethodPost}
+	}
 
 	method := operation.Method
 	if method == "" {
@@ -51,16 +80,19 @@ func New(hooks Hooks, operation *Operation, data any) *Request {
 	httpReq, _ := http.NewRequest(method, "", nil)
 
 	return &Request{
-		Request:   httpReq,
-		operation: operation,
-		Hooks:     hooks.Copy(),
+		Request:     httpReq,
+		operation:   operation,
+		Hooks:       hooks.Copy(),
+		Params:      params,
+		Data:        data,
+		RetryConfig: &RetryConfig{},
 	}
 }
 
 // Build will build the request object to be sent. Build will also
 // validate all the request's parameters.
 //
-// If any Validate or Build errors occur the build will stop and the error
+// If any Validate or Build errors occur, the build will stop and the error
 // which occurred will be returned
 func (r *Request) Build() error {
 	if r.built {
@@ -86,13 +118,13 @@ func (r *Request) Send() error {
 	defer func() {
 		// Ensure a non-nil HTTPResponse parameter is set to ensure hooks
 		// checking for HTTPResponse values, don't fail.
-		if r.response == nil {
-			r.response = &http.Response{
+		if r.Response == nil {
+			r.Response = &http.Response{
 				Header: http.Header{},
 				Body:   io.NopCloser(&bytes.Buffer{}),
 			}
 		}
-		// Regardless of success or failure of the request trigger the Complete
+		// Regardless of success or failure of the request, trigger the Complete
 		// request hooks.
 		r.Hooks.Complete.Run(r)
 	}()
@@ -103,6 +135,24 @@ func (r *Request) Send() error {
 		return r.Error
 	}
 
+	for {
+		if err := r.sendRequest(); err == nil {
+			// return immediately to break loop if we encounter no error
+			return nil
+		}
+
+		// if error occurred, confirm request is retryable
+		if r.Error != nil && !r.RetryConfig.IsRetryable() {
+			return r.Error
+		}
+
+		// run hooks to retry the request
+		r.Hooks.Retry.Run(r)
+
+	}
+}
+
+func (r *Request) sendRequest() error {
 	// run hooks that process sending the request
 	r.Hooks.Send.Run(r)
 	if r.Error != nil {
@@ -119,7 +169,16 @@ func (r *Request) Send() error {
 	return nil
 }
 
-func (r *Request) SetContext(ctx context.Context) {
+// Context will always return a non-nil context. If the Request does not have a
+// context, context.Background will be returned.
+func (r *Request) Context() context.Context {
+	if r.ctx != nil {
+		return r.ctx
+	}
+	return context.Background()
+}
+
+func (r *Request) WithContext(ctx context.Context) {
 	if ctx == nil {
 		return
 	}
