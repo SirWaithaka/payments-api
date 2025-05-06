@@ -25,18 +25,28 @@ type Daraja struct {
 }
 
 func New(hooks request.Hooks) Daraja {
-
+	return Daraja{hooks: hooks}
 }
 
-func (daraja Daraja) C2BExpressRequest(input RequestC2BExpress) *request.Request {
-	op := request.Operation{
+func (daraja Daraja) C2BExpressRequest(input RequestC2BExpress) (*request.Request, ResponseC2BExpress) {
+	op := &request.Operation{
 		Name:   OperationC2BExpress,
 		Method: http.MethodPost,
 		Path:   EndpointC2bExpress,
 	}
 
+	output := &ResponseC2BExpress{}
+	return request.New(daraja.hooks, op, input, output), *output
 }
 
 func (daraja Daraja) C2BExpress(ctx context.Context, request RequestC2BExpress) (ResponseC2BExpress, error) {
 
+	req, out := daraja.C2BExpressRequest(request)
+	req.WithContext(ctx)
+
+	if err := req.Send(); err != nil {
+		return ResponseC2BExpress{}, err
+	}
+
+	return out, nil
 }
