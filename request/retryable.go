@@ -30,3 +30,7 @@ func (r *RetryConfig) IsRetryable() bool {
 	// false by default
 	return false
 }
+
+func (r *RetryConfig) SetRetryable(retry bool) {
+	r.retryable = retry
+}
