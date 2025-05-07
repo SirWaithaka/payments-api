@@ -14,6 +14,15 @@ import (
 
 var schemeRE = regexp.MustCompile("^([^:]+)://")
 
+func DefaultHooks() request.Hooks {
+	var hooks request.Hooks
+
+	hooks.Build.PushBackHook(ResolveEndpoint)
+	hooks.Send.PushBackHook(SendHook)
+
+	return hooks
+}
+
 // AddScheme adds the HTTP or HTTPS schemes to an endpoint URL if there is no
 // scheme. If disableSSL is true, HTTP will set HTTP instead of the default HTTPS.
 //
