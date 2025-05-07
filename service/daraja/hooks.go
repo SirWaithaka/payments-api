@@ -2,6 +2,8 @@ package daraja
 
 import (
 	"log"
+	"net/http"
+	"time"
 
 	"github.com/SirWaithaka/payments-api/request"
 )
@@ -26,5 +28,14 @@ func SetBaseUrl(baseUrl, environment string) request.Hook {
 	return request.Hook{Fn: func(r *request.Request) {
 		log.Println("SetBaseUrl", url)
 		r.Config.Endpoint = url
+	}}
+}
+
+// HTTPClient creates an instance of http client configured
+// for daraja service.
+func HTTPClient() request.Hook {
+	return request.Hook{Fn: func(r *request.Request) {
+		client := &http.Client{Timeout: 30 * time.Second}
+		r.Config.HTTPClient = client
 	}}
 }
