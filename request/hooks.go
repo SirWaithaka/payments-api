@@ -93,3 +93,26 @@ func (h *Hooks) Copy() Hooks {
 		Complete:  h.Complete.copy(),
 	}
 }
+
+// IsEmpty returns if there are no hooks in any of the hook lists.
+func (h *Hooks) IsEmpty() bool {
+	if h.Validate.Len() != 0 {
+		return false
+	}
+	if h.Build.Len() != 0 {
+		return false
+	}
+	if h.Send.Len() != 0 {
+		return false
+	}
+	if h.Unmarshal.Len() != 0 {
+		return false
+	}
+	if h.Retry.Len() != 0 {
+		return false
+	}
+	if h.Complete.Len() != 0 {
+		return false
+	}
+	return true
+}
