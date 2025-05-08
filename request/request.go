@@ -3,8 +3,11 @@ package request
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 )
 
 var (
@@ -66,7 +69,7 @@ func WithRequestHeader(key, val string) Option {
 // Params is any value for the request payload.
 //
 // Data is for the response payload
-func New(hooks Hooks, operation *Operation, params, data any) *Request {
+func New(cfg Config, hooks Hooks, operation *Operation, params, data any) *Request {
 
 	if operation == nil {
 		operation = &Operation{Method: http.MethodPost}
@@ -79,12 +82,36 @@ func New(hooks Hooks, operation *Operation, params, data any) *Request {
 
 	httpReq, _ := http.NewRequest(method, "", nil)
 
+	var err error
+	httpReq.URL, err = url.Parse(cfg.Endpoint)
+	if err != nil {
+		httpReq.URL = &url.URL{}
+		err = errors.Join(errors.New("invalid endpoint url"), err)
+	}
+
+	// append path to request url
+	if len(operation.Path) != 0 {
+		opHTTPPath := operation.Path
+		var opQueryString string
+		if idx := strings.Index(opHTTPPath, "?"); idx >= 0 {
+			opQueryString = opHTTPPath[idx+1:]
+			opHTTPPath = opHTTPPath[:idx]
+		}
+
+		if strings.HasSuffix(httpReq.URL.Path, "/") && strings.HasPrefix(opHTTPPath, "/") {
+			opHTTPPath = opHTTPPath[1:]
+		}
+		httpReq.URL.Path += opHTTPPath
+		httpReq.URL.RawQuery = opQueryString
+	}
+
 	return &Request{
 		Request:     httpReq,
 		operation:   operation,
 		Hooks:       hooks.Copy(),
 		Params:      params,
 		Data:        data,
+		Error:       err,
 		RetryConfig: &RetryConfig{},
 	}
 }
