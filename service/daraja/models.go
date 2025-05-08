@@ -183,6 +183,10 @@ func (code *ResponseCode) UnmarshalText(text []byte) error {
 
 // TYPES
 
+const (
+	timeFormat = "20060102150405"
+)
+
 // Timestamp type represents time in the format of YYYYMMDDHHmmss
 type Timestamp struct {
 	t time.Time
@@ -193,7 +197,24 @@ func NewTimestamp() Timestamp {
 }
 
 func (t Timestamp) String() string {
-	return t.t.Format("20060102150405")
+	return t.t.Format(timeFormat)
+}
+
+func (t Timestamp) MarshalJSON() ([]byte, error) {
+	return jsoniter.Marshal(t.String())
+}
+
+func (t *Timestamp) UnmarshalJSON(b []byte) error {
+	var (
+		s   string
+		err error
+	)
+
+	if err = jsoniter.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	t.t, err = time.Parse(timeFormat, s)
+	return err
 }
 
 // Password type represents the daraja platform password format which is a
