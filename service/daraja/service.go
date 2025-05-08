@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/SirWaithaka/payments-api/corehooks"
 	"github.com/SirWaithaka/payments-api/request"
 )
 
@@ -21,11 +22,22 @@ const (
 // Daraja provides the API operation methods for making requests
 // to MPESA Daraja service.
 type Daraja struct {
-	hooks request.Hooks
+	endpoint string
+	hooks    request.Hooks
 }
 
-func New(hooks request.Hooks) Daraja {
-	return Daraja{hooks: hooks}
+func New() Daraja {
+
+	// create default hooks
+	hooks := corehooks.DefaultHooks()
+
+	hooks.Build.PushBackHook(HTTPClient())
+
+	return Daraja{hooks: hooks, endpoint: "http://localhost:9002/daraja"}
+}
+
+func (daraja *Daraja) Hooks() request.Hooks {
+	return daraja.hooks
 }
 
 func (daraja Daraja) C2BExpressRequest(input RequestC2BExpress) (*request.Request, ResponseC2BExpress) {
@@ -35,8 +47,10 @@ func (daraja Daraja) C2BExpressRequest(input RequestC2BExpress) (*request.Reques
 		Path:   EndpointC2bExpress,
 	}
 
+	cfg := request.Config{Endpoint: daraja.endpoint}
+
 	output := &ResponseC2BExpress{}
-	return request.New(daraja.hooks, op, input, output), *output
+	return request.New(cfg, daraja.hooks, op, input, output), *output
 }
 
 func (daraja Daraja) C2BExpress(ctx context.Context, request RequestC2BExpress) (ResponseC2BExpress, error) {
