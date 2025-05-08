@@ -1,9 +1,12 @@
 package daraja
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 	"time"
+
+	jsoniter "github.com/json-iterator/go"
+	"github.com/rs/zerolog"
 
 	"github.com/SirWaithaka/payments-api/request"
 )
@@ -26,16 +29,47 @@ func SetBaseUrl(baseUrl, environment string) request.Hook {
 	}
 
 	return request.Hook{Fn: func(r *request.Request) {
-		log.Println("SetBaseUrl", url)
+		zerolog.DefaultContextLogger.Info().Msg(url)
 		r.Config.Endpoint = url
 	}}
 }
 
-// HTTPClient creates an instance of http client configured
+// HTTPClient creates an instance of http.Client configured
 // for daraja service.
 func HTTPClient() request.Hook {
 	return request.Hook{Fn: func(r *request.Request) {
 		client := &http.Client{Timeout: 30 * time.Second}
 		r.Config.HTTPClient = client
+	}}
+}
+
+type errResponse struct {
+	ErrorResponse
+}
+
+func (r errResponse) Error() string {
+	return fmt.Sprintf("<%s> %s", r.ErrorCode, r.ErrorMessage)
+}
+
+// DecodeResponse parse the http.Response body into the property
+// request.Request.Data, if the status code is successful
+// Otherwise for
+func DecodeResponse() request.Hook {
+
+	return request.Hook{Fn: func(r *request.Request) {
+
+		if r.Response.StatusCode != http.StatusOK {
+			response := &errResponse{}
+			if err := jsoniter.NewDecoder(r.Response.Body).Decode(response.ErrorResponse); err != nil {
+				r.Error = err
+				return
+			}
+			r.Error = response
+			return
+		}
+
+		if err := jsoniter.NewDecoder(r.Response.Body).Decode(r.Data); err != nil {
+			r.Error = err
+		}
 	}}
 }

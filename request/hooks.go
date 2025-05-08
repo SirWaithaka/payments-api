@@ -1,7 +1,7 @@
 package request
 
 import (
-	"log"
+	"github.com/rs/zerolog"
 )
 
 type (
@@ -76,7 +76,7 @@ func (l *HookList) PushFrontHook(h Hook) {
 
 // Run executes all handlers in the list with a given request object
 func (l *HookList) Run(r *Request) {
-	log.Println("list length ", l.Len())
+	zerolog.DefaultContextLogger.Info().Msgf("list length %d", l.Len())
 	for _, h := range l.list {
 		h.Fn(r)
 	}
