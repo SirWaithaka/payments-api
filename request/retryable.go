@@ -14,7 +14,7 @@ type RetryConfig struct {
 	RetryDelay time.Duration
 
 	// Additional API error codes that should be retried. IsErrorRetryable
-	// will consider these codes in addition to its built in cases.
+	// will consider these codes in addition to its built-in cases.
 	RetryErrorCodes []string
 }
 

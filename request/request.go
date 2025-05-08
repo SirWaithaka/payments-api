@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/rs/zerolog"
 )
 
 var (
@@ -61,6 +63,14 @@ func WithRequestHeader(key, val string) Option {
 		r.Hooks.Build.PushBack(func(req *Request) {
 			r.Request.Header.Add(key, val)
 		})
+	}
+}
+
+// ApplyOptions will apply each option to the request calling them in the order
+// they were provided.
+func (r *Request) ApplyOptions(opts ...Option) {
+	for _, opt := range opts {
+		opt(r)
 	}
 }
 
@@ -167,6 +177,7 @@ func (r *Request) Send() error {
 			// return immediately to break loop if we encounter no error
 			return nil
 		}
+		zerolog.DefaultContextLogger.Err(r.Error).Send()
 
 		// if error occurred, confirm request is retryable
 		if r.Error != nil && !r.RetryConfig.IsRetryable() {

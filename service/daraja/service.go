@@ -32,6 +32,8 @@ func New() Daraja {
 	hooks := corehooks.DefaultHooks()
 
 	hooks.Build.PushBackHook(HTTPClient())
+	hooks.Build.PushBackHook(corehooks.EncodeRequestBody)
+	hooks.Unmarshal.PushBackHook(DecodeResponse())
 
 	return Daraja{hooks: hooks, endpoint: "http://localhost:9002/daraja"}
 }
@@ -40,7 +42,7 @@ func (daraja *Daraja) Hooks() request.Hooks {
 	return daraja.hooks
 }
 
-func (daraja Daraja) C2BExpressRequest(input RequestC2BExpress) (*request.Request, ResponseC2BExpress) {
+func (daraja Daraja) C2BExpressRequest(input RequestC2BExpress, opts ...request.Option) (*request.Request, *ResponseC2BExpress) {
 	op := &request.Operation{
 		Name:   OperationC2BExpress,
 		Method: http.MethodPost,
@@ -50,17 +52,19 @@ func (daraja Daraja) C2BExpressRequest(input RequestC2BExpress) (*request.Reques
 	cfg := request.Config{Endpoint: daraja.endpoint}
 
 	output := &ResponseC2BExpress{}
-	return request.New(cfg, daraja.hooks, op, input, output), *output
+	req := request.New(cfg, daraja.hooks, op, input, output)
+	req.ApplyOptions(opts...)
+
+	return req, output
 }
 
-func (daraja Daraja) C2BExpress(ctx context.Context, request RequestC2BExpress) (ResponseC2BExpress, error) {
-
-	req, out := daraja.C2BExpressRequest(request)
+func (daraja Daraja) C2BExpress(ctx context.Context, payload RequestC2BExpress) (ResponseC2BExpress, error) {
+	req, out := daraja.C2BExpressRequest(payload, request.WithRequestHeader("Content-Type", "application/json"))
 	req.WithContext(ctx)
 
 	if err := req.Send(); err != nil {
 		return ResponseC2BExpress{}, err
 	}
 
-	return out, nil
+	return *out, nil
 }
