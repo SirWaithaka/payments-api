@@ -3,11 +3,14 @@ package corehooks
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strconv"
+
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/SirWaithaka/payments-api/request"
 )
@@ -42,6 +45,24 @@ func AddScheme(endpoint string, disableSSL bool) string {
 
 var ResolveEndpoint = request.Hook{Fn: func(r *request.Request) {
 	r.Config.Endpoint = AddScheme(r.Config.Endpoint, r.Config.DisableSSL)
+}}
+
+// EncodeRequestBody converts the value in r.Params into an io reader and adds it
+// to the http.Request instance
+var EncodeRequestBody = request.Hook{Fn: func(r *request.Request) {
+	if r.Params == nil {
+		return
+	}
+
+	buf := new(bytes.Buffer)
+	if err := jsoniter.NewEncoder(buf).Encode(r.Params); err != nil {
+		r.Error = err
+		return
+	}
+
+	// add as body to request
+	r.Request.Body = io.NopCloser(buf)
+
 }}
 
 var reStatusCode = regexp.MustCompile(`^(\d{3})`)
