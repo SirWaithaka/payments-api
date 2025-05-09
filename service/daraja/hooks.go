@@ -36,9 +36,12 @@ func SetBaseUrl(baseUrl, environment string) request.Hook {
 
 // HTTPClient creates an instance of http.Client configured
 // for daraja service.
-func HTTPClient() request.Hook {
+func HTTPClient(client *http.Client) request.Hook {
 	return request.Hook{Fn: func(r *request.Request) {
-		client := &http.Client{Timeout: 30 * time.Second}
+		if client == nil {
+			client = &http.Client{Timeout: 30 * time.Second}
+		}
+
 		r.Config.HTTPClient = client
 	}}
 }
@@ -71,5 +74,31 @@ func DecodeResponse() request.Hook {
 		if err := jsoniter.NewDecoder(r.Response.Body).Decode(r.Data); err != nil {
 			r.Error = err
 		}
+	}}
+}
+
+func Authenticate(endpoint, key, secret string) request.Hook {
+
+	cache := NewCache[string]()
+
+	return request.Hook{Fn: func(r *request.Request) {
+		// make request to authenticate if token cache is empty
+		if cache.Get() == "" {
+			req, out := AuthenticationRequest(endpoint, key, secret)
+			req.WithContext(r.Context())
+
+			if err := req.Send(); err != nil {
+				r.Error = err
+				return
+			}
+
+			// if authentication request was successful, save token to cache
+			cache.Set(out.AccessToken, time.Now().Add(12*time.Hour))
+		}
+		zerolog.DefaultContextLogger.Info().Msg(cache.Get())
+
+		// add access token to request authorization header
+		r.Request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", cache.Get()))
+
 	}}
 }
