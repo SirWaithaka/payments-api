@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/SirWaithaka/payments-api/service/daraja"
+	"github.com/SirWaithaka/payments-api/clients/daraja"
 )
 
 func TestCache_Get(t *testing.T) {
