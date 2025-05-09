@@ -3,6 +3,7 @@ package daraja
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/SirWaithaka/payments-api/corehooks"
 	"github.com/SirWaithaka/payments-api/request"
@@ -19,6 +20,30 @@ const (
 	OperationQueryOrgInfo      = "org_info_query"
 )
 
+func AuthenticationRequest(endpoint, key, secret string) (*request.Request, *ResponseAuthorization) {
+	op := &request.Operation{
+		Name:   "Authenticate",
+		Method: http.MethodGet,
+		Path:   EndpointAuthentication + "?grant_type=client_credentials",
+	}
+
+	cfg := request.Config{Endpoint: endpoint}
+
+	// create a client with 40 second timeout
+	client := &http.Client{Timeout: time.Second * 40}
+	// default hooks
+	hooks := corehooks.DefaultHooks()
+	hooks.Build.PushBackHook(HTTPClient(client))
+	hooks.Build.PushBackHook(corehooks.SetBasicAuth(key, secret))
+	hooks.Build.PushBackHook(corehooks.EncodeRequestBody)
+	hooks.Unmarshal.PushBackHook(DecodeResponse())
+
+	output := &ResponseAuthorization{}
+	req := request.New(cfg, hooks, op, nil, output)
+
+	return req, output
+}
+
 // Daraja provides the API operation methods for making requests
 // to MPESA Daraja service.
 type Daraja struct {
@@ -27,15 +52,17 @@ type Daraja struct {
 }
 
 func New() Daraja {
+	endpoint := "http://localhost:9002/daraja"
 
 	// create default hooks
 	hooks := corehooks.DefaultHooks()
 
-	hooks.Build.PushBackHook(HTTPClient())
+	hooks.Build.PushBackHook(HTTPClient(nil))
 	hooks.Build.PushBackHook(corehooks.EncodeRequestBody)
+	hooks.Build.PushBackHook(Authenticate(endpoint, "fake_key", "fake_secret"))
 	hooks.Unmarshal.PushBackHook(DecodeResponse())
 
-	return Daraja{hooks: hooks, endpoint: "http://localhost:9002/daraja"}
+	return Daraja{hooks: hooks, endpoint: endpoint}
 }
 
 func (daraja *Daraja) Hooks() request.Hooks {
