@@ -26,6 +26,13 @@ func DefaultHooks() request.Hooks {
 	return hooks
 }
 
+// SetBasicAuth modifies the http.Request headers and adds basic auth credentials
+func SetBasicAuth(username, password string) request.Hook {
+	return request.Hook{Fn: func(r *request.Request) {
+		r.Request.SetBasicAuth(username, password)
+	}}
+}
+
 // AddScheme adds the HTTP or HTTPS schemes to an endpoint URL if there is no
 // scheme. If disableSSL is true, HTTP will set HTTP instead of the default HTTPS.
 //
