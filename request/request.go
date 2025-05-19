@@ -39,9 +39,9 @@ type (
 
 		Hooks Hooks
 
-		Error       error
-		ctx         context.Context
-		RetryConfig *RetryConfig
+		Error error
+		ctx   context.Context
+		Retryer
 
 		operation *Operation
 		Request   *http.Request
@@ -79,7 +79,11 @@ func (r *Request) ApplyOptions(opts ...Option) {
 // Params is any value for the request payload.
 //
 // Data is for the response payload
-func New(cfg Config, hooks Hooks, operation *Operation, params, data any) *Request {
+func New(cfg Config, hooks Hooks, retryer Retryer, operation *Operation, params, data any) *Request {
+
+	if retryer == nil {
+		retryer = noOpRetryer{}
+	}
 
 	if operation == nil {
 		operation = &Operation{Method: http.MethodPost}
@@ -116,13 +120,13 @@ func New(cfg Config, hooks Hooks, operation *Operation, params, data any) *Reque
 	}
 
 	return &Request{
-		Request:     httpReq,
-		operation:   operation,
-		Hooks:       hooks.Copy(),
-		Params:      params,
-		Data:        data,
-		Error:       err,
-		RetryConfig: &RetryConfig{},
+		Request:   httpReq,
+		operation: operation,
+		Hooks:     hooks.Copy(),
+		Params:    params,
+		Data:      data,
+		Error:     err,
+		Retryer:   retryer,
 	}
 }
 
@@ -179,8 +183,8 @@ func (r *Request) Send() error {
 		}
 		zerolog.DefaultContextLogger.Err(r.Error).Send()
 
-		// if error occurred, confirm request is retryable
-		if r.Error != nil && !r.RetryConfig.IsRetryable() {
+		// if an error occurred, return if Request is not retryable
+		if r.Error != nil && !r.Retryer.Retryable() {
 			return r.Error
 		}
 
