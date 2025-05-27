@@ -10,7 +10,7 @@ type Retryer interface {
 	Delay() time.Duration
 
 	// Retryable returns true if the request should be retried
-	Retryable() bool
+	Retryable(r *Request) bool
 }
 
 // noOpRetryer is the default retryer used when a request is created without
@@ -26,6 +26,6 @@ func (r noOpRetryer) Delay() time.Duration {
 
 // Retryable returns true if the request should be retried.
 // Since noOpRetryer does not retry, it always returns false.
-func (r noOpRetryer) Retryable() bool {
+func (r noOpRetryer) Retryable(*Request) bool {
 	return false
 }
