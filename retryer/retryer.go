@@ -159,9 +159,11 @@ func (r *DefaultRetryer) Retry(ctx context.Context) error {
 	// increment retry count
 	r.config.RetryCount += 1
 
-	// Stop retrying if context is canceled
-	if cerr := context.Cause(ctx); cerr != nil {
-		return cerr
+	if ctx != nil {
+		// Stop retrying if context is canceled
+		if cerr := context.Cause(ctx); cerr != nil {
+			return cerr
+		}
 	}
 
 	// start the timer and wait
