@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog"
 )
@@ -46,6 +47,8 @@ type (
 		operation *Operation
 		Request   *http.Request
 		Response  *http.Response
+
+		AttemptTime time.Time
 
 		// a boolean to indicate with request is build
 		built bool
@@ -176,22 +179,46 @@ func (r *Request) Send() error {
 		return r.Error
 	}
 
+	r.AttemptTime = time.Now()
 	for {
+		r.Error = nil
+
 		if err := r.sendRequest(); err == nil {
 			// return immediately to break loop if we encounter no error
 			return nil
 		}
 		zerolog.DefaultContextLogger.Err(r.Error).Send()
 
-		// if an error occurred, return if Request is not retryable
-		if r.Error != nil && !r.Retryer.Retryable() {
-			return r.Error
-		}
-
 		// run hooks to retry the request
 		r.Hooks.Retry.Run(r)
 
+		// if an error occurred, return if Request is not retryable
+		if r.Error != nil && !r.Retryer.Retryable(r) {
+			return r.Error
+		}
+
+		if err := r.prepareRetry(); err != nil {
+			r.Error = err
+			return err
+		}
+
 	}
+}
+
+func (r *Request) prepareRetry() error {
+
+	// The previous http.Request will have a reference to the r.Body
+	// and the HTTP Client's Transport may still be reading from
+	// the request's body even though the Client's Do returned.
+	r.Request = copyHTTPRequest(r.Request, nil)
+
+	// Closing response body to ensure that no response body is leaked
+	// between retry attempts.
+	if r.Response != nil && r.Response.Body != nil {
+		r.Response.Body.Close()
+	}
+
+	return nil
 }
 
 func (r *Request) sendRequest() error {
