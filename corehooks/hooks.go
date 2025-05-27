@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -133,7 +132,7 @@ func handleSendError(r *request.Request, err error) {
 			r.Response = &http.Response{
 				StatusCode: int(code),
 				Status:     http.StatusText(int(code)),
-				Body:       ioutil.NopCloser(bytes.NewReader([]byte{})),
+				Body:       io.NopCloser(bytes.NewReader([]byte{})),
 			}
 			return
 		}
@@ -144,7 +143,7 @@ func handleSendError(r *request.Request, err error) {
 		r.Response = &http.Response{
 			StatusCode: int(0),
 			Status:     http.StatusText(int(0)),
-			Body:       ioutil.NopCloser(bytes.NewReader([]byte{})),
+			Body:       io.NopCloser(bytes.NewReader([]byte{})),
 		}
 	}
 	// Catch all request errors, and let the default retrier determine
@@ -157,7 +156,6 @@ func handleSendError(r *request.Request, err error) {
 	case <-ctx.Done():
 		// set r.Error to context error and set request retry to false
 		r.Error = ctx.Err()
-		r.RetryConfig.SetRetryable(false)
 	default:
 	}
 }
