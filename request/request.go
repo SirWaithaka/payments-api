@@ -42,7 +42,9 @@ type (
 
 		Error error
 		ctx   context.Context
+
 		Retryer
+		RetryConfig RetryConfig
 
 		operation *Operation
 		Request   *http.Request
