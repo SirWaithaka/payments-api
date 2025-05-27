@@ -2,12 +2,14 @@ package corehooks
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strconv"
+	"time"
 
 	jsoniter "github.com/json-iterator/go"
 
@@ -21,6 +23,11 @@ func DefaultHooks() request.Hooks {
 
 	hooks.Build.PushBackHook(ResolveEndpoint)
 	hooks.Send.PushBackHook(SendHook)
+
+	// new instance of retry hook
+	retryHook := NewRetryer()
+	hooks.Retry.PushBackHook(retryHook.Retry())
+	hooks.Complete.PushBackHook(retryHook.Close())
 
 	return hooks
 }
@@ -146,11 +153,11 @@ func handleSendError(r *request.Request, err error) {
 			Body:       io.NopCloser(bytes.NewReader([]byte{})),
 		}
 	}
-	// Catch all request errors, and let the default retrier determine
+	// Catch all request errors and let the default retrier determine
 	// if the error is retryable.
 	r.Error = err
 
-	// Override the error with a context canceled error if that was canceled.
+	// Override the error with a context-canceled error if that was canceled.
 	ctx := r.Context()
 	select {
 	case <-ctx.Done():
@@ -158,4 +165,90 @@ func handleSendError(r *request.Request, err error) {
 		r.Error = ctx.Err()
 	default:
 	}
+}
+
+// Retry calls the retryer.Retry method with the request context
+//func Retry(retryer retryer.DefaultRetryer) request.Hook {
+//	return request.Hook{Fn: func(r *request.Request) {
+//		if err := retryer.Retry(r.Context()); err != nil {
+//			r.Error = err
+//		}
+//	}}
+//}
+
+type timer struct {
+	timer *time.Timer
+}
+
+func (t *timer) C() <-chan time.Time {
+	return t.timer.C
+}
+
+func (t *timer) Start(dur time.Duration) {
+	if t.timer == nil {
+		t.timer = time.NewTimer(dur)
+	} else {
+		t.timer.Reset(dur)
+	}
+}
+
+// Stop is used to free resources when timer is no longer used
+func (t *timer) Stop() {
+	if t.timer != nil {
+		t.timer.Stop()
+	}
+}
+
+func NewRetryer() RetryHook {
+	return RetryHook{timer: &timer{}}
+}
+
+type RetryHook struct {
+	timer *timer
+}
+
+func (r RetryHook) nextDelay(cfg request.RetryConfig) time.Duration {
+	// using the multiplier, calculate the next delay
+	next := float64(cfg.CurrentDelay) * cfg.Multiplier
+	// if the next calculated delay is greater than max delay, return max delay
+	if next > float64(cfg.MaxDelay) {
+		return cfg.MaxDelay
+	}
+	return time.Duration(next)
+}
+
+func (r *RetryHook) Retry() request.Hook {
+	return request.Hook{Fn: func(req *request.Request) {
+		// increment retry count
+		req.RetryConfig.RetryCount += 1
+
+		ctx := req.Context()
+		// Stop retrying if context is canceled
+		if err := context.Cause(ctx); err != nil {
+			req.Error = err
+			return
+		}
+
+		// start the timer and wait
+		r.timer.Start(req.Delay())
+		// wait for timer to complete or context Done signal
+		select {
+		case <-r.timer.C():
+		case <-ctx.Done():
+			req.Error = context.Cause(ctx)
+			return
+		}
+
+		// get the next delay duration
+		next := r.nextDelay(req.RetryConfig)
+		req.RetryConfig.CurrentDelay = next
+
+	}}
+}
+
+// Close stops the timer. Call close as a complete hook to ensure the timer is stopped.
+func (r *RetryHook) Close() request.Hook {
+	return request.Hook{Fn: func(_ *request.Request) {
+		r.timer.Stop()
+	}}
 }
