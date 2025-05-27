@@ -1,4 +1,4 @@
-package retryer
+package request
 
 import (
 	"testing"
