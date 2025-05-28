@@ -9,8 +9,6 @@ import (
 	"net/url"
 	"strings"
 	"time"
-
-	"github.com/rs/zerolog"
 )
 
 var (
@@ -189,13 +187,15 @@ func (r *Request) Send() error {
 			// return immediately to break loop if we encounter no error
 			return nil
 		}
-		zerolog.DefaultContextLogger.Err(r.Error).Send()
-
-		// run hooks to retry the request
-		r.Hooks.Retry.Run(r)
 
 		// if an error occurred, return if Request is not retryable
 		if r.Error != nil && !r.Retryer.Retryable(r) {
+			return r.Error
+		}
+
+		// run hooks to retry the request
+		r.Hooks.Retry.Run(r)
+		if r.Error != nil {
 			return r.Error
 		}
 
@@ -203,7 +203,6 @@ func (r *Request) Send() error {
 			r.Error = err
 			return err
 		}
-
 	}
 }
 
