@@ -17,7 +17,7 @@ var (
 		MaxElapsedTime: 5 * time.Second,
 	}
 
-	DefaultRetryer = &retryer{}
+	DefaultRetryer = retryer{}
 )
 
 type RetryConfig struct {
@@ -80,7 +80,7 @@ func (r noOpRetryer) Retryable(*Request) bool {
 type retryer struct{}
 
 // Delay modifies the current delay with some jitter
-func (r *retryer) Delay(req *Request) time.Duration {
+func (r retryer) Delay(req *Request) time.Duration {
 	if req.RetryConfig.CurrentDelay == 0 {
 		req.RetryConfig.CurrentDelay = req.RetryConfig.InitialDelay
 	}
@@ -92,7 +92,7 @@ func (r *retryer) Delay(req *Request) time.Duration {
 
 // Retryable performs validation checks on the retryer config to confirm if
 // an operation is retry-able.
-func (r *retryer) Retryable(req *Request) bool {
+func (r retryer) Retryable(req *Request) bool {
 
 	// check the number of max retries allowed
 	if req.RetryConfig.MaxRetries == 0 {
