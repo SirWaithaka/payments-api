@@ -123,13 +123,14 @@ func New(cfg Config, hooks Hooks, retryer Retryer, operation *Operation, params,
 	}
 
 	return &Request{
-		Request:   httpReq,
-		operation: operation,
-		Hooks:     hooks.Copy(),
-		Params:    params,
-		Data:      data,
-		Error:     err,
-		Retryer:   retryer,
+		Request:     httpReq,
+		operation:   operation,
+		Hooks:       hooks.Copy(),
+		Params:      params,
+		Data:        data,
+		Error:       err,
+		Retryer:     retryer,
+		RetryConfig: RetryConfig{}, // noOp retry config
 	}
 }
 
@@ -255,4 +256,8 @@ func (r *Request) WithContext(ctx context.Context) {
 
 	r.ctx = ctx
 	r.Request.WithContext(ctx)
+}
+
+func (r *Request) WithRetryConfig(cfg RetryConfig) {
+	r.RetryConfig = cfg
 }
