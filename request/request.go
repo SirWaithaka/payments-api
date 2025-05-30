@@ -83,6 +83,10 @@ func (r *Request) ApplyOptions(opts ...Option) {
 //
 // Data is for the response payload
 func New(cfg Config, hooks Hooks, retryer Retryer, operation *Operation, params, data any) *Request {
+	// set a default http client if not provided
+	if cfg.HTTPClient == nil {
+		cfg.HTTPClient = http.DefaultClient
+	}
 
 	if retryer == nil {
 		retryer = noOpRetryer{}
@@ -123,13 +127,15 @@ func New(cfg Config, hooks Hooks, retryer Retryer, operation *Operation, params,
 	}
 
 	return &Request{
-		Request:   httpReq,
-		operation: operation,
-		Hooks:     hooks.Copy(),
-		Params:    params,
-		Data:      data,
-		Error:     err,
-		Retryer:   retryer,
+		Config:      cfg,
+		Request:     httpReq,
+		operation:   operation,
+		Hooks:       hooks.Copy(),
+		Params:      params,
+		Data:        data,
+		Error:       err,
+		Retryer:     retryer,
+		RetryConfig: RetryConfig{}, // noOp retry config
 	}
 }
 
@@ -255,4 +261,8 @@ func (r *Request) WithContext(ctx context.Context) {
 
 	r.ctx = ctx
 	r.Request.WithContext(ctx)
+}
+
+func (r *Request) WithRetryConfig(cfg RetryConfig) {
+	r.RetryConfig = cfg
 }
