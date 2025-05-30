@@ -70,37 +70,42 @@ func TestSendHook(t *testing.T) {
 	}))
 	defer server.Close()
 
-	t.Run("test that redirect is followed", func(t *testing.T) {
-		cfg := request.Config{Endpoint: server.URL, DisableSSL: true, HTTPClient: http.DefaultClient}
-		hooks := request.Hooks{}
-		hooks.Send.PushBackHook(corehooks.SendHook)
-
-		op := &request.Operation{Name: "FooBar", Path: "/redirect"}
-
-		req := request.New(cfg, hooks, nil, op, nil, nil)
-		if err := req.Send(); err != nil {
-			t.Errorf("expected nil error, got %v", err)
+	t.Run("test redirect", func(t *testing.T) {
+		tcs := map[string]struct {
+			Redirect       bool
+			ExpectedStatus int
+		}{
+			"redirect": {
+				Redirect:       true,
+				ExpectedStatus: http.StatusOK,
+			},
+			"no redirect": {
+				Redirect:       false,
+				ExpectedStatus: http.StatusTemporaryRedirect,
+			},
 		}
 
-		// check response status
-		assertEquals(t, http.StatusOK, req.Response.StatusCode)
+		for name, tc := range tcs {
+			t.Run(name, func(t *testing.T) {
+				cfg := request.Config{Endpoint: server.URL, DisableSSL: true, HTTPClient: http.DefaultClient}
+				op := &request.Operation{Name: "FooBar", Path: "/redirect"}
+
+				hooks := request.Hooks{}
+				hooks.Send.PushBackHook(corehooks.SendHook)
+
+				cfg.DisableFollowRedirects = !tc.Redirect
+
+				req := request.New(cfg, hooks, nil, op, nil, nil)
+				if err := req.Send(); err != nil {
+					t.Errorf("expected nil error, got %v", err)
+				}
+
+				// check response status
+				assertEquals(t, tc.ExpectedStatus, req.Response.StatusCode)
+
+			})
+		}
 
 	})
 
-	t.Run("test that redirect is not followed", func(t *testing.T) {
-		cfg := request.Config{Endpoint: server.URL, DisableSSL: true, HTTPClient: http.DefaultClient, DisableFollowRedirects: true}
-		hooks := request.Hooks{}
-		hooks.Send.PushBackHook(corehooks.SendHook)
-
-		op := &request.Operation{Name: "FooBar", Path: "/redirect"}
-
-		req := request.New(cfg, hooks, nil, op, nil, nil)
-		if err := req.Send(); err != nil {
-			t.Errorf("expected nil error, got %v", err)
-		}
-
-		// check response
-		assertEquals(t, http.StatusTemporaryRedirect, req.Response.StatusCode)
-
-	})
 }
