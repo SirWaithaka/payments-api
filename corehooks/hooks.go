@@ -86,7 +86,7 @@ var SendHook = request.Hook{Fn: func(r *request.Request) {
 		sender = sendWithoutFollowRedirects
 	}
 
-	if request.NoBody == r.Request.Body {
+	if r.Request.Body == request.NoBody {
 		// Strip off the request body if the NoBody reader was used as a
 		// placeholder for a request body. This prevents the SDK from
 		// making requests with a request body when it would be invalid

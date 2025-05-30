@@ -1,9 +1,11 @@
 package corehooks_test
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/SirWaithaka/payments-api/corehooks"
 	"github.com/SirWaithaka/payments-api/request"
@@ -51,6 +53,15 @@ func TestAddScheme(t *testing.T) {
 			}
 		})
 	}
+}
+
+type testSendHandlerTransport struct{ timeout time.Duration }
+
+func (t *testSendHandlerTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	if t.timeout > 0 {
+		time.Sleep(t.timeout)
+	}
+	return nil, errors.New("mock error")
 }
 
 func TestSendHook(t *testing.T) {
@@ -105,7 +116,44 @@ func TestSendHook(t *testing.T) {
 
 			})
 		}
-
 	})
 
+	t.Run("test handle send error", func(t *testing.T) {
+
+		t.Run("transport error", func(t *testing.T) {
+			client := &http.Client{Transport: &testSendHandlerTransport{}}
+			op := &request.Operation{Name: "Operation"}
+
+			hooks := request.Hooks{}
+			hooks.Send.PushBackHook(corehooks.SendHook)
+			req := request.New(request.Config{HTTPClient: client}, hooks, nil, op, nil, nil)
+
+			if err := req.Send(); err == nil {
+				t.Errorf("expected error, got nil")
+			}
+			if req.Response == nil {
+				t.Errorf("expected response, got nil")
+			}
+		})
+
+		t.Run("url.Error timeout", func(t *testing.T) {
+			client := &http.Client{
+				Timeout:   100 * time.Millisecond,
+				Transport: &testSendHandlerTransport{timeout: 500 * time.Millisecond},
+			}
+			op := &request.Operation{Name: "Operation"}
+
+			hooks := request.Hooks{}
+			hooks.Send.PushBackHook(corehooks.SendHook)
+			req := request.New(request.Config{HTTPClient: client}, hooks, nil, op, nil, nil)
+
+			if err := req.Send(); err == nil {
+				t.Errorf("expected error, got nil")
+			}
+			if req.Response == nil {
+				t.Errorf("expected response, got nil")
+			}
+			assertEquals(t, 0, req.Response.StatusCode)
+		})
+	})
 }
