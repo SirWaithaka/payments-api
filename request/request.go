@@ -83,6 +83,10 @@ func (r *Request) ApplyOptions(opts ...Option) {
 //
 // Data is for the response payload
 func New(cfg Config, hooks Hooks, retryer Retryer, operation *Operation, params, data any) *Request {
+	// set a default http client if not provided
+	if cfg.HTTPClient == nil {
+		cfg.HTTPClient = http.DefaultClient
+	}
 
 	if retryer == nil {
 		retryer = noOpRetryer{}
@@ -123,6 +127,7 @@ func New(cfg Config, hooks Hooks, retryer Retryer, operation *Operation, params,
 	}
 
 	return &Request{
+		Config:      cfg,
 		Request:     httpReq,
 		operation:   operation,
 		Hooks:       hooks.Copy(),
