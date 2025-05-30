@@ -116,7 +116,7 @@ func (r *retryer) Retryable(req *Request) bool {
 
 	// check if the error is not temporary
 	var te interface{ Temporary() bool }
-	if e := req.Error; e == nil || errors.As(e, &te) && !te.Temporary() {
+	if e := req.Error; e == nil || !errors.As(e, &te) || !te.Temporary() {
 		return false
 	}
 
