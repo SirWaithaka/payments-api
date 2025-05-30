@@ -1,6 +1,7 @@
 package request
 
 import (
+	"errors"
 	"testing"
 	"time"
 )
@@ -162,7 +163,29 @@ func TestDefaultRetryer_Retryable(t *testing.T) {
 
 	})
 
-	t.Run("", func(t *testing.T) {
+	t.Run("test that the request is not retryable if total retry duration is more than MaxElapsedTime", func(t *testing.T) {
+		hooks := Hooks{}
+
+		attemptTime := time.Now().Add(-1 * time.Second)
+
+		cfg := RetryConfig{
+			RetryCount:     1,
+			MaxRetries:     5,
+			InitialDelay:   100 * time.Millisecond,
+			Jitter:         0.1,
+			MaxElapsedTime: 1 * time.Second,
+		}
+
+		// create an instance of retryer
+		ret := &retryer{}
+		req := New(Config{}, hooks, ret, nil, nil, nil)
+		req.WithRetryConfig(cfg)
+		req.AttemptTime = attemptTime
+
+		isRetryable := ret.Retryable(req)
+		if e, v := false, isRetryable; e != v {
+			t.Errorf("expected %v, got %v", e, v)
+		}
 
 	})
 
@@ -183,6 +206,78 @@ func TestDefaultRetryer_Retryable(t *testing.T) {
 
 		isRetryable := ret.Retryable(req)
 		if e, v := false, isRetryable; e != v {
+			t.Errorf("expected %v, got %v", e, v)
+		}
+
+	})
+
+	t.Run("test that the request is not retryable if Request.Error is not Temporary type", func(t *testing.T) {
+		hooks := Hooks{}
+
+		cfg := RetryConfig{
+			MaxRetries:     1,
+			InitialDelay:   100 * time.Millisecond,
+			Jitter:         0.1,
+			MaxElapsedTime: 1 * time.Second,
+		}
+
+		// create an instance of retryer
+		ret := &retryer{}
+		req := New(Config{}, hooks, ret, nil, nil, nil)
+		req.WithRetryConfig(cfg)
+
+		req.Error = errors.New("fake error")
+
+		isRetryable := ret.Retryable(req)
+		if e, v := false, isRetryable; e != v {
+			t.Errorf("expected %v, got %v", e, v)
+		}
+
+	})
+
+	t.Run("test that the request is not retryable if Request.Error is Temporary type but not temporary", func(t *testing.T) {
+		hooks := Hooks{}
+
+		cfg := RetryConfig{
+			MaxRetries:     1,
+			InitialDelay:   100 * time.Millisecond,
+			Jitter:         0.1,
+			MaxElapsedTime: 1 * time.Second,
+		}
+
+		// create an instance of retryer
+		ret := &retryer{}
+		req := New(Config{}, hooks, ret, nil, nil, nil)
+		req.WithRetryConfig(cfg)
+
+		req.Error = FakeTemporaryError{error: errors.New("fake error"), temporary: false}
+
+		isRetryable := ret.Retryable(req)
+		if e, v := false, isRetryable; e != v {
+			t.Errorf("expected %v, got %v", e, v)
+		}
+
+	})
+
+	t.Run("test that the request is retryable if Request.Error is Temporary", func(t *testing.T) {
+		hooks := Hooks{}
+
+		cfg := RetryConfig{
+			MaxRetries:     1,
+			InitialDelay:   100 * time.Millisecond,
+			Jitter:         0.1,
+			MaxElapsedTime: 1 * time.Second,
+		}
+
+		// create an instance of retryer
+		ret := &retryer{}
+		req := New(Config{}, hooks, ret, nil, nil, nil)
+		req.WithRetryConfig(cfg)
+
+		req.Error = FakeTemporaryError{error: errors.New("fake error"), temporary: true}
+
+		isRetryable := ret.Retryable(req)
+		if e, v := true, isRetryable; e != v {
 			t.Errorf("expected %v, got %v", e, v)
 		}
 
