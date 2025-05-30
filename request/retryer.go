@@ -15,6 +15,8 @@ var (
 		MaxRetries:     1,
 		MaxElapsedTime: 5 * time.Second,
 	}
+
+	DefaultRetryer = retryer{}
 )
 
 type RetryConfig struct {
@@ -51,10 +53,10 @@ type RetryConfig struct {
 type Retryer interface {
 	// Delay returns the duration to wait before making another attempt for the
 	// failed request.
-	Delay() time.Duration
+	Delay(*Request) time.Duration
 
 	// Retryable returns true if the request should be retried
-	Retryable(r *Request) bool
+	Retryable(*Request) bool
 }
 
 // noOpRetryer is the default retryer used when a request is created without
@@ -64,7 +66,7 @@ type noOpRetryer struct{}
 // Delay returns the duration to wait before making another attempt for the
 // failed request.
 // Since noOpRetryer does not retry, it always returns 0.
-func (r noOpRetryer) Delay() time.Duration {
+func (r noOpRetryer) Delay(*Request) time.Duration {
 	return 0
 }
 
@@ -74,36 +76,10 @@ func (r noOpRetryer) Retryable(*Request) bool {
 	return false
 }
 
-// timer used to manage retry delays
-type timer struct {
-	timer *time.Timer
-}
-
-func (t *timer) C() <-chan time.Time {
-	return t.timer.C
-}
-
-func (t *timer) Start(dur time.Duration) {
-	if t.timer == nil {
-		t.timer = time.NewTimer(dur)
-	} else {
-		t.timer.Reset(dur)
-	}
-}
-
-// Stop is used to free resources when timer is no longer used
-func (t *timer) Stop() {
-	if t.timer != nil {
-		t.timer.Stop()
-	}
-}
-
-type DefaultRetryer struct {
-	timer *timer
-}
+type retryer struct{}
 
 // Delay modifies the current delay with some jitter
-func (r *DefaultRetryer) Delay(req *Request) time.Duration {
+func (r retryer) Delay(req *Request) time.Duration {
 	if req.RetryConfig.CurrentDelay == 0 {
 		req.RetryConfig.CurrentDelay = req.RetryConfig.InitialDelay
 	}
@@ -115,7 +91,7 @@ func (r *DefaultRetryer) Delay(req *Request) time.Duration {
 
 // Retryable performs validation checks on the retryer config to confirm if
 // an operation is retry-able.
-func (r *DefaultRetryer) Retryable(req *Request) bool {
+func (r retryer) Retryable(req *Request) bool {
 
 	// check the number of max retries allowed
 	if req.RetryConfig.MaxRetries == 0 {
@@ -136,7 +112,7 @@ func (r *DefaultRetryer) Retryable(req *Request) bool {
 
 	// check if the error is not temporary
 	var te interface{ Temporary() bool }
-	if errors.As(req.Error, &te) && !te.Temporary() {
+	if e := req.Error; e == nil || !errors.As(e, &te) || !te.Temporary() {
 		return false
 	}
 

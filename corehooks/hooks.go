@@ -86,7 +86,7 @@ var SendHook = request.Hook{Fn: func(r *request.Request) {
 		sender = sendWithoutFollowRedirects
 	}
 
-	if request.NoBody == r.Request.Body {
+	if r.Request.Body == request.NoBody {
 		// Strip off the request body if the NoBody reader was used as a
 		// placeholder for a request body. This prevents the SDK from
 		// making requests with a request body when it would be invalid
@@ -167,15 +167,6 @@ func handleSendError(r *request.Request, err error) {
 	}
 }
 
-// Retry calls the retryer.Retry method with the request context
-//func Retry(retryer retryer.DefaultRetryer) request.Hook {
-//	return request.Hook{Fn: func(r *request.Request) {
-//		if err := retryer.Retry(r.Context()); err != nil {
-//			r.Error = err
-//		}
-//	}}
-//}
-
 type timer struct {
 	timer *time.Timer
 }
@@ -230,7 +221,7 @@ func (r *RetryHook) Retry() request.Hook {
 		}
 
 		// start the timer and wait
-		r.timer.Start(req.Delay())
+		r.timer.Start(req.Delay(req))
 		// wait for timer to complete or context Done signal
 		select {
 		case <-r.timer.C():
