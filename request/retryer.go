@@ -2,7 +2,6 @@ package request
 
 import (
 	"errors"
-	"log"
 	"math/rand/v2"
 	"time"
 )
@@ -99,20 +98,17 @@ func (r retryer) Retryable(req *Request) bool {
 		// return false if the number of max retries is 0
 		return false
 	}
-	log.Println("1")
 
 	// check if we have exceeded max allowed retries
 	if req.RetryConfig.RetryCount >= req.RetryConfig.MaxRetries {
 		return false
 	}
-	log.Println("2")
 
 	// total elapsed time plus the next delay duration should never be > than MaxElapsedTime
 	next := r.Delay(req)
 	if req.RetryConfig.MaxElapsedTime > 0 && time.Since(req.AttemptTime)+next > req.RetryConfig.MaxElapsedTime {
 		return false
 	}
-	log.Println("3")
 
 	// check if the error is not temporary
 	var te interface{ Temporary() bool }
@@ -120,7 +116,6 @@ func (r retryer) Retryable(req *Request) bool {
 		return false
 	}
 
-	log.Println("4")
 	return true
 
 }
