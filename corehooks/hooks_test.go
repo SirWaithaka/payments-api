@@ -55,22 +55,22 @@ func TestAddScheme(t *testing.T) {
 
 func TestSendHook(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "/redirect":
-			u := *r.URL
-			u.Path = "/home"
-			w.Header().Set("Location", u.String())
-			w.WriteHeader(http.StatusTemporaryRedirect)
-
-		case "/home":
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte("ok"))
-		}
-	}))
-	defer server.Close()
-
 	t.Run("test redirect", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch r.URL.Path {
+			case "/redirect":
+				u := *r.URL
+				u.Path = "/home"
+				w.Header().Set("Location", u.String())
+				w.WriteHeader(http.StatusTemporaryRedirect)
+
+			case "/home":
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte("ok"))
+			}
+		}))
+		defer server.Close()
+
 		tcs := map[string]struct {
 			Redirect       bool
 			ExpectedStatus int
