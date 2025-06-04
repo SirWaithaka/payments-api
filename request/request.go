@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -44,7 +45,7 @@ type (
 		Retryer
 		RetryConfig RetryConfig
 
-		operation *Operation
+		Operation *Operation
 		Request   *http.Request
 		Response  *http.Response
 
@@ -129,7 +130,7 @@ func New(cfg Config, hooks Hooks, retryer Retryer, operation *Operation, params,
 	return &Request{
 		Config:      cfg,
 		Request:     httpReq,
-		operation:   operation,
+		Operation:   operation,
 		Hooks:       hooks.Copy(),
 		Params:      params,
 		Data:        data,
@@ -137,6 +138,15 @@ func New(cfg Config, hooks Hooks, retryer Retryer, operation *Operation, params,
 		Retryer:     retryer,
 		RetryConfig: RetryConfig{}, // noOp retry config
 	}
+}
+
+func debugLogReqError(r *Request, err error) {
+	if !r.Config.LogLevel.Equals(LogDebugWithRequestErrors) {
+		return
+	}
+
+	r.Config.Logger.Log(fmt.Sprintf("DEBUG: %s failed, error %v",
+		r.Operation.Name, err))
 }
 
 // Build will build the request object to be sent. Build will also
@@ -152,11 +162,13 @@ func (r *Request) Build() error {
 	// run validate hooks
 	r.Hooks.Validate.Run(r)
 	if r.Error != nil {
+		debugLogReqError(r, r.Error)
 		return r.Error
 	}
 	// run build hooks
 	r.Hooks.Build.Run(r)
 	if r.Error != nil {
+		debugLogReqError(r, r.Error)
 		return r.Error
 	}
 	r.built = true
@@ -213,6 +225,10 @@ func (r *Request) Send() error {
 }
 
 func (r *Request) prepareRetry() error {
+	if r.Config.LogLevel.Equals(LogDebugWithRequestRetries) && r.Config.Logger != nil {
+		r.Config.Logger.Log(fmt.Sprintf("DEBUG: Retrying Request %s, attempt %d",
+			r.Operation.Name, r.RetryConfig.RetryCount))
+	}
 
 	// The previous http.Request will have a reference to the r.Body
 	// and the HTTP Client's Transport may still be reading from
@@ -232,13 +248,14 @@ func (r *Request) sendRequest() error {
 	// run hooks that process sending the request
 	r.Hooks.Send.Run(r)
 	if r.Error != nil {
-		// todo: log error
+		debugLogReqError(r, r.Error)
 		return r.Error
 	}
 
 	// run any hooks that unmarshal/validate the response
 	r.Hooks.Unmarshal.Run(r)
 	if r.Error != nil {
+		debugLogReqError(r, r.Error)
 		return r.Error
 	}
 

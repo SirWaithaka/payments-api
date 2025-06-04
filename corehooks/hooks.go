@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -242,4 +243,26 @@ func (r *RetryHook) Close() request.Hook {
 	return request.Hook{Fn: func(_ *request.Request) {
 		r.timer.Stop()
 	}}
+}
+
+// LogHTTPRequest is a hook to log the HTTP request sent to a service. If log level
+// matches request.LogDebugWithHTTPBody, the request body will be included.
+var LogHTTPRequest = request.Hook{Fn: logRequest}
+
+func logRequest(r *request.Request) {
+	if !r.Config.LogLevel.AtLeast(request.LogDebug) || r.Config.Logger == nil {
+		return
+	}
+
+	logBody := r.Config.LogLevel.Equals(request.LogDebugWithHTTPBody)
+	b, err := httputil.DumpRequest(r.Request, logBody)
+	if err != nil {
+		r.Config.Logger.Log(fmt.Sprintf("DEBUG: %s failed, error %v",
+			r.Operation.Name, err))
+		return
+	}
+
+	r.Config.Logger.Log(fmt.Sprintf("DEBUG: %s, %s",
+		r.Operation.Name, string(b)))
+
 }

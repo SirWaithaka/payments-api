@@ -44,7 +44,7 @@ func AuthenticationRequest(endpoint, key, secret string) (*request.Request, *Res
 	hooks.Unmarshal.PushBackHook(DecodeResponse())
 
 	output := &ResponseAuthorization{}
-	req := request.New(cfg, hooks, op, nil, output)
+	req := request.New(cfg, hooks, nil, op, nil, output)
 
 	return req, output
 }
@@ -84,7 +84,7 @@ func (daraja Daraja) C2BExpressRequest(input RequestC2BExpress, opts ...request.
 	cfg := request.Config{Endpoint: daraja.endpoint}
 
 	output := &ResponseC2BExpress{}
-	req := request.New(cfg, daraja.hooks, op, input, output)
+	req := request.New(cfg, daraja.hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
 	return req, output
@@ -111,7 +111,7 @@ func (daraja Daraja) ReversalRequest(input RequestReversal, opts ...request.Opti
 	cfg := request.Config{Endpoint: daraja.endpoint}
 	output := &ResponseReversal{}
 
-	req := request.New(cfg, daraja.hooks, op, input, output)
+	req := request.New(cfg, daraja.hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
 	return req, output
@@ -138,7 +138,7 @@ func (daraja Daraja) B2CRequest(input RequestB2C, opts ...request.Option) (*requ
 	cfg := request.Config{Endpoint: daraja.endpoint}
 	output := &ResponseB2C{}
 
-	req := request.New(cfg, daraja.hooks, op, input, output)
+	req := request.New(cfg, daraja.hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
 	return req, output
@@ -165,7 +165,7 @@ func (daraja Daraja) B2BRequest(input RequestB2B, opts ...request.Option) (*requ
 	cfg := request.Config{Endpoint: daraja.endpoint}
 	output := &ResponseB2B{}
 
-	req := request.New(cfg, daraja.hooks, op, input, output)
+	req := request.New(cfg, daraja.hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
 	return req, output
@@ -192,7 +192,7 @@ func (daraja Daraja) TransactionStatusRequest(input RequestTransactionStatus, op
 	cfg := request.Config{Endpoint: daraja.endpoint}
 	output := &ResponseTransactionStatus{}
 
-	req := request.New(cfg, daraja.hooks, op, input, output)
+	req := request.New(cfg, daraja.hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
 	return req, output
@@ -219,7 +219,7 @@ func (daraja Daraja) BalanceRequest(input RequestBalance, opts ...request.Option
 	cfg := request.Config{Endpoint: daraja.endpoint}
 	output := &ResponseBalance{}
 
-	req := request.New(cfg, daraja.hooks, op, input, output)
+	req := request.New(cfg, daraja.hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
 	return req, output
@@ -246,7 +246,7 @@ func (daraja Daraja) QueryOrgInfoRequest(input RequestOrgInfoQuery, opts ...requ
 	cfg := request.Config{Endpoint: daraja.endpoint}
 	output := &ResponseOrgInfoQuery{}
 
-	req := request.New(cfg, daraja.hooks, op, input, output)
+	req := request.New(cfg, daraja.hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
 	return req, output
