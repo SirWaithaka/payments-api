@@ -16,4 +16,9 @@ type Config struct {
 	HTTPClient *http.Client
 
 	DisableFollowRedirects bool
+
+	LogLevel LogLevel
+	// The logger writer interface to write logging messages to. Defaults to
+	// standard out.
+	Logger Logger
 }
