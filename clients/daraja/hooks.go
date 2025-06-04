@@ -6,7 +6,6 @@ import (
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
-	"github.com/rs/zerolog"
 
 	"github.com/SirWaithaka/payments-api/request"
 )
@@ -29,7 +28,6 @@ func SetBaseUrl(baseUrl, environment string) request.Hook {
 	}
 
 	return request.Hook{Fn: func(r *request.Request) {
-		zerolog.DefaultContextLogger.Info().Msg(url)
 		r.Config.Endpoint = url
 	}}
 }
@@ -95,10 +93,15 @@ func Authenticate(endpoint, key, secret string) request.Hook {
 			// if authentication request was successful, save token to cache
 			cache.Set(out.AccessToken, time.Now().Add(12*time.Hour))
 		}
-		zerolog.DefaultContextLogger.Info().Msg(cache.Get())
 
 		// add access token to request authorization header
 		r.Request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", cache.Get()))
+
+	}}
+}
+
+func RecordRequest() request.Hook {
+	return request.Hook{Fn: func(r *request.Request) {
 
 	}}
 }

@@ -2,17 +2,12 @@ package main
 
 import (
 	"context"
-	"os"
-
-	"github.com/rs/zerolog"
+	"log"
 
 	"github.com/SirWaithaka/payments-api/clients/daraja"
 )
 
 func main() {
-	l := zerolog.New(os.Stdout).With().Timestamp().Caller().Logger()
-	zerolog.DefaultContextLogger = &l
-
 	darajaclient := daraja.New()
 
 	req := daraja.RequestC2BExpress{
@@ -31,8 +26,7 @@ func main() {
 
 	res, err := darajaclient.C2BExpress(context.Background(), req)
 	if err != nil {
-		l.Err(err).Send()
-		return
+		log.Fatal(err)
 	}
-	l.Info().Any("response", res).Send()
+	log.Println(res)
 }
