@@ -2,8 +2,8 @@ package request
 
 type (
 	Hook struct {
-		//Name string
-		Fn func(*Request)
+		Name string
+		Fn   func(*Request)
 	}
 
 	HookList struct {
@@ -42,7 +42,7 @@ func (l *HookList) Len() int {
 
 // PushBack pushes hook f to the back of the hook list.
 func (l *HookList) PushBack(f func(*Request)) {
-	l.PushBackHook(Hook{Fn: f})
+	l.PushBackHook(Hook{Fn: f, Name: "__anon"})
 }
 
 // PushBackHook pushes hook h to the back of the hook list.
@@ -54,7 +54,7 @@ func (l *HookList) PushBackHook(h Hook) {
 }
 
 func (l *HookList) PushFront(f func(*Request)) {
-	l.PushFrontHook(Hook{Fn: f})
+	l.PushFrontHook(Hook{Fn: f, Name: "__anon"})
 }
 
 // PushFrontHook pushes hook h to the front of the hook list
@@ -67,6 +67,36 @@ func (l *HookList) PushFrontHook(h Hook) {
 		l.list = append(l.list, Hook{})
 		copy(l.list[1:], l.list)
 		l.list[0] = h
+	}
+}
+
+// Remove removes a Hook by name
+func (l *HookList) Remove(name string) {
+	for i := 0; i < len(l.list); i++ {
+		m := l.list[i]
+		if m.Name == name {
+			// shift slice elements in place
+			copy(l.list[i:], l.list[i+1:])
+			// zero last element
+			l.list[len(l.list)-1] = Hook{}
+			// clear last element
+			l.list = l.list[:len(l.list)-1]
+
+			i--
+		}
+	}
+}
+
+// RemoveHook removes Hook h
+func (l *HookList) RemoveHook(h Hook) {
+	l.Remove(h.Name)
+}
+
+func (l *HookList) Swap(name string, replace Hook) {
+	for i := 0; i < len(l.list); i++ {
+		if l.list[i].Name == name {
+			l.list[i] = replace
+		}
 	}
 }
 
