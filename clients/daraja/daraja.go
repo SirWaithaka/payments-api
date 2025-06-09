@@ -10,16 +10,35 @@ import (
 	"github.com/SirWaithaka/payments-api/request"
 )
 
+type Config struct {
+	Endpoint string
+	Hooks    request.Hooks
+}
+
 const (
 	OperationC2BExpress        = "express"
 	OperationC2BQuery          = "stk_query"
 	OperationReversal          = "reversal"
 	OperationB2C               = "b2c"
 	OperationB2B               = "b2b"
-	OperationTransactionStatus = "search"
 	OperationBalance           = "balance"
+	OperationTransactionStatus = "search"
 	OperationQueryOrgInfo      = "org_info_query"
 )
+
+func DefaultHooks() request.Hooks {
+	// create default hooks
+	hooks := corehooks.DefaultHooks()
+
+	// create client with default timeout of 5 seconds
+	client := &http.Client{Timeout: 5 * time.Second}
+	hooks.Build.PushBackHook(SetEndpoint(SandboxUrl))
+	hooks.Build.PushBackHook(HTTPClient(client))
+	hooks.Build.PushBackHook(corehooks.EncodeRequestBody)
+	hooks.Unmarshal.PushBackHook(DecodeResponse)
+	return hooks
+
+}
 
 func PasswordEncode(shortcode, passphrase, timestamp string) string {
 	return base64.StdEncoding.EncodeToString([]byte(shortcode + passphrase + timestamp))
@@ -32,16 +51,15 @@ func AuthenticationRequest(endpoint, key, secret string) (*request.Request, *Res
 		Path:   EndpointAuthentication + "?grant_type=client_credentials",
 	}
 
-	cfg := request.Config{Endpoint: endpoint}
-
 	// create a client with 40 second timeout
 	client := &http.Client{Timeout: time.Second * 40}
+	cfg := request.Config{HTTPClient: client, Endpoint: endpoint}
+
 	// default hooks
 	hooks := corehooks.DefaultHooks()
-	hooks.Build.PushBackHook(HTTPClient(client))
 	hooks.Build.PushBackHook(corehooks.SetBasicAuth(key, secret))
 	hooks.Build.PushBackHook(corehooks.EncodeRequestBody)
-	hooks.Unmarshal.PushBackHook(DecodeResponse())
+	hooks.Unmarshal.PushBackHook(DecodeResponse)
 
 	output := &ResponseAuthorization{}
 	req := request.New(cfg, hooks, nil, op, nil, output)
@@ -53,25 +71,14 @@ func AuthenticationRequest(endpoint, key, secret string) (*request.Request, *Res
 // to MPESA Daraja service.
 type Daraja struct {
 	endpoint string
-	hooks    request.Hooks
+	Hooks    request.Hooks
 }
 
-func New() Daraja {
-	endpoint := "http://localhost:9002/daraja"
-
-	// create default hooks
-	hooks := corehooks.DefaultHooks()
-
-	hooks.Build.PushBackHook(HTTPClient(nil))
-	hooks.Build.PushBackHook(corehooks.EncodeRequestBody)
-	hooks.Build.PushBackHook(Authenticate(endpoint, "fake_key", "fake_secret"))
-	hooks.Unmarshal.PushBackHook(DecodeResponse())
-
-	return Daraja{hooks: hooks, endpoint: endpoint}
-}
-
-func (daraja *Daraja) Hooks() request.Hooks {
-	return daraja.hooks
+func New(cfg Config) Daraja {
+	if cfg.Hooks.IsEmpty() {
+		cfg.Hooks = DefaultHooks()
+	}
+	return Daraja{endpoint: cfg.Endpoint, Hooks: cfg.Hooks}
 }
 
 func (daraja Daraja) C2BExpressRequest(input RequestC2BExpress, opts ...request.Option) (*request.Request, *ResponseC2BExpress) {
@@ -84,7 +91,7 @@ func (daraja Daraja) C2BExpressRequest(input RequestC2BExpress, opts ...request.
 	cfg := request.Config{Endpoint: daraja.endpoint}
 
 	output := &ResponseC2BExpress{}
-	req := request.New(cfg, daraja.hooks, nil, op, input, output)
+	req := request.New(cfg, daraja.Hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
 	return req, output
@@ -111,7 +118,7 @@ func (daraja Daraja) ReversalRequest(input RequestReversal, opts ...request.Opti
 	cfg := request.Config{Endpoint: daraja.endpoint}
 	output := &ResponseReversal{}
 
-	req := request.New(cfg, daraja.hooks, nil, op, input, output)
+	req := request.New(cfg, daraja.Hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
 	return req, output
@@ -138,7 +145,7 @@ func (daraja Daraja) B2CRequest(input RequestB2C, opts ...request.Option) (*requ
 	cfg := request.Config{Endpoint: daraja.endpoint}
 	output := &ResponseB2C{}
 
-	req := request.New(cfg, daraja.hooks, nil, op, input, output)
+	req := request.New(cfg, daraja.Hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
 	return req, output
@@ -165,7 +172,7 @@ func (daraja Daraja) B2BRequest(input RequestB2B, opts ...request.Option) (*requ
 	cfg := request.Config{Endpoint: daraja.endpoint}
 	output := &ResponseB2B{}
 
-	req := request.New(cfg, daraja.hooks, nil, op, input, output)
+	req := request.New(cfg, daraja.Hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
 	return req, output
@@ -192,7 +199,7 @@ func (daraja Daraja) TransactionStatusRequest(input RequestTransactionStatus, op
 	cfg := request.Config{Endpoint: daraja.endpoint}
 	output := &ResponseTransactionStatus{}
 
-	req := request.New(cfg, daraja.hooks, nil, op, input, output)
+	req := request.New(cfg, daraja.Hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
 	return req, output
@@ -219,7 +226,7 @@ func (daraja Daraja) BalanceRequest(input RequestBalance, opts ...request.Option
 	cfg := request.Config{Endpoint: daraja.endpoint}
 	output := &ResponseBalance{}
 
-	req := request.New(cfg, daraja.hooks, nil, op, input, output)
+	req := request.New(cfg, daraja.Hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
 	return req, output
@@ -246,7 +253,7 @@ func (daraja Daraja) QueryOrgInfoRequest(input RequestOrgInfoQuery, opts ...requ
 	cfg := request.Config{Endpoint: daraja.endpoint}
 	output := &ResponseOrgInfoQuery{}
 
-	req := request.New(cfg, daraja.hooks, nil, op, input, output)
+	req := request.New(cfg, daraja.Hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
 	return req, output
