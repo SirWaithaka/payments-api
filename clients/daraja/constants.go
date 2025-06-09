@@ -1,11 +1,8 @@
 package daraja
 
 const (
-	ENV_PRODUCTION = "PRODUCTION"
-	ENV_SANDBOX    = "SANDBOX"
-
-	productionUrl = "https://api.safaricom.co.ke"
-	sandboxUrl    = "https://sandbox.safaricom.co.ke"
+	ProductionUrl = "https://api.safaricom.co.ke"
+	SandboxUrl    = "https://sandbox.safaricom.co.ke"
 
 	EndpointAuthentication    = "/oauth/v1/generate"
 	EndpointC2bExpress        = "/mpesa/stkpush/v1/processrequest"
