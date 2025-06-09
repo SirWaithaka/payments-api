@@ -18,7 +18,7 @@ type ShortCodeConfig struct {
 }
 
 func main() {
-	l := log.New(os.Stdout, "Daraja: ", log.LstdFlags)
+	l := log.New(os.Stdout, "Daraja: ", log.LstdFlags|log.Llongfile)
 
 	sCfg := ShortCodeConfig{
 		ShortCode:         "000000",
@@ -31,10 +31,12 @@ func main() {
 
 	endpoint := "http://localhost:9002/daraja"
 	darajaclient := daraja.New(daraja.Config{Endpoint: endpoint})
+	darajaclient.Hooks.Build.PushBackHook(daraja.Authenticate(endpoint, sCfg.InitiatorName, sCfg.InitiatorPassword))
 
+	password := daraja.PasswordEncode(sCfg.ShortCode, sCfg.Passphrase, daraja.NewTimestamp().String())
 	req := daraja.RequestC2BExpress{
 		BusinessShortCode: sCfg.ShortCode,
-		Password:          sCfg.InitiatorPassword, // encoded passphrase for c2b
+		Password:          password, // encoded passphrase for c2b
 		Timestamp:         daraja.NewTimestamp(),
 		TransactionType:   daraja.OperationC2BExpress,
 		Amount:            "100",
