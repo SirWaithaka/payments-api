@@ -52,7 +52,7 @@ func encrypt(data, certificate []byte) ([]byte, error) {
 }
 
 // OpenSSLEncrypt encrypts param data using param certificate
-func OpenSSLEncrypt(data string, certificate string) (string, error) {
+func OpenSSLEncrypt(data, certificate string) (string, error) {
 	encrypted, err := encrypt([]byte(data), []byte(certificate))
 	if err != nil {
 		return "", err
