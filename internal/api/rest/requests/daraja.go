@@ -10,5 +10,5 @@ type RequestPayment struct {
 
 	Amount string `json:"amount" binding:"required"`
 
-	ExternalWalletID string `json:"external_wallet_id" binding:"required"`
+	ExternalAccountID string `json:"external_account_id" binding:"required"`
 }
