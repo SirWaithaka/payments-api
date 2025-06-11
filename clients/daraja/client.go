@@ -67,38 +67,38 @@ func AuthenticationRequest(endpoint, key, secret string) (*request.Request, *Res
 	return req, output
 }
 
-// Daraja provides the API operation methods for making requests
-// to MPESA Daraja service.
-type Daraja struct {
+// Client provides the API operation methods for making requests
+// to MPESA daraja service.
+type Client struct {
 	endpoint string
 	Hooks    request.Hooks
 }
 
-func New(cfg Config) Daraja {
+func New(cfg Config) Client {
 	if cfg.Hooks.IsEmpty() {
 		cfg.Hooks = DefaultHooks()
 	}
-	return Daraja{endpoint: cfg.Endpoint, Hooks: cfg.Hooks}
+	return Client{endpoint: cfg.Endpoint, Hooks: cfg.Hooks}
 }
 
-func (daraja Daraja) C2BExpressRequest(input RequestC2BExpress, opts ...request.Option) (*request.Request, *ResponseC2BExpress) {
+func (client Client) C2BExpressRequest(input RequestC2BExpress, opts ...request.Option) (*request.Request, *ResponseC2BExpress) {
 	op := &request.Operation{
 		Name:   OperationC2BExpress,
 		Method: http.MethodPost,
 		Path:   EndpointC2bExpress,
 	}
 
-	cfg := request.Config{Endpoint: daraja.endpoint}
+	cfg := request.Config{Endpoint: client.endpoint}
 
 	output := &ResponseC2BExpress{}
-	req := request.New(cfg, daraja.Hooks, nil, op, input, output)
+	req := request.New(cfg, client.Hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
 	return req, output
 }
 
-func (daraja Daraja) C2BExpress(ctx context.Context, payload RequestC2BExpress) (ResponseC2BExpress, error) {
-	req, out := daraja.C2BExpressRequest(payload, request.WithRequestHeader("Content-Type", "application/json"))
+func (client Client) C2BExpress(ctx context.Context, payload RequestC2BExpress) (ResponseC2BExpress, error) {
+	req, out := client.C2BExpressRequest(payload, request.WithRequestHeader("Content-Type", "application/json"))
 	req.WithContext(ctx)
 
 	if err := req.Send(); err != nil {
@@ -108,24 +108,24 @@ func (daraja Daraja) C2BExpress(ctx context.Context, payload RequestC2BExpress) 
 	return *out, nil
 }
 
-func (daraja Daraja) ReversalRequest(input RequestReversal, opts ...request.Option) (*request.Request, *ResponseReversal) {
+func (client Client) ReversalRequest(input RequestReversal, opts ...request.Option) (*request.Request, *ResponseReversal) {
 	op := &request.Operation{
 		Name:   OperationReversal,
 		Method: http.MethodPost,
 		Path:   EndpointReversal,
 	}
 
-	cfg := request.Config{Endpoint: daraja.endpoint}
+	cfg := request.Config{Endpoint: client.endpoint}
 	output := &ResponseReversal{}
 
-	req := request.New(cfg, daraja.Hooks, nil, op, input, output)
+	req := request.New(cfg, client.Hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
 	return req, output
 }
 
-func (daraja Daraja) Reverse(ctx context.Context, payload RequestReversal) (ResponseReversal, error) {
-	req, out := daraja.ReversalRequest(payload, request.WithRequestHeader("Content-Type", "application/json"))
+func (client Client) Reverse(ctx context.Context, payload RequestReversal) (ResponseReversal, error) {
+	req, out := client.ReversalRequest(payload, request.WithRequestHeader("Content-Type", "application/json"))
 	req.WithContext(ctx)
 
 	if err := req.Send(); err != nil {
@@ -135,24 +135,24 @@ func (daraja Daraja) Reverse(ctx context.Context, payload RequestReversal) (Resp
 	return *out, nil
 }
 
-func (daraja Daraja) B2CRequest(input RequestB2C, opts ...request.Option) (*request.Request, *ResponseB2C) {
+func (client Client) B2CRequest(input RequestB2C, opts ...request.Option) (*request.Request, *ResponseB2C) {
 	op := &request.Operation{
 		Name:   OperationB2C,
 		Method: http.MethodPost,
 		Path:   EndpointB2cPayment,
 	}
 
-	cfg := request.Config{Endpoint: daraja.endpoint}
+	cfg := request.Config{Endpoint: client.endpoint}
 	output := &ResponseB2C{}
 
-	req := request.New(cfg, daraja.Hooks, nil, op, input, output)
+	req := request.New(cfg, client.Hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
 	return req, output
 }
 
-func (daraja Daraja) B2C(ctx context.Context, payload RequestB2C) (ResponseB2C, error) {
-	req, out := daraja.B2CRequest(payload, request.WithRequestHeader("Content-Type", "application/json"))
+func (client Client) B2C(ctx context.Context, payload RequestB2C) (ResponseB2C, error) {
+	req, out := client.B2CRequest(payload, request.WithRequestHeader("Content-Type", "application/json"))
 	req.WithContext(ctx)
 
 	if err := req.Send(); err != nil {
@@ -162,24 +162,24 @@ func (daraja Daraja) B2C(ctx context.Context, payload RequestB2C) (ResponseB2C, 
 	return *out, nil
 }
 
-func (daraja Daraja) B2BRequest(input RequestB2B, opts ...request.Option) (*request.Request, *ResponseB2B) {
+func (client Client) B2BRequest(input RequestB2B, opts ...request.Option) (*request.Request, *ResponseB2B) {
 	op := &request.Operation{
 		Name:   OperationB2B,
 		Method: http.MethodPost,
 		Path:   EndpointB2bPayment,
 	}
 
-	cfg := request.Config{Endpoint: daraja.endpoint}
+	cfg := request.Config{Endpoint: client.endpoint}
 	output := &ResponseB2B{}
 
-	req := request.New(cfg, daraja.Hooks, nil, op, input, output)
+	req := request.New(cfg, client.Hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
 	return req, output
 }
 
-func (daraja Daraja) B2B(ctx context.Context, payload RequestB2B) (ResponseB2B, error) {
-	req, out := daraja.B2BRequest(payload, request.WithRequestHeader("Content-Type", "application/json"))
+func (client Client) B2B(ctx context.Context, payload RequestB2B) (ResponseB2B, error) {
+	req, out := client.B2BRequest(payload, request.WithRequestHeader("Content-Type", "application/json"))
 	req.WithContext(ctx)
 
 	if err := req.Send(); err != nil {
@@ -189,24 +189,24 @@ func (daraja Daraja) B2B(ctx context.Context, payload RequestB2B) (ResponseB2B, 
 	return *out, nil
 }
 
-func (daraja Daraja) TransactionStatusRequest(input RequestTransactionStatus, opts ...request.Option) (*request.Request, *ResponseTransactionStatus) {
+func (client Client) TransactionStatusRequest(input RequestTransactionStatus, opts ...request.Option) (*request.Request, *ResponseTransactionStatus) {
 	op := &request.Operation{
 		Name:   OperationTransactionStatus,
 		Method: http.MethodPost,
 		Path:   EndpointTransactionStatus,
 	}
 
-	cfg := request.Config{Endpoint: daraja.endpoint}
+	cfg := request.Config{Endpoint: client.endpoint}
 	output := &ResponseTransactionStatus{}
 
-	req := request.New(cfg, daraja.Hooks, nil, op, input, output)
+	req := request.New(cfg, client.Hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
 	return req, output
 }
 
-func (daraja Daraja) TransactionStatus(ctx context.Context, payload RequestTransactionStatus) (ResponseTransactionStatus, error) {
-	req, out := daraja.TransactionStatusRequest(payload, request.WithRequestHeader("Content-Type", "application/json"))
+func (client Client) TransactionStatus(ctx context.Context, payload RequestTransactionStatus) (ResponseTransactionStatus, error) {
+	req, out := client.TransactionStatusRequest(payload, request.WithRequestHeader("Content-Type", "application/json"))
 	req.WithContext(ctx)
 
 	if err := req.Send(); err != nil {
@@ -216,24 +216,24 @@ func (daraja Daraja) TransactionStatus(ctx context.Context, payload RequestTrans
 	return *out, nil
 }
 
-func (daraja Daraja) BalanceRequest(input RequestBalance, opts ...request.Option) (*request.Request, *ResponseBalance) {
+func (client Client) BalanceRequest(input RequestBalance, opts ...request.Option) (*request.Request, *ResponseBalance) {
 	op := &request.Operation{
 		Name:   OperationBalance,
 		Method: http.MethodPost,
 		Path:   EndpointAccountBalance,
 	}
 
-	cfg := request.Config{Endpoint: daraja.endpoint}
+	cfg := request.Config{Endpoint: client.endpoint}
 	output := &ResponseBalance{}
 
-	req := request.New(cfg, daraja.Hooks, nil, op, input, output)
+	req := request.New(cfg, client.Hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
 	return req, output
 }
 
-func (daraja Daraja) Balance(ctx context.Context, payload RequestBalance) (ResponseBalance, error) {
-	req, out := daraja.BalanceRequest(payload, request.WithRequestHeader("Content-Type", "application/json"))
+func (client Client) Balance(ctx context.Context, payload RequestBalance) (ResponseBalance, error) {
+	req, out := client.BalanceRequest(payload, request.WithRequestHeader("Content-Type", "application/json"))
 	req.WithContext(ctx)
 
 	if err := req.Send(); err != nil {
@@ -243,24 +243,24 @@ func (daraja Daraja) Balance(ctx context.Context, payload RequestBalance) (Respo
 	return *out, nil
 }
 
-func (daraja Daraja) QueryOrgInfoRequest(input RequestOrgInfoQuery, opts ...request.Option) (*request.Request, *ResponseOrgInfoQuery) {
+func (client Client) QueryOrgInfoRequest(input RequestOrgInfoQuery, opts ...request.Option) (*request.Request, *ResponseOrgInfoQuery) {
 	op := &request.Operation{
 		Name:   OperationQueryOrgInfo,
 		Method: http.MethodPost,
 		Path:   EndpointQueryOrgInfo,
 	}
 
-	cfg := request.Config{Endpoint: daraja.endpoint}
+	cfg := request.Config{Endpoint: client.endpoint}
 	output := &ResponseOrgInfoQuery{}
 
-	req := request.New(cfg, daraja.Hooks, nil, op, input, output)
+	req := request.New(cfg, client.Hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
 	return req, output
 }
 
-func (daraja Daraja) QueryOrgInfo(ctx context.Context, payload RequestOrgInfoQuery) (ResponseOrgInfoQuery, error) {
-	req, out := daraja.QueryOrgInfoRequest(payload, request.WithRequestHeader("Content-Type", "application/json"))
+func (client Client) QueryOrgInfo(ctx context.Context, payload RequestOrgInfoQuery) (ResponseOrgInfoQuery, error) {
+	req, out := client.QueryOrgInfoRequest(payload, request.WithRequestHeader("Content-Type", "application/json"))
 	req.WithContext(ctx)
 
 	if err := req.Send(); err != nil {
