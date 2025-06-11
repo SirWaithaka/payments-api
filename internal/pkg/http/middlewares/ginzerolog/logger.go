@@ -19,7 +19,7 @@ type responseWriter struct {
 
 func (rw *responseWriter) Write(b []byte) (n int, err error) {
 	copy(rw.buf, b)
-	return rw.Write(b)
+	return rw.ResponseWriter.Write(b)
 }
 
 func New(cfg Config) gin.HandlerFunc {
