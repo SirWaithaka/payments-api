@@ -11,8 +11,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/SirWaithaka/payments-api/internal/pkg/http/middlewares"
-	"github.com/SirWaithaka/payments-api/internal/pkg/http/middlewares/ginzerolog"
-	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
 	"github.com/SirWaithaka/payments-api/internal/repositories/postgres"
 )
 
@@ -23,12 +21,9 @@ func assertEquals(t *testing.T, exp any, val any) {
 }
 
 func TestErrorHandler(t *testing.T) {
-	lg := logger.New(&logger.Config{})
-
 	engine := gin.New()
 	gin.SetMode(gin.TestMode)
 	engine.Use(middlewares.ErrorHandler())
-	engine.Use(ginzerolog.New(ginzerolog.Config{Logger: &lg}))
 
 	t.Run("test it catches postgres errors", func(t *testing.T) {
 		err := postgres.Error{Err: gorm.ErrRecordNotFound}
