@@ -14,7 +14,7 @@ import (
 func ErrorHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		l := zerolog.Ctx(c.Request.Context())
-		l.Info().Msg("handling error")
+		l.Debug().Msg("handling error")
 
 		c.Next()
 
@@ -29,8 +29,8 @@ func ErrorHandler() gin.HandlerFunc {
 		// set header for error responses format
 		c.Header("content-type", "application/json")
 
-		// check if status code is set and headers are not written
-		if c.Writer.Status() > 0 && !c.Writer.Written() {
+		// check headers are not written and status code is not default 200
+		if c.Writer.Size() < 1 && c.Writer.Status() != http.StatusOK {
 			c.AbortWithStatusJSON(c.Writer.Status(), gin.H{
 				"error": err.Error(),
 			})
@@ -55,6 +55,7 @@ func ErrorHandler() gin.HandlerFunc {
 			}
 
 		default:
+			l.Error().Msg(e.Error())
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 				"error": e.Error(),
 			})
