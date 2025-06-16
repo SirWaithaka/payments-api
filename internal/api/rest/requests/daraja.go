@@ -11,4 +11,6 @@ type RequestPayment struct {
 	Amount string `json:"amount" binding:"required"`
 
 	ExternalAccountID string `json:"external_account_id" binding:"required"`
+
+	Description string `json:"description"`
 }
