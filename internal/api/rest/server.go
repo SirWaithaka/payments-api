@@ -9,19 +9,19 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 
-	"github.com/SirWaithaka/payments-api/internal/di"
+	dipkg "github.com/SirWaithaka/payments-api/internal/di"
 	"github.com/SirWaithaka/payments-api/internal/pkg/http/middlewares"
 	"github.com/SirWaithaka/payments-api/internal/pkg/http/middlewares/ginzerolog"
 	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
 )
 
-func New(c context.Context, di *di.DI) *Server {
+func New(c context.Context, di *dipkg.DI) *Server {
 	l := logger.New(&logger.Config{})
 
 	return &Server{
 		logger: l,
 		ctx:    c,
-		server: newServer(di.Cfg.HTTPPort, &l),
+		server: newServer(di, &l),
 	}
 }
 
@@ -51,7 +51,7 @@ func (server *Server) Stop() error {
 	return server.server.Shutdown(server.ctx)
 }
 
-func newServer(port string, logger *zerolog.Logger) *http.Server {
+func newServer(di *dipkg.DI, logger *zerolog.Logger) *http.Server {
 	engine := gin.New()
 	gin.SetMode(gin.ReleaseMode)
 
@@ -60,10 +60,10 @@ func newServer(port string, logger *zerolog.Logger) *http.Server {
 	engine.Use(ginzerolog.New(ginzerolog.Config{Logger: logger}))
 	engine.Use(middlewares.ErrorHandler())
 
-	routes(engine)
+	routes(engine, di)
 
 	return &http.Server{
-		Addr:    fmt.Sprintf(":%s", port),
+		Addr:    fmt.Sprintf(":%s", di.Cfg.HTTPPort),
 		Handler: engine.Handler(),
 	}
 }
