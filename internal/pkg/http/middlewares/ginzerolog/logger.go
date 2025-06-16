@@ -44,7 +44,7 @@ func New(cfg Config) gin.HandlerFunc {
 			return ctx.Fields(map[string]interface{}{
 				logger.LRequestID: requestID,
 				"method":          c.Request.Method,
-				"url":             c.Request.RequestURI,
+				"url":             c.Request.URL.String(),
 			})
 		})
 
@@ -80,10 +80,8 @@ func New(cfg Config) gin.HandlerFunc {
 			} else if statusCode >= 500 && statusCode < 600 {
 				level = zerolog.ErrorLevel
 			}
+
 			lg := *cfg.Logger
-
-			lg.WithLevel(zerolog.ErrorLevel).Msg(string(rw.buf))
-
 			lg.WithLevel(level).
 				Int("statusCode", statusCode).
 				Str("elapsed", elapsed(duration)).
