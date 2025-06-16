@@ -7,18 +7,36 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/SirWaithaka/payments-api/internal/api/rest/requests"
+	"github.com/SirWaithaka/payments-api/internal/domains/payments"
 )
 
-type PaymentHandlers struct{}
+func NewPaymentHandlers(service payments.Service) PaymentHandlers {
+	return PaymentHandlers{service}
+}
+
+type PaymentHandlers struct {
+	service payments.Service
+}
 
 func (handler PaymentHandlers) Deposit(c *gin.Context) {
-	l := zerolog.Ctx(c)
-	l.Info().Msg("deposit request")
+	l := zerolog.Ctx(c.Request.Context())
+	l.Debug().Msg("deposit request")
 
 	var params requests.RequestPayment
-	if err := c.ShouldBindJSON(&params); err != nil {
+	if err := c.ShouldBindBodyWithJSON(&params); err != nil {
+		handleRequestParsingError(c, err)
+		return
+	}
+
+	err := handler.service.Transact(c.Request.Context(), payments.Payment{
+		ExternalAccountNumber: params.ExternalAccountID,
+		Amount:                params.Amount,
+		Description:           params.Description,
+		ExternalID:            params.ExternalID,
+		ExternalUID:           params.ExternalUID,
+	})
+	if err != nil {
 		err = c.Error(err)
-		l.Error().Err(err).Msg("error parsing request")
 		return
 	}
 
