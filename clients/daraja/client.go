@@ -13,6 +13,7 @@ import (
 type Config struct {
 	Endpoint string
 	Hooks    request.Hooks
+	LogLevel request.LogLevel
 }
 
 const (
@@ -71,6 +72,7 @@ func AuthenticationRequest(endpoint, key, secret string) (*request.Request, *Res
 // to MPESA daraja service.
 type Client struct {
 	endpoint string
+	logLevel request.LogLevel
 	Hooks    request.Hooks
 }
 
@@ -78,7 +80,8 @@ func New(cfg Config) Client {
 	if cfg.Hooks.IsEmpty() {
 		cfg.Hooks = DefaultHooks()
 	}
-	return Client{endpoint: cfg.Endpoint, Hooks: cfg.Hooks}
+
+	return Client{endpoint: cfg.Endpoint, Hooks: cfg.Hooks, logLevel: cfg.LogLevel}
 }
 
 func (client Client) C2BExpressRequest(input RequestC2BExpress, opts ...request.Option) (*request.Request, *ResponseC2BExpress) {
@@ -169,7 +172,7 @@ func (client Client) B2BRequest(input RequestB2B, opts ...request.Option) (*requ
 		Path:   EndpointB2bPayment,
 	}
 
-	cfg := request.Config{Endpoint: client.endpoint}
+	cfg := request.Config{Endpoint: client.endpoint, LogLevel: client.logLevel}
 	output := &ResponseB2B{}
 
 	req := request.New(cfg, client.Hooks, nil, op, input, output)

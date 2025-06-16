@@ -58,8 +58,6 @@ func TestErrorHandler(t *testing.T) {
 		req, _ := http.NewRequest(http.MethodPost, "/validation", b)
 		engine.ServeHTTP(w, req)
 
-		t.Log(w.Body.String())
-
 		assertEquals(t, http.StatusBadRequest, w.Code)
 
 	})

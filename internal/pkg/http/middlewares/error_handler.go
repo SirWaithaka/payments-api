@@ -55,7 +55,6 @@ func ErrorHandler() gin.HandlerFunc {
 			}
 
 		default:
-			l.Error().Msg(e.Error())
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 				"error": e.Error(),
 			})
