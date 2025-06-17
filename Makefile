@@ -4,7 +4,7 @@ export
 # install the stringer binary only if not present
 install-tools:
 ifeq ($(shell which stringer 2>/dev/null),)
-	go install golang.org/x/tools/cmd/stringer@v0.24.0
+	go install golang.org/x/tools/cmd/stringer@v0.34.0
 endif
 
 install-deps: install-tools
@@ -22,3 +22,10 @@ test.verbose: generate
 
 test.cover: generate
 	go test ./... -v -coverprofile=coverage.out
+
+build:
+	mkdir -p bin
+	go build -o bin/main cmd/main.go
+
+run.prod:
+	./main
