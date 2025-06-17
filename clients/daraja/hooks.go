@@ -10,6 +10,15 @@ import (
 	"github.com/SirWaithaka/payments-api/request"
 )
 
+func debugLogReqError(r *request.Request, name string, err error) {
+	if !r.Config.LogLevel.AtLeast(request.LogError) {
+		return
+	}
+
+	r.Config.Logger.Log(fmt.Sprintf("DEBUG: %s %s failed, error %v",
+		name, r.Operation.Name, err))
+}
+
 // SetEndpoint sets the endpoint used by the client. It will
 // default to sandbox base url if nothing is provided.
 // Should be used as a build hook
@@ -62,6 +71,7 @@ var DecodeResponse = request.Hook{
 		if r.Response.StatusCode != http.StatusOK {
 			response := &errResponse{}
 			if err := jsoniter.NewDecoder(r.Response.Body).Decode(response.ErrorResponse); err != nil {
+				debugLogReqError(r, "DecodeResponse", err)
 				r.Error = err
 				return
 			}
@@ -75,7 +85,7 @@ var DecodeResponse = request.Hook{
 	},
 }
 
-func Authenticate(endpoint, key, secret string) request.Hook {
+func Authenticate(reqFn AuthenticationRequestFunc) request.Hook {
 
 	cache := NewCache[string]()
 
@@ -84,9 +94,10 @@ func Authenticate(endpoint, key, secret string) request.Hook {
 		Fn: func(r *request.Request) {
 			// make request to authenticate if token cache is empty
 			if cache.Get() == "" {
-				req, out := AuthenticationRequest(endpoint, key, secret)
+				req, out := reqFn()
 				req.WithContext(r.Context())
-
+				req.Config.Logger = r.Config.Logger
+				// make request
 				if err := req.Send(); err != nil {
 					r.Error = err
 					return
