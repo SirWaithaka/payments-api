@@ -64,9 +64,21 @@ type (
 // request.
 func WithRequestHeader(key, val string) Option {
 	return func(r *Request) {
-		r.Hooks.Build.PushBack(func(req *Request) {
-			r.Request.Header.Add(key, val)
-		})
+		r.Request.Header.Add(key, val)
+	}
+}
+
+// WithLogLevel sets log level
+func WithLogLevel(l LogLevel) Option {
+	return func(r *Request) {
+		r.Config.LogLevel = l
+	}
+}
+
+// WithLogger sets the logger func used with the request
+func WithLogger(logger Logger) Option {
+	return func(r *Request) {
+		r.Config.Logger = logger
 	}
 }
 
@@ -140,13 +152,13 @@ func New(cfg Config, hooks Hooks, retryer Retryer, operation *Operation, params,
 	}
 }
 
-func debugLogReqError(r *Request, err error) {
+func debugLogReqError(r *Request, stage string, err error) {
 	if !r.Config.LogLevel.Equals(LogDebugWithRequestErrors) {
 		return
 	}
 
-	r.Config.Logger.Log(fmt.Sprintf("DEBUG: %s failed, error %v",
-		r.Operation.Name, err))
+	r.Config.Logger.Log(fmt.Sprintf("DEBUG: %s %s failed, error %v",
+		stage, r.Operation.Name, err))
 }
 
 // Build will build the request object to be sent. Build will also
@@ -162,13 +174,13 @@ func (r *Request) Build() error {
 	// run validate hooks
 	r.Hooks.Validate.Run(r)
 	if r.Error != nil {
-		debugLogReqError(r, r.Error)
+		debugLogReqError(r, "Validate", r.Error)
 		return r.Error
 	}
 	// run build hooks
 	r.Hooks.Build.Run(r)
 	if r.Error != nil {
-		debugLogReqError(r, r.Error)
+		debugLogReqError(r, "Build", r.Error)
 		return r.Error
 	}
 	r.built = true
@@ -248,14 +260,14 @@ func (r *Request) sendRequest() error {
 	// run hooks that process sending the request
 	r.Hooks.Send.Run(r)
 	if r.Error != nil {
-		debugLogReqError(r, r.Error)
+		debugLogReqError(r, "Send", r.Error)
 		return r.Error
 	}
 
 	// run any hooks that unmarshal/validate the response
 	r.Hooks.Unmarshal.Run(r)
 	if r.Error != nil {
-		debugLogReqError(r, r.Error)
+		debugLogReqError(r, "Unmarshal", r.Error)
 		return r.Error
 	}
 
