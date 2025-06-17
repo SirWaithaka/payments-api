@@ -13,8 +13,8 @@ import (
 	"github.com/SirWaithaka/payments-api/request"
 )
 
-// given a base url and action, the function returns an url in the following format
-// http[s]://<baseurl>?type=<action>
+// adds action to the path of base url
+// https://<baseurl>/:action
 func webhook(baseUrl string, action string) string {
 	if baseUrl == "" {
 		return ""
@@ -25,9 +25,11 @@ func webhook(baseUrl string, action string) string {
 		return ""
 	}
 
-	q := u.Query()
-	q.Add("type", action)
-	u.RawQuery = q.Encode()
+	u.Path, err = url.JoinPath(u.Path, action)
+	if err != nil {
+		return u.String()
+	}
+
 	return u.String()
 }
 
@@ -59,7 +61,7 @@ func (service MpesaService) C2B(ctx context.Context, shortcode payments.ShortCod
 		PartyA:            payment.ExternalAccountNumber,
 		PartyB:            shortcode.ShortCode,
 		PhoneNumber:       payment.ExternalAccountNumber,
-		CallBackURL:       shortcode.CallbackURL,
+		CallBackURL:       webhook(shortcode.CallbackURL, daraja.OperationC2BExpress),
 		AccountReference:  payment.Reference,
 		TransactionDesc:   fmt.Sprintf("C2B REF %s ID %s", payment.Reference, payment.ExternalID),
 	}
@@ -94,8 +96,8 @@ func (service MpesaService) B2C(ctx context.Context, shortcode payments.ShortCod
 		PartyA:                   shortcode.ShortCode,
 		PartyB:                   payment.ExternalAccountNumber,
 		Remarks:                  fmt.Sprintf("B2C REF %s ID %s", payment.Reference, payment.ExternalID),
-		QueueTimeOutURL:          shortcode.CallbackURL,
-		ResultURL:                shortcode.CallbackURL,
+		QueueTimeOutURL:          webhook(shortcode.CallbackURL, daraja.OperationB2C),
+		ResultURL:                webhook(shortcode.CallbackURL, daraja.OperationB2C),
 		Occasion:                 fmt.Sprintf("B2C REF %s ID %s", payment.Reference, payment.ExternalID),
 	}
 
@@ -130,8 +132,8 @@ func (service MpesaService) B2B(ctx context.Context, shortcode payments.ShortCod
 		PartyB:                 payment.ExternalAccountNumber,
 		AccountReference:       payment.BeneficiaryAccountNumber,
 		Remarks:                fmt.Sprintf("B2B REF %s ID %s", payment.Reference, payment.ExternalID),
-		QueueTimeOutURL:        shortcode.CallbackURL,
-		ResultURL:              shortcode.CallbackURL,
+		QueueTimeOutURL:        webhook(shortcode.CallbackURL, daraja.OperationB2B),
+		ResultURL:              webhook(shortcode.CallbackURL, daraja.OperationB2B),
 	}
 	res, err := service.daraja.B2B(ctx, payload, request.WithLogger(request.NewDefaultLogger()), request.WithLogLevel(request.LogDebugWithRequestErrors))
 	if err != nil {
@@ -161,8 +163,8 @@ func (service MpesaService) Reversal(ctx context.Context, shortcode payments.Sho
 		ReceiverParty:          shortcode.ShortCode,
 		ReceiverIdentifierType: daraja.IdentifierOrgOperatorUsername,
 		Amount:                 payment.Amount,
-		ResultURL:              shortcode.CallbackURL,
-		QueueTimeOutURL:        shortcode.CallbackURL,
+		ResultURL:              webhook(shortcode.CallbackURL, daraja.OperationReversal),
+		QueueTimeOutURL:        webhook(shortcode.CallbackURL, daraja.OperationReversal),
 		Remarks:                fmt.Sprintf("REVERSAL REF %s ID %s", payment.Reference, payment.ExternalID),
 	}
 
@@ -193,8 +195,8 @@ func (service MpesaService) TransactionStatus(ctx context.Context, shortcode pay
 		CommandID:          daraja.CommandTransactionStatus,
 		PartyA:             shortcode.ShortCode,
 		IdentifierType:     daraja.IdentifierOrgShortCode,
-		ResultURL:          shortcode.CallbackURL,
-		QueueTimeOutURL:    shortcode.CallbackURL,
+		ResultURL:          webhook(shortcode.CallbackURL, daraja.OperationTransactionStatus),
+		QueueTimeOutURL:    webhook(shortcode.CallbackURL, daraja.OperationTransactionStatus),
 		Remarks:            "OK",
 		Occasion:           "OK",
 	}
