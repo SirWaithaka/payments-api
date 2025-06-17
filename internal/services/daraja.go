@@ -33,18 +33,18 @@ func webhook(baseUrl string, action string) string {
 	return u.String()
 }
 
-func NewMpesaService(daraja *daraja.Client) MpesaService {
-	return MpesaService{daraja: daraja}
+func NewDarajaApi(daraja *daraja.Client) DarajaApi {
+	return DarajaApi{daraja: daraja}
 }
 
-// MpesaService provides an interface to the mpesa wallet
+// DarajaApi provides an interface to the mpesa wallet
 // through either daraja or quikk apis.
-type MpesaService struct {
+type DarajaApi struct {
 	daraja *daraja.Client
 	//quikk  *quikk.Client
 }
 
-func (service MpesaService) C2B(ctx context.Context, shortcode payments.ShortCodeConfig, payment payments.Payment) error {
+func (api DarajaApi) C2B(ctx context.Context, shortcode payments.ShortCodeConfig, payment payments.Payment) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling c2b payment")
 
@@ -66,7 +66,7 @@ func (service MpesaService) C2B(ctx context.Context, shortcode payments.ShortCod
 		TransactionDesc:   fmt.Sprintf("C2B REF %s ID %s", payment.Reference, payment.ExternalID),
 	}
 
-	res, err := service.daraja.C2BExpress(ctx, payload)
+	res, err := api.daraja.C2BExpress(ctx, payload)
 	if err != nil {
 		l.Error().Err(err).Msg("client error")
 		return err
@@ -77,7 +77,7 @@ func (service MpesaService) C2B(ctx context.Context, shortcode payments.ShortCod
 
 }
 
-func (service MpesaService) B2C(ctx context.Context, shortcode payments.ShortCodeConfig, payment payments.Payment) error {
+func (api DarajaApi) B2C(ctx context.Context, shortcode payments.ShortCodeConfig, payment payments.Payment) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling b2c payment")
 
@@ -101,7 +101,7 @@ func (service MpesaService) B2C(ctx context.Context, shortcode payments.ShortCod
 		Occasion:                 fmt.Sprintf("B2C REF %s ID %s", payment.Reference, payment.ExternalID),
 	}
 
-	res, err := service.daraja.B2C(ctx, payload)
+	res, err := api.daraja.B2C(ctx, payload)
 	if err != nil {
 		l.Error().Err(err).Msg("client error")
 		return err
@@ -111,7 +111,7 @@ func (service MpesaService) B2C(ctx context.Context, shortcode payments.ShortCod
 	return nil
 }
 
-func (service MpesaService) B2B(ctx context.Context, shortcode payments.ShortCodeConfig, payment payments.Payment) error {
+func (api DarajaApi) B2B(ctx context.Context, shortcode payments.ShortCodeConfig, payment payments.Payment) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling b2b payment")
 
@@ -135,7 +135,7 @@ func (service MpesaService) B2B(ctx context.Context, shortcode payments.ShortCod
 		QueueTimeOutURL:        webhook(shortcode.CallbackURL, daraja.OperationB2B),
 		ResultURL:              webhook(shortcode.CallbackURL, daraja.OperationB2B),
 	}
-	res, err := service.daraja.B2B(ctx, payload, request.WithLogger(request.NewDefaultLogger()), request.WithLogLevel(request.LogDebugWithRequestErrors))
+	res, err := api.daraja.B2B(ctx, payload, request.WithLogger(request.NewDefaultLogger()), request.WithLogLevel(request.LogDebugWithRequestErrors))
 	if err != nil {
 		l.Error().Err(err).Msg("client error")
 		return err
@@ -145,7 +145,7 @@ func (service MpesaService) B2B(ctx context.Context, shortcode payments.ShortCod
 	return nil
 }
 
-func (service MpesaService) Reversal(ctx context.Context, shortcode payments.ShortCodeConfig, payment payments.Payment) error {
+func (api DarajaApi) Reversal(ctx context.Context, shortcode payments.ShortCodeConfig, payment payments.Payment) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling reversal")
 
@@ -168,7 +168,7 @@ func (service MpesaService) Reversal(ctx context.Context, shortcode payments.Sho
 		Remarks:                fmt.Sprintf("REVERSAL REF %s ID %s", payment.Reference, payment.ExternalID),
 	}
 
-	res, err := service.daraja.Reverse(ctx, payload)
+	res, err := api.daraja.Reverse(ctx, payload)
 	if err != nil {
 		l.Error().Err(err).Msg("client error")
 		return err
@@ -179,7 +179,7 @@ func (service MpesaService) Reversal(ctx context.Context, shortcode payments.Sho
 
 }
 
-func (service MpesaService) TransactionStatus(ctx context.Context, shortcode payments.ShortCodeConfig, payment payments.Payment) error {
+func (api DarajaApi) TransactionStatus(ctx context.Context, shortcode payments.ShortCodeConfig, payment payments.Payment) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling transaction status")
 
@@ -208,7 +208,7 @@ func (service MpesaService) TransactionStatus(ctx context.Context, shortcode pay
 		payload.OriginatorConversationID = &payment.Reference
 	}
 
-	res, err := service.daraja.TransactionStatus(ctx, payload)
+	res, err := api.daraja.TransactionStatus(ctx, payload)
 	if err != nil {
 		l.Error().Err(err).Msg("client error")
 		return err
@@ -219,7 +219,7 @@ func (service MpesaService) TransactionStatus(ctx context.Context, shortcode pay
 
 }
 
-func (service MpesaService) Balance(ctx context.Context, shortcode payments.ShortCodeConfig) error {
+func (api DarajaApi) Balance(ctx context.Context, shortcode payments.ShortCodeConfig) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling balance")
 
@@ -240,7 +240,7 @@ func (service MpesaService) Balance(ctx context.Context, shortcode payments.Shor
 		ResultURL:          webhook(shortcode.CallbackURL, daraja.OperationBalance),
 	}
 
-	res, err := service.daraja.Balance(ctx, payload)
+	res, err := api.daraja.Balance(ctx, payload)
 	if err != nil {
 		l.Error().Err(err).Msg("client error")
 		return err
@@ -251,7 +251,7 @@ func (service MpesaService) Balance(ctx context.Context, shortcode payments.Shor
 
 }
 
-//func (service MpesaService) Namecheck(ctx context.Context, req RequestOrgNameCheck) (OrgNameCheckResponse, error) {
+//func (service DarajaApi) Namecheck(ctx context.Context, req RequestOrgNameCheck) (OrgNameCheckResponse, error) {
 //	l := zerolog.Ctx(ctx)
 //	l.Debug().Msg("handling namecheck")
 //
