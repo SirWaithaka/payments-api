@@ -1,0 +1,15 @@
+services:
+  payments-api:
+    hostname: payments-api
+    container_name: payments-api
+    image: payments-api
+    build:
+      context: .
+    ports:
+      - "6001:6000"
+    networks:
+      - apps
+
+networks:
+  apps:
+    external: true
