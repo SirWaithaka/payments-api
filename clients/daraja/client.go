@@ -10,6 +10,8 @@ import (
 	"github.com/SirWaithaka/payments-api/request"
 )
 
+type AuthenticationRequestFunc func() (*request.Request, *ResponseAuthorization)
+
 type Config struct {
 	Endpoint string
 	Hooks    request.Hooks
@@ -45,28 +47,28 @@ func PasswordEncode(shortcode, passphrase, timestamp string) string {
 	return base64.StdEncoding.EncodeToString([]byte(shortcode + passphrase + timestamp))
 }
 
-func AuthenticationRequest(endpoint, key, secret string) (*request.Request, *ResponseAuthorization) {
-	op := &request.Operation{
-		Name:   "Authenticate",
-		Method: http.MethodGet,
-		Path:   EndpointAuthentication + "?grant_type=client_credentials",
-	}
-
-	// create a client with 40 second timeout
-	client := &http.Client{Timeout: time.Second * 40}
-	cfg := request.Config{HTTPClient: client, Endpoint: endpoint}
-
-	// default hooks
-	hooks := corehooks.DefaultHooks()
-	hooks.Build.PushBackHook(corehooks.SetBasicAuth(key, secret))
-	hooks.Build.PushBackHook(corehooks.EncodeRequestBody)
-	hooks.Unmarshal.PushBackHook(DecodeResponse)
-
-	output := &ResponseAuthorization{}
-	req := request.New(cfg, hooks, nil, op, nil, output)
-
-	return req, output
-}
+//func AuthenticationRequest(endpoint, key, secret string) (*request.Request, *ResponseAuthorization) {
+//	op := &request.Operation{
+//		Name:   "Authenticate",
+//		Method: http.MethodGet,
+//		Path:   EndpointAuthentication + "?grant_type=client_credentials",
+//	}
+//
+//	// create a client with 40 second timeout
+//	client := &http.Client{Timeout: time.Second * 40}
+//	cfg := request.Config{HTTPClient: client, Endpoint: endpoint}
+//
+//	// default hooks
+//	hooks := corehooks.DefaultHooks()
+//	hooks.Build.PushBackHook(corehooks.SetBasicAuth(key, secret))
+//	hooks.Build.PushBackHook(corehooks.EncodeRequestBody)
+//	hooks.Unmarshal.PushBackHook(DecodeResponse)
+//
+//	output := &ResponseAuthorization{}
+//	req := request.New(cfg, hooks, nil, op, nil, output)
+//
+//	return req, output
+//}
 
 // Client provides the API operation methods for making requests
 // to MPESA daraja service.
@@ -82,6 +84,31 @@ func New(cfg Config) Client {
 	}
 
 	return Client{endpoint: cfg.Endpoint, Hooks: cfg.Hooks, logLevel: cfg.LogLevel}
+}
+
+func (client Client) AuthenticationRequest(key, secret string) AuthenticationRequestFunc {
+	return func() (*request.Request, *ResponseAuthorization) {
+		op := &request.Operation{
+			Name:   "Authenticate",
+			Method: http.MethodGet,
+			Path:   EndpointAuthentication + "?grant_type=client_credentials",
+		}
+
+		// create a client with a 40-second timeout
+		cl := &http.Client{Timeout: time.Second * 40}
+		cfg := request.Config{HTTPClient: cl, Endpoint: client.endpoint, LogLevel: client.logLevel}
+
+		// default hooks
+		hooks := corehooks.DefaultHooks()
+		hooks.Build.PushBackHook(corehooks.SetBasicAuth(key, secret))
+		hooks.Send.PushFrontHook(corehooks.LogHTTPRequest)
+		hooks.Unmarshal.PushBackHook(DecodeResponse)
+
+		output := &ResponseAuthorization{}
+		req := request.New(cfg, hooks, nil, op, nil, output)
+
+		return req, output
+	}
 }
 
 func (client Client) C2BExpressRequest(input RequestC2BExpress, opts ...request.Option) (*request.Request, *ResponseC2BExpress) {
@@ -181,8 +208,9 @@ func (client Client) B2BRequest(input RequestB2B, opts ...request.Option) (*requ
 	return req, output
 }
 
-func (client Client) B2B(ctx context.Context, payload RequestB2B) (ResponseB2B, error) {
-	req, out := client.B2BRequest(payload, request.WithRequestHeader("Content-Type", "application/json"))
+func (client Client) B2B(ctx context.Context, payload RequestB2B, opts ...request.Option) (ResponseB2B, error) {
+	opts = append(opts, request.WithRequestHeader("Content-Type", "application/json"))
+	req, out := client.B2BRequest(payload, opts...)
 	req.WithContext(ctx)
 
 	if err := req.Send(); err != nil {
