@@ -8,7 +8,16 @@ import (
 )
 
 func routes(router *gin.Engine, di *dipkg.DI) {
+	webhookRoutes(router, di)
+
 	paymentHandlers := handlers.NewPaymentHandlers(di.Payments)
 
 	router.POST("/deposits", paymentHandlers.Deposit)
+}
+
+func webhookRoutes(router *gin.Engine, di *dipkg.DI) {
+	webhookGroup := router.Group("/webhooks")
+
+	webhookHandlers := handlers.NewWebhookHandlers()
+	webhookGroup.POST("/daraja/:action", webhookHandlers.Daraja)
 }
