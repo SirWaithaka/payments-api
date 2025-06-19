@@ -10,9 +10,11 @@ import (
 func routes(router *gin.Engine, di *dipkg.DI) {
 	webhookRoutes(router, di)
 
-	paymentHandlers := handlers.NewPaymentHandlers(di.Payments)
+	paymentHandlers := handlers.NewPaymentHandlers(di.Wallets)
 
-	router.POST("/deposits", paymentHandlers.Deposit)
+	group := router.Group("/api")
+
+	group.POST("/charge", paymentHandlers.Charge)
 }
 
 func webhookRoutes(router *gin.Engine, di *dipkg.DI) {
