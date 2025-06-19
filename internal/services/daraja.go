@@ -33,37 +33,38 @@ func webhook(baseUrl string, action string) string {
 	return u.String()
 }
 
-func NewDarajaApi(client *daraja.Client) DarajaApi {
-	return DarajaApi{client: client}
+func NewDarajaApi(client *daraja.Client, shortcode ShortCodeConfig) DarajaApi {
+	return DarajaApi{client: client, shortcode: shortcode}
 }
 
 // DarajaApi provides an interface to the mpesa wallet
-// through either daraja or quikk apis.
+// through the daraja platform
 type DarajaApi struct {
-	client *daraja.Client
-	//quikk  *quikk.Client
+	client    *daraja.Client
+	shortcode ShortCodeConfig
 }
 
-func (api DarajaApi) C2B(ctx context.Context, shortcode payments.ShortCodeConfig, payment payments.Payment) error {
+func (api DarajaApi) C2B(ctx context.Context, payment payments.WalletPayment) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling c2b payment")
 
 	timestamp := daraja.NewTimestamp()
 	l.Debug().Str(logger.LData, timestamp.String()).Msg("timestamp")
-	password := daraja.PasswordEncode(shortcode.ShortCode, shortcode.Passphrase, timestamp.String())
+	password := daraja.PasswordEncode(api.shortcode.ShortCode, api.shortcode.Passphrase, timestamp.String())
 
 	payload := daraja.RequestC2BExpress{
-		BusinessShortCode: shortcode.ShortCode,
+		BusinessShortCode: api.shortcode.ShortCode,
 		Password:          password,
 		Timestamp:         timestamp,
 		TransactionType:   daraja.TypeCustomerPayBillOnline,
 		Amount:            payment.Amount,
 		PartyA:            payment.ExternalAccountNumber,
-		PartyB:            shortcode.ShortCode,
+		PartyB:            api.shortcode.ShortCode,
 		PhoneNumber:       payment.ExternalAccountNumber,
-		CallBackURL:       webhook(shortcode.CallbackURL, daraja.OperationC2BExpress),
+		CallBackURL:       webhook(api.shortcode.CallbackURL, daraja.OperationC2BExpress),
 		AccountReference:  payment.TransactionID,
-		TransactionDesc:   fmt.Sprintf("C2B REF %s ID %s", payment.TransactionID, payment.PaymentID),
+		TransactionDesc:   payment.Description,
+		//TransactionDesc:   fmt.Sprintf("C2B REF %s ID %s", payment.TransactionID, payment.PaymentID),
 	}
 
 	res, err := api.client.C2BExpress(ctx, payload)
@@ -77,11 +78,11 @@ func (api DarajaApi) C2B(ctx context.Context, shortcode payments.ShortCodeConfig
 
 }
 
-func (api DarajaApi) B2C(ctx context.Context, shortcode payments.ShortCodeConfig, payment payments.Payment) error {
+func (api DarajaApi) B2C(ctx context.Context, payment payments.WalletPayment) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling b2c payment")
 
-	credential, err := daraja.OpenSSLEncrypt(shortcode.InitiatorPassword, daraja.SandboxCertificate)
+	credential, err := daraja.OpenSSLEncrypt(api.shortcode.InitiatorPassword, daraja.SandboxCertificate)
 	if err != nil {
 		l.Error().Err(err).Msg("error encrypting password")
 		return err
@@ -89,16 +90,18 @@ func (api DarajaApi) B2C(ctx context.Context, shortcode payments.ShortCodeConfig
 
 	payload := daraja.RequestB2C{
 		OriginatorConversationID: payment.TransactionID,
-		InitiatorName:            shortcode.InitiatorName,
+		InitiatorName:            api.shortcode.InitiatorName,
 		SecurityCredential:       credential,
 		CommandID:                daraja.CommandBusinessPayment,
 		Amount:                   payment.Amount,
-		PartyA:                   shortcode.ShortCode,
+		PartyA:                   api.shortcode.ShortCode,
 		PartyB:                   payment.ExternalAccountNumber,
-		Remarks:                  fmt.Sprintf("B2C REF %s ID %s", payment.TransactionID, payment.PaymentID),
-		QueueTimeOutURL:          webhook(shortcode.CallbackURL, daraja.OperationB2C),
-		ResultURL:                webhook(shortcode.CallbackURL, daraja.OperationB2C),
-		Occasion:                 fmt.Sprintf("B2C REF %s ID %s", payment.TransactionID, payment.PaymentID),
+		QueueTimeOutURL:          webhook(api.shortcode.CallbackURL, daraja.OperationB2C),
+		ResultURL:                webhook(api.shortcode.CallbackURL, daraja.OperationB2C),
+		Remarks:                  payment.Description,
+		Occasion:                 "OK",
+		//Remarks:                  fmt.Sprintf("B2C REF %s ID %s", payment.TransactionID, payment.PaymentID),
+		//Occasion:                 fmt.Sprintf("B2C REF %s ID %s", payment.TransactionID, payment.PaymentID),
 	}
 
 	res, err := api.client.B2C(ctx, payload)
@@ -111,31 +114,31 @@ func (api DarajaApi) B2C(ctx context.Context, shortcode payments.ShortCodeConfig
 	return nil
 }
 
-func (api DarajaApi) B2B(ctx context.Context, shortcode payments.ShortCodeConfig, payment payments.Payment) error {
+func (api DarajaApi) B2B(ctx context.Context, payment payments.WalletPayment) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling b2b payment")
 
-	credential, err := daraja.OpenSSLEncrypt(shortcode.InitiatorPassword, daraja.SandboxCertificate)
+	credential, err := daraja.OpenSSLEncrypt(api.shortcode.InitiatorPassword, daraja.SandboxCertificate)
 	if err != nil {
 		l.Error().Err(err).Msg("error encrypting password")
 		return err
 	}
 
 	payload := daraja.RequestB2B{
-		Initiator:              shortcode.InitiatorName,
+		Initiator:              api.shortcode.InitiatorName,
 		SecurityCredential:     credential,
 		CommandID:              daraja.CommandBusinessPayBill,
 		SenderIdentifierType:   daraja.IdentifierOrgShortCode,
 		RecieverIdentifierType: daraja.IdentifierOrgShortCode,
 		Amount:                 payment.Amount,
-		PartyA:                 shortcode.ShortCode,
+		PartyA:                 api.shortcode.ShortCode,
 		PartyB:                 payment.ExternalAccountNumber,
 		AccountReference:       payment.BeneficiaryAccountNumber,
-		Remarks:                fmt.Sprintf("B2B REF %s ID %s", payment.TransactionID, payment.PaymentID),
-		QueueTimeOutURL:        webhook(shortcode.CallbackURL, daraja.OperationB2B),
-		ResultURL:              webhook(shortcode.CallbackURL, daraja.OperationB2B),
+		QueueTimeOutURL:        webhook(api.shortcode.CallbackURL, daraja.OperationB2B),
+		ResultURL:              webhook(api.shortcode.CallbackURL, daraja.OperationB2B),
+		Remarks:                payment.Description,
 	}
-	res, err := api.client.B2B(ctx, payload, request.WithLogger(request.NewDefaultLogger()), request.WithLogLevel(request.LogDebugWithRequestErrors))
+	res, err := api.client.B2B(ctx, payload, request.WithLogger(request.NewDefaultLogger()), request.WithLogLevel(request.LogError))
 	if err != nil {
 		l.Error().Err(err).Msg("client error")
 		return err
@@ -145,26 +148,26 @@ func (api DarajaApi) B2B(ctx context.Context, shortcode payments.ShortCodeConfig
 	return nil
 }
 
-func (api DarajaApi) Reversal(ctx context.Context, shortcode payments.ShortCodeConfig, payment payments.Payment) error {
+func (api DarajaApi) Reversal(ctx context.Context, payment payments.Payment) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling reversal")
 
-	credential, err := daraja.OpenSSLEncrypt(shortcode.InitiatorPassword, daraja.SandboxCertificate)
+	credential, err := daraja.OpenSSLEncrypt(api.shortcode.InitiatorPassword, daraja.SandboxCertificate)
 	if err != nil {
 		l.Error().Err(err).Msg("error encrypting password")
 		return nil
 	}
 
 	payload := daraja.RequestReversal{
-		Initiator:              shortcode.InitiatorName,
+		Initiator:              api.shortcode.InitiatorName,
 		SecurityCredential:     credential,
 		CommandID:              daraja.CommandTransactionReversal,
 		TransactionID:          payment.PaymentReference,
-		ReceiverParty:          shortcode.ShortCode,
+		ReceiverParty:          api.shortcode.ShortCode,
 		ReceiverIdentifierType: daraja.IdentifierOrgOperatorUsername,
 		Amount:                 payment.Amount,
-		ResultURL:              webhook(shortcode.CallbackURL, daraja.OperationReversal),
-		QueueTimeOutURL:        webhook(shortcode.CallbackURL, daraja.OperationReversal),
+		ResultURL:              webhook(api.shortcode.CallbackURL, daraja.OperationReversal),
+		QueueTimeOutURL:        webhook(api.shortcode.CallbackURL, daraja.OperationReversal),
 		Remarks:                fmt.Sprintf("REVERSAL REF %s ID %s", payment.TransactionID, payment.PaymentID),
 	}
 
@@ -179,24 +182,25 @@ func (api DarajaApi) Reversal(ctx context.Context, shortcode payments.ShortCodeC
 
 }
 
-func (api DarajaApi) TransactionStatus(ctx context.Context, shortcode payments.ShortCodeConfig, payment payments.Payment) error {
+// Status calls the api to check transaction status
+func (api DarajaApi) Status(ctx context.Context, payment payments.Payment) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling transaction status")
 
-	credential, err := daraja.OpenSSLEncrypt(shortcode.InitiatorPassword, daraja.SandboxCertificate)
+	credential, err := daraja.OpenSSLEncrypt(api.shortcode.InitiatorPassword, daraja.SandboxCertificate)
 	if err != nil {
 		l.Error().Err(err).Msg("error encrypting password")
 		return err
 	}
 
 	payload := daraja.RequestTransactionStatus{
-		Initiator:          shortcode.InitiatorName,
+		Initiator:          api.shortcode.InitiatorName,
 		SecurityCredential: credential,
 		CommandID:          daraja.CommandTransactionStatus,
-		PartyA:             shortcode.ShortCode,
+		PartyA:             api.shortcode.ShortCode,
 		IdentifierType:     daraja.IdentifierOrgShortCode,
-		ResultURL:          webhook(shortcode.CallbackURL, daraja.OperationTransactionStatus),
-		QueueTimeOutURL:    webhook(shortcode.CallbackURL, daraja.OperationTransactionStatus),
+		ResultURL:          webhook(api.shortcode.CallbackURL, daraja.OperationTransactionStatus),
+		QueueTimeOutURL:    webhook(api.shortcode.CallbackURL, daraja.OperationTransactionStatus),
 		Remarks:            "OK",
 		Occasion:           "OK",
 	}
@@ -219,25 +223,25 @@ func (api DarajaApi) TransactionStatus(ctx context.Context, shortcode payments.S
 
 }
 
-func (api DarajaApi) Balance(ctx context.Context, shortcode payments.ShortCodeConfig) error {
+func (api DarajaApi) Balance(ctx context.Context, shortcode ShortCodeConfig) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling balance")
 
-	credential, err := daraja.OpenSSLEncrypt(shortcode.InitiatorPassword, daraja.SandboxCertificate)
+	credential, err := daraja.OpenSSLEncrypt(api.shortcode.InitiatorPassword, daraja.SandboxCertificate)
 	if err != nil {
 		l.Error().Err(err).Msg("error encrypting password")
 		return err
 	}
 
 	payload := daraja.RequestBalance{
-		Initiator:          shortcode.InitiatorName,
+		Initiator:          api.shortcode.InitiatorName,
 		SecurityCredential: credential,
 		CommandID:          daraja.CommandAccountBalance,
-		PartyA:             shortcode.ShortCode,
+		PartyA:             api.shortcode.ShortCode,
 		IdentifierType:     daraja.IdentifierOrgShortCode,
 		Remarks:            "Wallet Balance",
-		QueueTimeOutURL:    webhook(shortcode.CallbackURL, daraja.OperationBalance),
-		ResultURL:          webhook(shortcode.CallbackURL, daraja.OperationBalance),
+		QueueTimeOutURL:    webhook(api.shortcode.CallbackURL, daraja.OperationBalance),
+		ResultURL:          webhook(api.shortcode.CallbackURL, daraja.OperationBalance),
 	}
 
 	res, err := api.client.Balance(ctx, payload)
