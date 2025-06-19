@@ -10,35 +10,38 @@ import (
 	"github.com/SirWaithaka/payments-api/internal/domains/payments"
 )
 
-func NewPaymentHandlers(service payments.Service) PaymentHandlers {
+func NewPaymentHandlers(service payments.WalletService) PaymentHandlers {
 	return PaymentHandlers{service}
 }
 
 type PaymentHandlers struct {
-	service payments.Service
+	service payments.WalletService
 }
 
-func (handler PaymentHandlers) Deposit(c *gin.Context) {
+func (handler PaymentHandlers) Charge(c *gin.Context) {
 	l := zerolog.Ctx(c.Request.Context())
-	l.Debug().Msg("deposit request")
+	l.Debug().Msg("wallet charge request")
 
-	var params requests.RequestPayment
+	var params requests.RequestWalletCharge
 	if err := c.ShouldBindBodyWithJSON(&params); err != nil {
 		handleRequestParsingError(c, err)
 		return
 	}
 
-	err := handler.service.Transact(c.Request.Context(), payments.Payment{
+	payment, err := handler.service.Charge(c.Request.Context(), payments.WalletPayment{
+		Type:                  "CHARGE",
+		BankCode:              params.BankCode,
 		ExternalAccountNumber: params.ExternalAccountID,
 		Amount:                params.Amount,
 		Description:           params.Description,
-		ExternalID:            params.ExternalID,
-		ExternalUID:           params.ExternalUID,
+		TransactionID:         params.TransactionID,
+		IdempotencyID:         params.IdempotencyID,
 	})
 	if err != nil {
 		err = c.Error(err)
 		return
 	}
+	l.Debug().Interface("payment", payment).Msg("payment")
 
-	c.Status(http.StatusOK)
+	c.JSON(http.StatusOK, payment)
 }
