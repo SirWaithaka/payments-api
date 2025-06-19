@@ -153,7 +153,7 @@ func New(cfg Config, hooks Hooks, retryer Retryer, operation *Operation, params,
 }
 
 func debugLogReqError(r *Request, stage string, err error) {
-	if !r.Config.LogLevel.Equals(LogDebugWithRequestErrors) {
+	if !r.Config.LogLevel.AtLeast(LogError) {
 		return
 	}
 
