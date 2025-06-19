@@ -74,7 +74,6 @@ func PasswordEncode(shortcode, passphrase, timestamp string) string {
 // to MPESA daraja service.
 type Client struct {
 	endpoint string
-	logLevel request.LogLevel
 	Hooks    request.Hooks
 }
 
@@ -83,7 +82,10 @@ func New(cfg Config) Client {
 		cfg.Hooks = DefaultHooks()
 	}
 
-	return Client{endpoint: cfg.Endpoint, Hooks: cfg.Hooks, logLevel: cfg.LogLevel}
+	// add log level to request config
+	cfg.Hooks.Build.PushFront(request.WithLogLevel(cfg.LogLevel))
+
+	return Client{endpoint: cfg.Endpoint, Hooks: cfg.Hooks}
 }
 
 func (client Client) AuthenticationRequest(key, secret string) AuthenticationRequestFunc {
@@ -96,7 +98,7 @@ func (client Client) AuthenticationRequest(key, secret string) AuthenticationReq
 
 		// create a client with a 40-second timeout
 		cl := &http.Client{Timeout: time.Second * 40}
-		cfg := request.Config{HTTPClient: cl, Endpoint: client.endpoint, LogLevel: client.logLevel}
+		cfg := request.Config{HTTPClient: cl, Endpoint: client.endpoint}
 
 		// default hooks
 		hooks := corehooks.DefaultHooks()
@@ -120,11 +122,11 @@ func (client Client) C2BExpressRequest(input RequestC2BExpress, opts ...request.
 
 	cfg := request.Config{Endpoint: client.endpoint}
 
-	output := &ResponseC2BExpress{}
-	req := request.New(cfg, client.Hooks, nil, op, input, output)
+	output := ResponseC2BExpress{}
+	req := request.New(cfg, client.Hooks, nil, op, input, &output)
 	req.ApplyOptions(opts...)
 
-	return req, output
+	return req, &output
 }
 
 func (client Client) C2BExpress(ctx context.Context, payload RequestC2BExpress) (ResponseC2BExpress, error) {
@@ -199,7 +201,7 @@ func (client Client) B2BRequest(input RequestB2B, opts ...request.Option) (*requ
 		Path:   EndpointB2bPayment,
 	}
 
-	cfg := request.Config{Endpoint: client.endpoint, LogLevel: client.logLevel}
+	cfg := request.Config{Endpoint: client.endpoint}
 	output := &ResponseB2B{}
 
 	req := request.New(cfg, client.Hooks, nil, op, input, output)
