@@ -33,14 +33,14 @@ func webhook(baseUrl string, action string) string {
 	return u.String()
 }
 
-func NewDarajaApi(daraja *daraja.Client) DarajaApi {
-	return DarajaApi{daraja: daraja}
+func NewDarajaApi(client *daraja.Client) DarajaApi {
+	return DarajaApi{client: client}
 }
 
 // DarajaApi provides an interface to the mpesa wallet
 // through either daraja or quikk apis.
 type DarajaApi struct {
-	daraja *daraja.Client
+	client *daraja.Client
 	//quikk  *quikk.Client
 }
 
@@ -62,11 +62,11 @@ func (api DarajaApi) C2B(ctx context.Context, shortcode payments.ShortCodeConfig
 		PartyB:            shortcode.ShortCode,
 		PhoneNumber:       payment.ExternalAccountNumber,
 		CallBackURL:       webhook(shortcode.CallbackURL, daraja.OperationC2BExpress),
-		AccountReference:  payment.Reference,
-		TransactionDesc:   fmt.Sprintf("C2B REF %s ID %s", payment.Reference, payment.ExternalID),
+		AccountReference:  payment.TransactionID,
+		TransactionDesc:   fmt.Sprintf("C2B REF %s ID %s", payment.TransactionID, payment.PaymentID),
 	}
 
-	res, err := api.daraja.C2BExpress(ctx, payload)
+	res, err := api.client.C2BExpress(ctx, payload)
 	if err != nil {
 		l.Error().Err(err).Msg("client error")
 		return err
@@ -88,20 +88,20 @@ func (api DarajaApi) B2C(ctx context.Context, shortcode payments.ShortCodeConfig
 	}
 
 	payload := daraja.RequestB2C{
-		OriginatorConversationID: payment.Reference,
+		OriginatorConversationID: payment.TransactionID,
 		InitiatorName:            shortcode.InitiatorName,
 		SecurityCredential:       credential,
 		CommandID:                daraja.CommandBusinessPayment,
 		Amount:                   payment.Amount,
 		PartyA:                   shortcode.ShortCode,
 		PartyB:                   payment.ExternalAccountNumber,
-		Remarks:                  fmt.Sprintf("B2C REF %s ID %s", payment.Reference, payment.ExternalID),
+		Remarks:                  fmt.Sprintf("B2C REF %s ID %s", payment.TransactionID, payment.PaymentID),
 		QueueTimeOutURL:          webhook(shortcode.CallbackURL, daraja.OperationB2C),
 		ResultURL:                webhook(shortcode.CallbackURL, daraja.OperationB2C),
-		Occasion:                 fmt.Sprintf("B2C REF %s ID %s", payment.Reference, payment.ExternalID),
+		Occasion:                 fmt.Sprintf("B2C REF %s ID %s", payment.TransactionID, payment.PaymentID),
 	}
 
-	res, err := api.daraja.B2C(ctx, payload)
+	res, err := api.client.B2C(ctx, payload)
 	if err != nil {
 		l.Error().Err(err).Msg("client error")
 		return err
@@ -131,11 +131,11 @@ func (api DarajaApi) B2B(ctx context.Context, shortcode payments.ShortCodeConfig
 		PartyA:                 shortcode.ShortCode,
 		PartyB:                 payment.ExternalAccountNumber,
 		AccountReference:       payment.BeneficiaryAccountNumber,
-		Remarks:                fmt.Sprintf("B2B REF %s ID %s", payment.Reference, payment.ExternalID),
+		Remarks:                fmt.Sprintf("B2B REF %s ID %s", payment.TransactionID, payment.PaymentID),
 		QueueTimeOutURL:        webhook(shortcode.CallbackURL, daraja.OperationB2B),
 		ResultURL:              webhook(shortcode.CallbackURL, daraja.OperationB2B),
 	}
-	res, err := api.daraja.B2B(ctx, payload, request.WithLogger(request.NewDefaultLogger()), request.WithLogLevel(request.LogDebugWithRequestErrors))
+	res, err := api.client.B2B(ctx, payload, request.WithLogger(request.NewDefaultLogger()), request.WithLogLevel(request.LogDebugWithRequestErrors))
 	if err != nil {
 		l.Error().Err(err).Msg("client error")
 		return err
@@ -165,10 +165,10 @@ func (api DarajaApi) Reversal(ctx context.Context, shortcode payments.ShortCodeC
 		Amount:                 payment.Amount,
 		ResultURL:              webhook(shortcode.CallbackURL, daraja.OperationReversal),
 		QueueTimeOutURL:        webhook(shortcode.CallbackURL, daraja.OperationReversal),
-		Remarks:                fmt.Sprintf("REVERSAL REF %s ID %s", payment.Reference, payment.ExternalID),
+		Remarks:                fmt.Sprintf("REVERSAL REF %s ID %s", payment.TransactionID, payment.PaymentID),
 	}
 
-	res, err := api.daraja.Reverse(ctx, payload)
+	res, err := api.client.Reverse(ctx, payload)
 	if err != nil {
 		l.Error().Err(err).Msg("client error")
 		return err
@@ -205,10 +205,10 @@ func (api DarajaApi) TransactionStatus(ctx context.Context, shortcode payments.S
 	if payment.PaymentReference != "" {
 		payload.TransactionID = &payment.PaymentReference
 	} else {
-		payload.OriginatorConversationID = &payment.Reference
+		payload.OriginatorConversationID = &payment.TransactionID
 	}
 
-	res, err := api.daraja.TransactionStatus(ctx, payload)
+	res, err := api.client.TransactionStatus(ctx, payload)
 	if err != nil {
 		l.Error().Err(err).Msg("client error")
 		return err
@@ -240,7 +240,7 @@ func (api DarajaApi) Balance(ctx context.Context, shortcode payments.ShortCodeCo
 		ResultURL:          webhook(shortcode.CallbackURL, daraja.OperationBalance),
 	}
 
-	res, err := api.daraja.Balance(ctx, payload)
+	res, err := api.client.Balance(ctx, payload)
 	if err != nil {
 		l.Error().Err(err).Msg("client error")
 		return err
