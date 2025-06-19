@@ -2,12 +2,6 @@ package payments
 
 import (
 	"context"
-	"fmt"
-
-	"github.com/rs/zerolog"
-
-	"github.com/SirWaithaka/payments-api/clients/daraja"
-	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
 )
 
 const (
@@ -15,8 +9,15 @@ const (
 )
 
 type Payment struct {
-	// unique payment reference
-	Reference string
+	BankCode string
+	// automatically generated unique id
+	PaymentID string
+	// client's transaction reference
+	TransactionID string
+	// client generated unique id identifying the payment request
+	IdempotencyID string
+	// payment reference from the payment processor
+	PaymentReference string
 	// source account
 	AccountNumber string
 	// destination account
@@ -27,52 +28,54 @@ type Payment struct {
 	Amount string
 	// short description for payment
 	Description string
-	// external payment reference
-	ExternalID string
-	// external idempotent unique payment reference
-	ExternalUID string
 }
 
-func NewService() Service {
-	return Service{provider: Provider{}}
+type WalletPayment struct {
+	// should be one of charge, transfer or payout
+	Type string
+	// code identifying the wallet provider
+	BankCode string
+	// external identifier for the transfer which can be used for reconciliation. Need not be unique
+	TransactionID string
+	// unique idempotency identifier. Duplicates are rejected
+	IdempotencyID string
+	// amount to be charged
+	Amount string
+	// for charge payments, this is the account of customer that will be charged
+	// for payouts and transfers, this is the destination account
+	ExternalAccountNumber string
+	// for transfers, this is the account number of the beneficiary.
+	// Not required for other payment types
+	BeneficiaryAccountNumber string
+	// payment description
+	Description string
 }
 
-type Service struct {
-	provider Provider
+type Wallet interface {
+	Charge(context.Context, WalletPayment) (Payment, error)
+	Payout(context.Context, WalletPayment) (Payment, error)
+	Transfer(context.Context, WalletPayment) (Payment, error)
 }
 
-func (service Service) Transact(ctx context.Context, payment Payment) error {
-	l := zerolog.Ctx(ctx)
+type WalletApi interface {
+	C2B(context.Context, WalletPayment) error
+	B2C(context.Context, WalletPayment) error
+	B2B(context.Context, WalletPayment) error
+	Status(context.Context, Payment) error
+}
 
-	shortcode, _ := service.provider.GetShortCodeConfig("C2B")
-	client := service.provider.GetDarajaClient(darajaEndpoint, shortcode)
+type Provider interface {
+	GetWalletApi(WalletPayment) WalletApi
+}
 
-	credential, err := daraja.OpenSSLEncrypt(shortcode.InitiatorPassword, daraja.SandboxCertificate)
-	if err != nil {
-		l.Error().Err(err).Msg("error encrypting")
-		return err
-	}
+type OptionsFindOnePayment struct {
+	PaymentID        *string
+	TransactionID    *string
+	PaymentReference *string
+	IdempotencyID    *string
+}
 
-	res, err := client.B2B(ctx, daraja.RequestB2B{
-		Initiator:              shortcode.InitiatorName,
-		SecurityCredential:     credential,
-		CommandID:              daraja.CommandBusinessPayBill,
-		SenderIdentifierType:   daraja.IdentifierOrgShortCode,
-		RecieverIdentifierType: daraja.IdentifierOrgShortCode,
-		Amount:                 payment.Amount,
-		PartyA:                 shortcode.ShortCode,
-		PartyB:                 payment.ExternalAccountNumber,
-		AccountReference:       payment.BeneficiaryAccountNumber,
-		Remarks:                fmt.Sprintf("B2B REF %s ID %s", payment.Reference, payment.ExternalID),
-		QueueTimeOutURL:        shortcode.CallbackURL,
-		ResultURL:              shortcode.CallbackURL,
-	})
-	if err != nil {
-		l.Error().Err(err).Msg("client error")
-		return err
-	}
-
-	l.Info().Any(logger.LData, res).Msg("response")
-
-	return nil
+type Repository interface {
+	AddPayment(context.Context, Payment) error
+	FindOnePayment(ctx context.Context, opts OptionsFindOnePayment) (Payment, error)
 }
