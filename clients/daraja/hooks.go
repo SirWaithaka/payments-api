@@ -54,7 +54,7 @@ func HTTPClient(client *http.Client) request.Hook {
 }
 
 type errResponse struct {
-	ErrorResponse
+	*ErrorResponse
 }
 
 func (r errResponse) Error() string {
@@ -69,9 +69,8 @@ var DecodeResponse = request.Hook{
 	Fn: func(r *request.Request) {
 		// response formats for non-200 status codes follow the same format
 		if r.Response.StatusCode != http.StatusOK {
-			response := &errResponse{}
+			response := &errResponse{ErrorResponse: &ErrorResponse{}}
 			if err := jsoniter.NewDecoder(r.Response.Body).Decode(response.ErrorResponse); err != nil {
-				debugLogReqError(r, "DecodeResponse", err)
 				r.Error = err
 				return
 			}
