@@ -27,5 +27,8 @@ build:
 	mkdir -p bin
 	go build -o bin/main cmd/main.go
 
+run:
+	go run cmd/main.go
+
 run.prod:
 	./main
