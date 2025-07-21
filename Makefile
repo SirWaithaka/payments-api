@@ -1,6 +1,8 @@
 -include .env
 export
 
+migrate: uri = "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}?sslmode=disable"
+
 # install the stringer binary only if not present
 install-tools:
 ifeq ($(shell which stringer 2>/dev/null),)
@@ -22,6 +24,10 @@ test.verbose: generate
 
 test.cover: generate
 	go test ./... -v -coverprofile=coverage.out
+
+migrate:
+	@echo "Running migrations..."
+	migrate -database ${uri} -path migrations up
 
 build:
 	mkdir -p bin
