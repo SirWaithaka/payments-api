@@ -13,21 +13,24 @@ type Payment struct {
 	// automatically generated unique id
 	PaymentID string
 	// client's transaction reference
-	TransactionID string
+	ClientTransactionID string
 	// client generated unique id identifying the payment request
 	IdempotencyID string
 	// payment reference from the payment processor
 	PaymentReference string
 	// source account
-	AccountNumber string
+	SourceAccountNumber string
 	// destination account
-	ExternalAccountNumber string
-	// (optional)
-	BeneficiaryAccountNumber string
+	DestinationAccountNumber string
+	// (optional) - this can be an account number, account name
+	// of the beneficiary for the payment
+	Beneficiary string
 	// amount for payment
 	Amount string
 	// short description for payment
 	Description string
+	// status of the payment, "received", "pending", "completed", "failed", "refunded"
+	Status string
 }
 
 type WalletPayment struct {
