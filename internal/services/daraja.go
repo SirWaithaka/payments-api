@@ -1,17 +1,66 @@
 package services
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"net/url"
+	"strconv"
+	"strings"
 
+	jsoniter "github.com/json-iterator/go"
 	"github.com/rs/zerolog"
 
 	"github.com/SirWaithaka/payments-api/clients/daraja"
 	"github.com/SirWaithaka/payments-api/internal/domains/payments"
+	"github.com/SirWaithaka/payments-api/internal/domains/webhooks"
 	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
 	"github.com/SirWaithaka/payments-api/request"
 )
+
+type Status string
+
+const (
+	StatusFailed    Status = "failed"
+	StatusCompleted Status = "completed"
+)
+
+func ToStatus(status string) Status {
+	switch strings.ToLower(status) {
+	case "completed":
+		return StatusCompleted
+	case "failed":
+		return StatusFailed
+	case "cancelled":
+		return StatusFailed
+	default:
+		return StatusFailed
+	}
+}
+
+// WEBHOOK REQUEST MODELS
+
+type PaymentAttributes struct {
+	SenderNo        string `json:"senderNo"`
+	SenderName      string `json:"senderName"`
+	RecipientNo     string `json:"recipientNo"`
+	RecipientName   string `json:"recipientName"`
+	Amount          string `json:"amount"`
+	MpesaReceiptID  string `json:"mpesaReceiptId"`
+	TransactionDate string `json:"transactionDate"`
+}
+
+type WebhookResult struct {
+	Type           string            `json:"type"`
+	ResultCode     daraja.ResultCode `json:"resultCode"`
+	ResultMessage  string            `json:"resultMessage"`
+	ConversationID string            `json:"conversationID"`
+	OriginationID  string            `json:"originatorID"`
+	Status         Status            `json:"status"`
+	Attributes     any               `json:"attributes"`
+}
 
 // adds action to the path of base url
 // https://<baseurl>/:action
@@ -66,6 +115,7 @@ func (api DarajaApi) C2B(ctx context.Context, payment payments.WalletPayment) er
 		TransactionDesc:   payment.Description,
 		//TransactionDesc:   fmt.Sprintf("C2B REF %s ID %s", payment.TransactionID, payment.PaymentID),
 	}
+	l.Debug().Any(logger.LData, payload).Msg("request payload")
 
 	res, err := api.client.C2BExpress(ctx, payload)
 	if err != nil {
@@ -168,7 +218,7 @@ func (api DarajaApi) Reversal(ctx context.Context, payment payments.Payment) err
 		Amount:                 payment.Amount,
 		ResultURL:              webhook(api.shortcode.CallbackURL, daraja.OperationReversal),
 		QueueTimeOutURL:        webhook(api.shortcode.CallbackURL, daraja.OperationReversal),
-		Remarks:                fmt.Sprintf("REVERSAL REF %s ID %s", payment.TransactionID, payment.PaymentID),
+		Remarks:                fmt.Sprintf("REVERSAL REF %s ID %s", payment.ClientTransactionID, payment.PaymentID),
 	}
 
 	res, err := api.client.Reverse(ctx, payload)
@@ -209,7 +259,7 @@ func (api DarajaApi) Status(ctx context.Context, payment payments.Payment) error
 	if payment.PaymentReference != "" {
 		payload.TransactionID = &payment.PaymentReference
 	} else {
-		payload.OriginatorConversationID = &payment.TransactionID
+		payload.OriginatorConversationID = &payment.ClientTransactionID
 	}
 
 	res, err := api.client.TransactionStatus(ctx, payload)
@@ -282,3 +332,241 @@ func (api DarajaApi) Balance(ctx context.Context, shortcode ShortCodeConfig) err
 //	return response, nil
 //
 //}
+
+// TRANSFORMER FUNCTIONS
+
+func c2bWebHookResult(body io.Reader) (WebhookResult, error) {
+
+	var c2bResult daraja.WebhookRequestC2BExpress
+	if err := jsoniter.NewDecoder(body).Decode(&c2bResult); err != nil {
+		return WebhookResult{}, err
+	}
+
+	var wb WebhookResult
+
+	wb.ResultCode = c2bResult.Body.StkCallback.ResultCode
+	wb.ResultMessage = c2bResult.Body.StkCallback.ResultDesc
+	wb.OriginationID = c2bResult.Body.StkCallback.MerchantRequestID
+	wb.ConversationID = c2bResult.Body.StkCallback.CheckoutRequestID
+
+	// check if result code is success
+	if c2bResult.Body.StkCallback.ResultCode != daraja.ResultCodeSuccess {
+		wb.Status = StatusFailed
+		return wb, nil
+	}
+
+	// otherwise if result code was success, retrieve payment information
+
+	var attributes PaymentAttributes
+	for _, item := range c2bResult.Body.StkCallback.CallbackMetadata.Item {
+		if item.Name == "Amount" {
+			amount := item.Value.(float64)
+			attributes.Amount = strconv.FormatFloat(amount, 'f', 0, 64)
+		}
+		if item.Name == "MpesaReceiptNumber" {
+			attributes.MpesaReceiptID = item.Value.(string)
+		}
+		if item.Name == "PhoneNumber" {
+			senderNo := item.Value.(float64)
+			attributes.SenderNo = strconv.FormatFloat(senderNo, 'f', 0, 64)
+		}
+		if item.Name == "TransactionDate" {
+			transactionDate := item.Value.(float64)
+			attributes.TransactionDate = strconv.FormatFloat(transactionDate, 'f', 0, 64)
+		}
+	}
+
+	// update attributes field in variable
+	wb.Attributes = attributes
+	wb.Status = StatusCompleted
+
+	return wb, nil
+}
+
+func b2cWebhookResult(body io.Reader) (WebhookResult, error) {
+
+	var b2cResult daraja.WebhookRequestB2C
+	if err := jsoniter.NewDecoder(body).Decode(&b2cResult); err != nil {
+		return WebhookResult{}, err
+	}
+
+	var wb WebhookResult
+
+	wb.ResultCode = b2cResult.Result.ResultCode
+	wb.ResultMessage = b2cResult.Result.ResultDesc
+	wb.OriginationID = b2cResult.Result.OriginatorConversationID
+	wb.ConversationID = b2cResult.Result.ConversationID
+
+	// check if result code is success
+	if b2cResult.Result.ResultCode != daraja.ResultCodeSuccess {
+		wb.Status = StatusFailed
+		return wb, nil
+	}
+
+	// loop through params
+	var attributes PaymentAttributes
+	for _, param := range b2cResult.Result.ResultParameters.ResultParameter {
+		if param.Key == "TransactionAmount" {
+			amount := param.Value.(float64)
+			attributes.Amount = strconv.FormatFloat(amount, 'f', 2, 64)
+		}
+		if param.Key == "TransactionReceipt" {
+			attributes.MpesaReceiptID = param.Value.(string)
+		}
+		if param.Key == "ReceiverPartyPublicName" {
+			attributes.RecipientName = param.Value.(string)
+		}
+		if param.Key == "TransactionCompletedDateTime" {
+			attributes.TransactionDate = param.Value.(string)
+		}
+	}
+
+	// update attributes field
+	wb.Attributes = attributes
+	wb.Status = StatusCompleted
+
+	return wb, nil
+}
+
+func b2bWebhookResult(body io.Reader) (WebhookResult, error) {
+
+	var b2bResult daraja.WebhookRequestB2B
+	if err := jsoniter.NewDecoder(body).Decode(&b2bResult); err != nil {
+		return WebhookResult{}, err
+	}
+
+	var wb WebhookResult
+
+	wb.ResultCode = b2bResult.Result.ResultCode
+	wb.ResultMessage = b2bResult.Result.ResultDesc
+	wb.OriginationID = b2bResult.Result.OriginatorConversationID
+	wb.ConversationID = b2bResult.Result.ConversationID
+
+	// check if result code is success
+	if b2bResult.Result.ResultCode != daraja.ResultCodeSuccess {
+		wb.Status = StatusFailed
+		return wb, nil
+	}
+
+	// loop through params
+	var attributes PaymentAttributes
+	for _, param := range b2bResult.Result.ResultParameters.ResultParameter {
+		if param.Key == "Amount" {
+			amount := param.Value.(float64)
+			attributes.Amount = strconv.FormatFloat(amount, 'f', 2, 64)
+		}
+		if param.Key == "TransactionReceipt" {
+			attributes.MpesaReceiptID = param.Value.(string)
+		}
+		if param.Key == "ReceiverPartyPublicName" {
+			attributes.RecipientName = param.Value.(string)
+		}
+		if param.Key == "TransCompletedTime" {
+			transactionDate := param.Value.(float64)
+			attributes.TransactionDate = strconv.FormatFloat(transactionDate, 'f', 2, 64)
+		}
+	}
+
+	// check receipt id is not empty
+	if attributes.MpesaReceiptID == "" {
+		attributes.MpesaReceiptID = b2bResult.Result.TransactionID
+	}
+
+	// update attributes field
+	wb.Attributes = attributes
+	wb.Status = StatusCompleted
+
+	return wb, nil
+}
+
+func transactionStatusWebhookResult(body io.Reader) (WebhookResult, error) {
+
+	var searchResult daraja.WebhookRequestTransactionStatus
+	if err := jsoniter.NewDecoder(body).Decode(&searchResult); err != nil {
+		return WebhookResult{}, err
+	}
+
+	var wb WebhookResult
+
+	wb.ResultCode = searchResult.Result.ResultCode
+	wb.ResultMessage = searchResult.Result.ResultDesc
+	wb.OriginationID = searchResult.Result.OriginatorConversationID
+	wb.ConversationID = searchResult.Result.ConversationID
+
+	// check if result code is success
+	if searchResult.Result.ResultCode != daraja.ResultCodeSuccess {
+		return wb, nil
+	}
+
+	// loop through params
+	var attributes PaymentAttributes
+	for _, param := range searchResult.Result.ResultParameters.ResultParameter {
+		if param.Key == "Amount" {
+			amount := param.Value.(float64)
+			attributes.Amount = strconv.FormatFloat(amount, 'f', 2, 64)
+		}
+		if param.Key == "InitiatedTime" {
+			transactionDate := param.Value.(float64)
+			attributes.TransactionDate = strconv.FormatFloat(transactionDate, 'f', 0, 64)
+		}
+		if param.Key == "ReceiptNo" {
+			attributes.MpesaReceiptID = param.Value.(string)
+		}
+		if param.Key == "TransactionStatus" {
+			status := param.Value.(string)
+			wb.Status = ToStatus(status)
+		}
+		if param.Key == "DebitPartyName" {
+			attributes.SenderName = param.Value.(string)
+		}
+		if param.Key == "CreditPartyName" {
+			attributes.RecipientName = param.Value.(string)
+		}
+		if param.Key == "OriginatorConversationID" {
+			wb.OriginationID = param.Value.(string)
+		}
+	}
+
+	wb.Attributes = attributes
+
+	return wb, nil
+}
+
+func NewWebhookProcessor(repo webhooks.WebhookRepository) WebhookProcessor {
+	return WebhookProcessor{repo}
+}
+
+type WebhookProcessor struct {
+	repository webhooks.WebhookRepository
+}
+
+func (wp WebhookProcessor) Process(ctx context.Context, result *webhooks.WebhookResult) error {
+
+	// save the webhook result
+	err := wp.repository.Add(ctx, result.Service, result.Action, result.Bytes())
+	if err != nil {
+		// I think we should fail if saving fails
+		return err
+	}
+
+	r := bytes.NewReader(result.Bytes())
+	switch result.Action {
+	case string(daraja.OperationC2BExpress):
+		result.Data, err = c2bWebHookResult(r)
+		return err
+	case string(daraja.OperationB2C):
+		result.Data, err = b2cWebhookResult(r)
+		return err
+	case string(daraja.OperationB2B):
+		result.Data, err = b2bWebhookResult(r)
+		return err
+	case string(daraja.OperationTransactionStatus):
+		result.Data, err = transactionStatusWebhookResult(r)
+		return err
+	case string(daraja.OperationReversal):
+		//TODO: Create for reversal
+		return errors.New("webhook processor for reversal not created")
+	default:
+		return errors.New("action processor not defined")
+	}
+}
