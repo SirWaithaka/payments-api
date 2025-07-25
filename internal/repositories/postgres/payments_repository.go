@@ -13,17 +13,17 @@ import (
 )
 
 type PaymentSchema struct {
-	ID                       string `gorm:"column:id;primaryKey;type:uuid;"`
-	PaymentID                string `gorm:"column:payment_id;unique;check:payment_id<>'';"`
-	ClientTransactionID      string `gorm:"column:client_transaction_id;unique;check:client_transaction_id<>'';"`
-	IdempotencyID            string `gorm:"column:idempotency_id;check:idempotency_id<>'';"`
-	PaymentReference         string `gorm:"column:payment_reference;check:payment_reference<>'';"`
-	Amount                   string `gorm:"column:amount;"`
-	Currency                 string `gorm:"column:currency;"`
-	SourceAccountNumber      string `gorm:"column:source_account_number;"`
-	DestinationAccountNumber string `gorm:"column:external_account_number;"`
-	BeneficiaryAccountNumber string `gorm:"column:beneficiary_account_number;"`
-	Description              string `gorm:"column:description;"`
+	ID                       string  `gorm:"column:id;primaryKey;type:uuid;"`
+	PaymentID                string  `gorm:"column:payment_id;unique;check:payment_id<>'';"`
+	ClientTransactionID      string  `gorm:"column:client_transaction_id;unique;check:client_transaction_id<>'';"`
+	IdempotencyID            string  `gorm:"column:idempotency_id;check:idempotency_id<>'';"`
+	PaymentReference         *string `gorm:"column:payment_reference;check:payment_reference<>'';"`
+	Amount                   string  `gorm:"column:amount;"`
+	Currency                 string  `gorm:"column:currency;"`
+	SourceAccountNumber      string  `gorm:"column:source_account_number;"`
+	DestinationAccountNumber string  `gorm:"column:external_account_number;"`
+	BeneficiaryAccountNumber string  `gorm:"column:beneficiary_account_number;"`
+	Description              string  `gorm:"column:description;"`
 
 	Bank   string `gorm:"column:bank;"`
 	Type   string `gorm:"column:type;"`
@@ -44,10 +44,10 @@ func (schema PaymentSchema) ToEntity() payments.Payment {
 		PaymentID:                schema.PaymentID,
 		ClientTransactionID:      schema.ClientTransactionID,
 		IdempotencyID:            schema.IdempotencyID,
-		PaymentReference:         schema.PaymentReference,
-		AccountNumber:            schema.SourceAccountNumber,
-		ExternalAccountNumber:    schema.DestinationAccountNumber,
-		BeneficiaryAccountNumber: schema.BeneficiaryAccountNumber,
+		PaymentReference:         *schema.PaymentReference,
+		SourceAccountNumber:      schema.SourceAccountNumber,
+		DestinationAccountNumber: schema.DestinationAccountNumber,
+		Beneficiary:              schema.BeneficiaryAccountNumber,
 		Amount:                   schema.Amount,
 		Description:              schema.Description,
 	}
@@ -56,6 +56,13 @@ func (schema PaymentSchema) ToEntity() payments.Payment {
 func (schema *PaymentSchema) BeforeCreate(tx *gorm.DB) (err error) {
 	// generate uuid v7 id for the primary key
 	schema.ID = uuid.Must(uuid.NewV7()).String()
+
+	sch := *schema
+
+	// validate that nullable strings should be nil instead of empty
+	if sch.PaymentReference != nil && *sch.PaymentReference == "" {
+		schema.PaymentReference = nil
+	}
 
 	return
 }
@@ -72,19 +79,19 @@ func (schema *PaymentSchema) FindOptions(opts payments.OptionsFindOnePayment) {
 		schema.ClientTransactionID = *opts.TransactionID
 	}
 	if opts.PaymentReference != nil {
-		schema.PaymentReference = *opts.PaymentReference
+		schema.PaymentReference = opts.PaymentReference
 	}
 }
 
-func NewRepository(db *gorm.DB) Repository {
-	return Repository{db: db}
+func NewPaymentsRepository(db *gorm.DB) PaymentsRepository {
+	return PaymentsRepository{db: db}
 }
 
-type Repository struct {
+type PaymentsRepository struct {
 	db *gorm.DB
 }
 
-func (repo Repository) AddPayment(ctx context.Context, payment payments.Payment) error {
+func (repo PaymentsRepository) AddPayment(ctx context.Context, payment payments.Payment) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Any(logger.LData, payment).Msg("saving payment")
 
@@ -92,12 +99,12 @@ func (repo Repository) AddPayment(ctx context.Context, payment payments.Payment)
 		PaymentID:           payment.PaymentID,
 		ClientTransactionID: payment.ClientTransactionID,
 		IdempotencyID:       payment.IdempotencyID,
-		PaymentReference:    payment.PaymentReference,
+		PaymentReference:    &payment.PaymentReference,
 		Amount:              payment.Amount,
 		//Currency:                 "",
-		SourceAccountNumber:      payment.AccountNumber,
-		DestinationAccountNumber: payment.ExternalAccountNumber,
-		BeneficiaryAccountNumber: payment.BeneficiaryAccountNumber,
+		SourceAccountNumber:      payment.SourceAccountNumber,
+		DestinationAccountNumber: payment.DestinationAccountNumber,
+		BeneficiaryAccountNumber: payment.Beneficiary,
 		Description:              payment.Description,
 		Bank:                     payment.BankCode,
 		//Type:                     "",
@@ -116,7 +123,7 @@ func (repo Repository) AddPayment(ctx context.Context, payment payments.Payment)
 	return nil
 }
 
-func (repo Repository) FindOnePayment(ctx context.Context, opts payments.OptionsFindOnePayment) (payments.Payment, error) {
+func (repo PaymentsRepository) FindOnePayment(ctx context.Context, opts payments.OptionsFindOnePayment) (payments.Payment, error) {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Any(logger.LData, opts).Msg("find options")
 
