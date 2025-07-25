@@ -15,7 +15,7 @@ type RequestPayment struct {
 	Description string `json:"description"`
 }
 
-type RequestWalletCharge struct {
+type RequestWalletPayment struct {
 	// code identifying the wallet provider
 	BankCode string `json:"bank" binding:"required"`
 	//External identifier for the transfer which can be used for reconciliation. Need not be unique
