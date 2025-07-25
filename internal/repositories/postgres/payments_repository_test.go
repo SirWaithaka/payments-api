@@ -15,7 +15,7 @@ func TestRequestRepository_AddPayment(t *testing.T) {
 	ctx := context.Background()
 	t.Cleanup(func() { testdata.ResetTables(inf) })
 
-	repo := postgres.NewRepository(inf.Storage.PG)
+	repo := postgres.NewPaymentsRepository(inf.Storage.PG)
 
 	t.Run("test that empty payment instance cant be saved", func(t *testing.T) {
 		testcases := []struct {
