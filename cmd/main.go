@@ -7,11 +7,16 @@ import (
 	"syscall"
 
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/SirWaithaka/payments-api/internal/api/rest"
 	"github.com/SirWaithaka/payments-api/internal/config"
 	dipkg "github.com/SirWaithaka/payments-api/internal/di"
+	"github.com/SirWaithaka/payments-api/internal/events/listener"
+	"github.com/SirWaithaka/payments-api/internal/events/publisher"
+	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
+	"github.com/SirWaithaka/payments-api/internal/storage"
 )
 
 func main() {
@@ -21,23 +26,58 @@ func main() {
 		panic(errors.Wrap(err, "env configs could not be loaded"))
 	}
 
-	// create context that listens on sigterm and sigint
+	// create context that listens to on sigterm and sigint
 	mCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	defer stop()
 
-	// initialize DI container
-	di := dipkg.New(cfg)
+	// set default logger
+	l := logger.New(&logger.Config{LogMode: cfg.LogLevel, Service: cfg.ServiceName})
+	logger.SetDefaultLogger(l)
+	zerolog.DefaultContextLogger = &l
+	// add logger to context
+	mCtx = l.WithContext(mCtx)
 
-	// create error group
+	// create db connection
+	db, err := storage.NewDatabase(cfg)
+	if err != nil {
+		l.WithLevel(zerolog.FatalLevel).Err(err).Msg("could not connect to db")
+		return
+	}
+	l.Info().Msg("db connection succeeded")
+
+	// create an instance of publisher
+	pub := publisher.New(cfg.Kafka)
+
+	// initialize DI container
+	di := dipkg.New(cfg, db, pub)
+
+	// create an error group
 	g, gCtx := errgroup.WithContext(mCtx)
 
-	// create instance of http rest server
+	// create an instance of http rest server
 	app := rest.New(gCtx, di)
 	g.Go(app.Start)
 	g.Go(app.Stop)
 
-	// wait for all goroutines in g group
+	// create an instance of listener and start
+	ln := listener.New(gCtx, cfg.Kafka, di)
+	g.Go(ln.Listen)
+	g.Go(ln.Close)
+
+	// wait for all goroutines in a g group
 	if err := g.Wait(); err != nil {
 		return
 	}
+	l.Info().Msg("main shutting down")
+
+	// close publisher
+	if err = pub.Close(); err != nil {
+		l.WithLevel(zerolog.FatalLevel).Err(err).Msg("publisher close error")
+	}
+
+	// shutdown db
+	db.Close()
+
+	l.Info().Msg("main shut down")
+
 }
