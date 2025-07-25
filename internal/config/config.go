@@ -9,9 +9,14 @@ type PostgresConfigs struct {
 	Schema   string
 }
 
+type KafkaConfig struct {
+	Host string
+}
+
 type Config struct {
 	ServiceName string
 	LogLevel    string
 	HTTPPort    string
 	Postgres    PostgresConfigs
+	Kafka       KafkaConfig
 }

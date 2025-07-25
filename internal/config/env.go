@@ -12,6 +12,8 @@ type envConfig struct {
 	PostgresPort     string `envconfig:"postgres_port" required:"true"`
 	PostgresDBName   string `envconfig:"postgres_database" default:"payments"`
 	PostgresSchema   string `envconfig:"postgres_schema" default:"public"`
+
+	KafkaBrokers string `envconfig:"kafka_brokers" required:"true"`
 }
 
 func FromEnv(cfg *Config) error {
@@ -29,6 +31,8 @@ func FromEnv(cfg *Config) error {
 	cfg.Postgres.Port = c.PostgresPort
 	cfg.Postgres.DbName = c.PostgresDBName
 	cfg.Postgres.Schema = c.PostgresSchema
+
+	cfg.Kafka.Host = c.KafkaBrokers
 
 	return nil
 }
