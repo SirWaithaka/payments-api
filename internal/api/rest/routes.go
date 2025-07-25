@@ -15,11 +15,12 @@ func routes(router *gin.Engine, di *dipkg.DI) {
 	group := router.Group("/api")
 
 	group.POST("/charge", paymentHandlers.Charge)
+	group.POST("/payout", paymentHandlers.Payout)
 }
 
 func webhookRoutes(router *gin.Engine, di *dipkg.DI) {
 	webhookGroup := router.Group("/webhooks")
 
-	webhookHandlers := handlers.NewWebhookHandlers()
+	webhookHandlers := handlers.NewWebhookHandlers(di.Webhook)
 	webhookGroup.POST("/daraja/:action", webhookHandlers.Daraja)
 }
