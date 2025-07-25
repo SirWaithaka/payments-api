@@ -115,7 +115,7 @@ func Setup(cfg *config.Config) (*Infrastructure, error) {
 	}
 
 	// migrate schemas to postgres
-	if err = store.PG.Migrator().CreateTable(&postgres.PaymentSchema{}); err != nil {
+	if err = store.PG.Migrator().CreateTable(&postgres.PaymentSchema{}, &postgres.WebhookRequestSchema{}); err != nil {
 		return nil, err
 	}
 
