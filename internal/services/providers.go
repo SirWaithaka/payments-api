@@ -6,6 +6,7 @@ import (
 	"github.com/SirWaithaka/payments-api/clients/daraja"
 	"github.com/SirWaithaka/payments-api/corehooks"
 	"github.com/SirWaithaka/payments-api/internal/domains/payments"
+	"github.com/SirWaithaka/payments-api/internal/domains/webhooks"
 	"github.com/SirWaithaka/payments-api/request"
 )
 
@@ -34,6 +35,7 @@ func NewProvider() *Provider {
 }
 
 type Provider struct {
+	webhooksRepo webhooks.WebhookRepository
 }
 
 func (provider Provider) GetWalletApi(request payments.WalletPayment) payments.WalletApi {
@@ -46,6 +48,15 @@ func (provider Provider) GetWalletApi(request payments.WalletPayment) payments.W
 	}
 
 	return nil
+}
+
+func (provider Provider) GetWebhookClient(service string) webhooks.WebhookProcessor {
+	switch service {
+	case "daraja":
+		return NewWebhookProcessor(provider.webhooksRepo)
+	default:
+		return nil
+	}
 }
 
 func (provider Provider) GetDarajaClient(endpoint string, cfg ShortCodeConfig) *daraja.Client {
@@ -63,10 +74,10 @@ func (provider Provider) GetShortCodeConfig(name string) (ShortCodeConfig, error
 	switch name {
 	case "CHARGE":
 		return ShortCodeConfig{
-			ShortCode:         "000000",
+			ShortCode:         "174379",
 			InitiatorName:     "testapi",
 			InitiatorPassword: "Safaricom999!*!%",
-			Passphrase:        "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919%",
+			Passphrase:        "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919",
 			ConsumerKey:       "GW0TvN2gUTakps3b1AbAw48no1Yogu92oXI0N55fmlEVK40p",
 			ConsumerSecret:    "CtpMOjvk47jm6A5hmCzaQjQTBOWAwK1LM95awGNLSTGawbGNPsy9f8Eabsr1Lg7Q",
 			CallbackURL:       "https://webhook.sirwaithaka.space/webhooks/daraja",
@@ -74,20 +85,18 @@ func (provider Provider) GetShortCodeConfig(name string) (ShortCodeConfig, error
 
 	case "PAYOUT":
 		return ShortCodeConfig{
-			ShortCode:         "001001",
+			ShortCode:         "000000",
 			InitiatorName:     "testapi",
 			InitiatorPassword: "Safaricom999!*!%",
-			Passphrase:        "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919%",
 			ConsumerKey:       "GW0TvN2gUTakps3b1AbAw48no1Yogu92oXI0N55fmlEVK40p",
 			ConsumerSecret:    "CtpMOjvk47jm6A5hmCzaQjQTBOWAwK1LM95awGNLSTGawbGNPsy9f8Eabsr1Lg7Q",
 			CallbackURL:       "https://webhook.sirwaithaka.space/webhooks/daraja",
 		}, nil
 	case "TRANSFER":
 		return ShortCodeConfig{
-			ShortCode:         "005005",
+			ShortCode:         "000000",
 			InitiatorName:     "testapi",
-			InitiatorPassword: "Safaricom999!*!%",
-			Passphrase:        "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919%",
+			InitiatorPassword: "Safaricom999!*!",
 			ConsumerKey:       "GW0TvN2gUTakps3b1AbAw48no1Yogu92oXI0N55fmlEVK40p",
 			ConsumerSecret:    "CtpMOjvk47jm6A5hmCzaQjQTBOWAwK1LM95awGNLSTGawbGNPsy9f8Eabsr1Lg7Q",
 			CallbackURL:       "https://webhook.sirwaithaka.space/webhooks/daraja",
