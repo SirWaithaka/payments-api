@@ -2,6 +2,7 @@ package postgres_test
 
 import (
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/rs/zerolog"
@@ -35,4 +36,31 @@ func TestMain(m *testing.M) {
 	testdata.CleanUp(inf)
 
 	os.Exit(code)
+}
+
+func AssertNil(t *testing.T, actual any) {
+	if actual == nil {
+		t.Errorf("expected nil, got %v", actual)
+	}
+
+	value := reflect.ValueOf(actual)
+	switch value.Kind() {
+	case
+		reflect.Chan, reflect.Func,
+		reflect.Interface, reflect.Map,
+		reflect.Ptr, reflect.Slice, reflect.UnsafePointer:
+
+		if !value.IsNil() {
+			// For pointers, try to get the underlying value
+			if value.Kind() == reflect.Ptr && value.Elem().IsValid() {
+				t.Errorf("expected nil, got %v", value.Elem().Interface())
+			} else {
+				t.Errorf("expected nil, got %v", actual)
+			}
+		}
+
+	default:
+		return
+	}
+
 }
