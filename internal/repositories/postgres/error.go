@@ -13,7 +13,9 @@ const (
 )
 
 var (
-	ErrDatabase = errors.New("database error")
+	ErrDatabase  = errors.New("database error")
+	ErrNotFound  = errors.New("not found")
+	ErrDuplicate = errors.New("duplicate record")
 )
 
 type Error struct {
@@ -21,15 +23,17 @@ type Error struct {
 	Err error
 }
 
-func (e Error) Unwrap() error { return e.Err }
+func (e Error) Unwrap() error {
+	return e.Err
+}
 
 func (e Error) Error() string {
 	if e.NotFound() {
-		return "not found"
+		return ErrNotFound.Error()
 	}
 
 	if e.Duplicate() {
-		return "duplicate record"
+		return ErrDuplicate.Error()
 	}
 
 	if e.msg == "" {
@@ -39,12 +43,28 @@ func (e Error) Error() string {
 }
 
 func (e Error) NotFound() bool {
-	return errors.Is(e.Err, gorm.ErrRecordNotFound)
+	if errors.Is(e.Err, gorm.ErrRecordNotFound) {
+		return true
+	}
+
+	if errors.Is(e.Err, ErrNotFound) {
+		return true
+	}
+
+	return false
 }
 
 func (e Error) Duplicate() bool {
 	if e.Err == nil {
 		return false
+	}
+
+	if errors.Is(e.Err, gorm.ErrDuplicatedKey) {
+		return true
+	}
+
+	if errors.Is(e.Err, ErrDuplicate) {
+		return true
 	}
 
 	var pgErr *pgconn.PgError
