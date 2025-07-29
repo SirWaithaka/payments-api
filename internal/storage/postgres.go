@@ -72,7 +72,7 @@ func (l *Logger) Trace(ctx context.Context, begin time.Time, fc func() (sql stri
 func NewPostgresClient(cfg config.PostgresConfigs) (*gorm.DB, error) {
 	var err error
 
-	gormconfig := gorm.Config{Logger: NewLogger(), TranslateError: true}
+	gormconfig := gorm.Config{Logger: NewLogger(), TranslateError: false}
 
 	gormDB, err := gorm.Open(postgres.New(postgres.Config{DSN: postgresDSN(cfg)}), &gormconfig)
 	if err != nil {
