@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-playground/assert/v2"
 	"github.com/gofrs/uuid/v5"
 	"github.com/oklog/ulid/v2"
 )
@@ -183,6 +184,86 @@ func TestB2CWebhookResult(t *testing.T) {
 			}
 		}
 	})
+}
+
+func TestB2BWebhookResult(t *testing.T) {
+
+	type tcInput struct {
+		resultCode   int
+		originatorID string
+		amount       int
+		receiptId    string
+		receiverName string
+	}
+
+	t.Run("test success case", func(t *testing.T) {
+		const successTestBody = `{"Result":{"ResultType":0,"ResultCode":%d,"ResultDesc":"The service request is processed successfully.","OriginatorConversationID":"%s","ConversationID":"AG_20240903_20100d107ffe523be186","TransactionID":"%s","ResultParameters":{"ResultParameter":[{"Key":"Currency","Value":"KES"},{"Key":"ReceiverPartyPublicName","Value":"%s"},{"Key":"DebitPartyCharges"},{"Key":"TransCompletedTime","Value":20240903093417},{"Key":"DebitPartyAffectedAccountBalance","Value":"Working Account|KES|199979.00|199979.00|0.00|0.00"},{"Key":"Amount","Value":%d},{"Key":"DebitAccountCurrentBalance","Value":"{Amount={CurrencyCode=KES, MinimumAmount=19997900, BasicAmount=199979.00}}"},{"Key":"InitiatorAccountCurrentBalance","Value":"{Amount={CurrencyCode=KES, MinimumAmount=19997900, BasicAmount=199979.00}}"}]},"ReferenceData":{"ReferenceItem":[{"Key":"BillReferenceNumber","Value":1},{"Key":"QueueTimeoutURL","Value":"https://internalsandbox"},{"Key":"Occassion"}]}}}`
+
+		tcs := []struct {
+			input tcInput
+		}{
+			{input: tcInput{resultCode: 0, originatorID: uuid.Must(uuid.NewV7()).String(), amount: 1, receiptId: ulid.Make().String(), receiverName: "000000 - agg"}},
+			{input: tcInput{resultCode: 0, originatorID: uuid.Must(uuid.NewV7()).String(), amount: 10, receiptId: ulid.Make().String(), receiverName: "000000 - agg"}},
+			{input: tcInput{resultCode: 0, originatorID: uuid.Must(uuid.NewV7()).String(), amount: 100, receiptId: ulid.Make().String(), receiverName: "000000 - agg"}},
+			{input: tcInput{resultCode: 0, originatorID: uuid.Must(uuid.NewV7()).String(), amount: 1000, receiptId: ulid.Make().String(), receiverName: "000000 - agg"}},
+			{input: tcInput{resultCode: 0, originatorID: uuid.Must(uuid.NewV7()).String(), amount: 10000, receiptId: ulid.Make().String(), receiverName: "000000 - agg"}},
+			{input: tcInput{resultCode: 0, originatorID: uuid.Must(uuid.NewV7()).String(), amount: 50000, receiptId: ulid.Make().String(), receiverName: "000000 - agg"}},
+			{input: tcInput{resultCode: 0, originatorID: uuid.Must(uuid.NewV7()).String(), amount: 70000, receiptId: ulid.Make().String(), receiverName: "000000 - agg"}},
+			{input: tcInput{resultCode: 0, originatorID: uuid.Must(uuid.NewV7()).String(), amount: 100000, receiptId: ulid.Make().String(), receiverName: "000000 - agg"}},
+			{input: tcInput{resultCode: 0, originatorID: uuid.Must(uuid.NewV7()).String(), amount: 150000, receiptId: ulid.Make().String(), receiverName: "000000 - agg"}},
+		}
+
+		for _, tc := range tcs {
+			result, err := b2bWebhookResult(strings.NewReader(fmt.Sprintf(successTestBody, tc.input.resultCode, tc.input.originatorID, tc.input.receiptId, tc.input.receiverName, tc.input.amount)))
+			if err != nil {
+				t.Errorf("expected nil error, got %v", err)
+			}
+
+			assert.Equal(t, tc.input.originatorID, result.OriginationID)
+
+			if attributes, ok := result.Attributes.(PaymentAttributes); !ok {
+				t.Errorf("attributes property type incorrect")
+			} else {
+
+				// check amount is valid
+				amount, err := strconv.ParseFloat(attributes.Amount, 64)
+				if err != nil {
+					t.Errorf("expected nil error, got %v", err)
+				}
+
+				assert.Equal(t, float64(tc.input.amount), amount)
+				assert.Equal(t, tc.input.receiptId, attributes.MpesaReceiptID)
+			}
+		}
+	})
+
+	t.Run("test failed case", func(t *testing.T) {
+		failedTestBody := `{"Result":{"ResultType":0,"ResultCode":%d,"ResultDesc":"The service request is processed successfully.","OriginatorConversationID":"%s","ConversationID":"AG_20240703_204072a2b81ca27558c6","TransactionID":"SG31FWI0VP","ReferenceData":{"ReferenceItem":{"Key":"QueueTimeoutURL","Value":"http://internalapi.safaricom.co.ke/mpesa/b2bresults/v1/submit"}}}}`
+
+		tcs := []struct {
+			input tcInput
+		}{
+			{input: tcInput{resultCode: 1, originatorID: uuid.Must(uuid.NewV7()).String()}},
+			{input: tcInput{resultCode: 1032, originatorID: uuid.Must(uuid.NewV7()).String()}},
+			{input: tcInput{resultCode: 2001, originatorID: uuid.Must(uuid.NewV7()).String()}},
+			{input: tcInput{resultCode: 1037, originatorID: uuid.Must(uuid.NewV7()).String()}},
+		}
+
+		for _, tc := range tcs {
+			result, err := b2cWebhookResult(strings.NewReader(fmt.Sprintf(failedTestBody, tc.input.resultCode, tc.input.originatorID)))
+			if err != nil {
+				t.Errorf("expected nil error, got %v", err)
+			}
+
+			assert.Equal(t, tc.input.originatorID, result.OriginationID)
+
+			if result.Attributes != nil {
+				t.Errorf("expected attributes property to be nil, got %v", result.Attributes)
+			}
+		}
+
+	})
+
 }
 
 func TestTransactionStatusWebhookResult(t *testing.T) {
