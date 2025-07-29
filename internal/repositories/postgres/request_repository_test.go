@@ -2,10 +2,12 @@ package postgres_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/go-playground/assert/v2"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/oklog/ulid/v2"
 
 	"github.com/SirWaithaka/payments-api/internal/domains/payments"
@@ -18,10 +20,10 @@ func StringPtr(s string) *string {
 }
 
 func TestRequestRepository_AddRequest(t *testing.T) {
+	defer testdata.ResetTables(inf)
 
 	t.Run("test that it saves record", func(t *testing.T) {
 		ctx := context.Background()
-		defer testdata.ResetTables(inf)
 
 		successResponse := map[string]any{
 			"MerchantRequestID":   "ed49-4afa-95de-fde98781ae6b37982271",
@@ -36,6 +38,7 @@ func TestRequestRepository_AddRequest(t *testing.T) {
 		record := payments.Request{
 			RequestID: ulid.Make().String(),
 			Status:    "success",
+			Partner:   "test",
 			Latency:   100 * time.Millisecond,
 			Response:  successResponse,
 			CreatedAt: time.Now(),
@@ -49,7 +52,6 @@ func TestRequestRepository_AddRequest(t *testing.T) {
 
 	t.Run("test that empty string values are not saved", func(t *testing.T) {
 		ctx := context.Background()
-		defer testdata.ResetTables(inf)
 
 		response := map[string]any{
 			"ResponseCode": "0",
@@ -62,25 +64,19 @@ func TestRequestRepository_AddRequest(t *testing.T) {
 			Response:  response,
 		}
 		err := repo.Add(ctx, record)
-		if err != nil {
+		if err == nil {
 			t.Errorf("expected non-nil error")
 		}
 
-		// fetch record and check values
-		r := postgres.RequestSchema{}
-		result := inf.Storage.PG.First(&r)
-		if result.Error != nil {
-			t.Errorf("expected nil error, got %v", result.Error)
+		// confirm error is a check constraint violation
+		pgErr := &pgconn.PgError{}
+		if errors.As(err, &pgErr) {
+			if pgErr.Code != postgres.PgCodeCheckConstraintViolation {
+				t.Errorf("expected check constraint violation error, got %s", pgErr.Code)
+			}
+		} else {
+			t.Errorf("expected pg error, got %T %v", err, err)
 		}
-
-		if r.PaymentID != nil {
-			t.Errorf("expected nil value, got %v", r.PaymentID)
-		}
-
-		// assert values are nil and not empty strings
-		AssertNil(t, r.PaymentID)
-		AssertNil(t, r.ExternalID)
-		AssertNil(t, r.Status)
 
 	})
 }
