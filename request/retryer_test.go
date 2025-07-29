@@ -81,8 +81,7 @@ func TestDefaultRetryer_Delay(t *testing.T) {
 		req := New(Config{}, hooks, DefaultRetryer, nil, nil, nil)
 		req.WithRetryConfig(cfg)
 
-		delay := DefaultRetryer.Delay(req)
-		t.Log(delay)
+		//delay := DefaultRetryer.Delay(req)
 
 		//// mock an error with a send hook
 		//// mock an error at send hooks

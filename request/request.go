@@ -28,8 +28,6 @@ type (
 	Request struct {
 		Config Config
 
-		//BaseUrl string
-
 		// request payload
 		Params any
 
