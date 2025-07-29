@@ -40,6 +40,7 @@ func loadConfig() (config.Config, error) {
 	GetSetEnv("POSTGRES_PORT", "5432")
 	GetSetEnv("POSTGRES_DATABASE", "test")
 	GetSetEnv("POSTGRES_SCHEMA", "public")
+	GetSetEnv("KAFKA_BROKERS", "url://fake-host")
 
 	var conf config.Config
 	err := config.FromEnv(&conf)
@@ -115,7 +116,11 @@ func Setup(cfg *config.Config) (*Infrastructure, error) {
 	}
 
 	// migrate schemas to postgres
-	if err = store.PG.Migrator().CreateTable(&postgres.PaymentSchema{}, &postgres.WebhookRequestSchema{}); err != nil {
+	if err = store.PG.Migrator().CreateTable(
+		&postgres.PaymentSchema{},
+		&postgres.RequestSchema{},
+		&postgres.WebhookRequestSchema{},
+	); err != nil {
 		return nil, err
 	}
 
@@ -134,8 +139,9 @@ func ResetTables(inf *Infrastructure) {
 	l.Info().Msg("resetting tables")
 
 	// clear tables of any data
+	inf.Storage.PG.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&postgres.RequestSchema{})
 	inf.Storage.PG.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&postgres.PaymentSchema{})
-	//inf.Storage.PG.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&postgres.WebhookRequestSchema{})
+	inf.Storage.PG.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&postgres.WebhookRequestSchema{})
 
 }
 
