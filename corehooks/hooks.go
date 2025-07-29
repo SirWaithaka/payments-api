@@ -13,6 +13,7 @@ import (
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
+	"github.com/rs/xid"
 
 	"github.com/SirWaithaka/payments-api/request"
 )
@@ -265,4 +266,16 @@ func logRequest(r *request.Request) {
 	r.Config.Logger.Log(fmt.Sprintf("DEBUG: %s, %s",
 		r.Operation.Name, string(b)))
 
+}
+
+// SetRequestID will set a default request id to the request if no id generator
+// function is given
+func SetRequestID(fn ...func() string) request.Hook {
+	return request.Hook{Name: "core.SetRequestID", Fn: func(r *request.Request) {
+		if len(fn) == 0 {
+			r.Config.RequestID = xid.New().String()
+			return
+		}
+		r.Config.RequestID = fn[0]()
+	}}
 }
