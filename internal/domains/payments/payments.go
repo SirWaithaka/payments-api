@@ -2,6 +2,7 @@ package payments
 
 import (
 	"context"
+	"time"
 )
 
 const (
@@ -54,6 +55,19 @@ type WalletPayment struct {
 	Description string
 }
 
+type Request struct {
+	RequestID  string // unique request id
+	PaymentID  string // foreign id tied to the original payment request
+	ExternalID string // request id we get back from partner from response
+	Partner    string
+	Status     string
+	Latency    time.Duration
+	Response   map[string]any
+	CreatedAt  time.Time
+
+	Payment *Payment
+}
+
 type Wallet interface {
 	Charge(context.Context, WalletPayment) (Payment, error)
 	Payout(context.Context, WalletPayment) (Payment, error)
@@ -78,7 +92,24 @@ type OptionsFindOnePayment struct {
 	IdempotencyID    *string
 }
 
+type OptionsFindOneRequest struct {
+	RequestID  *string
+	ExternalID *string
+}
+
+type OptionsUpdateRequest struct {
+	ExternalID *string
+	Status     *string
+	Response   map[string]any
+}
+
 type Repository interface {
 	AddPayment(context.Context, Payment) error
 	FindOnePayment(ctx context.Context, opts OptionsFindOnePayment) (Payment, error)
+}
+
+type RequestRepository interface {
+	Add(ctx context.Context, req Request) error
+	FindOneRequest(ctx context.Context, opts OptionsFindOneRequest) (Request, error)
+	UpdateRequest(ctx context.Context, id string, opts OptionsUpdateRequest) error
 }
