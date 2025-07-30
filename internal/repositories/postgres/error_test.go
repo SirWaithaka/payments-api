@@ -58,4 +58,7 @@ func TestError_Error(t *testing.T) {
 
 	e = Error{Err: nil}
 	assert.Equal(t, e.Error(), ErrDatabase.Error())
+
+	e = Error{msg: "test error"}
+	assert.Equal(t, e.Error(), "test error")
 }
