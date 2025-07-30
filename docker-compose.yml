@@ -22,7 +22,7 @@ services:
       - .env
     environment:
       - POSTGRES_HOST=postgres
-      - KAFKA_BROKERS=kafka-kraft
+      - KAFKA_BROKERS=kafka:29092
     ports:
       - "6001:6000"
     networks:
