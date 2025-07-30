@@ -50,6 +50,7 @@ func NewConsumer(cCfg ConsumerConfig) *Consumer {
 // ReadMessage reads a message from the Kafka topic.
 func (c *Consumer) ReadMessage(ctx context.Context) error {
 	l := zerolog.Ctx(ctx)
+	l.Debug().Msgf("starting consumer - %s on host %s", c.reader.Config().Topic, c.reader.Config().Brokers[0])
 
 loop:
 	for {
