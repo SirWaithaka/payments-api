@@ -30,11 +30,12 @@ type ShortCodeConfig struct {
 	CallbackURL       string // callback url for shortcode async responses
 }
 
-func NewProvider() *Provider {
-	return &Provider{}
+func NewProvider(requestsRepo payments.RequestRepository, webhooksRepo webhooks.WebhookRepository) *Provider {
+	return &Provider{requestsRepo: requestsRepo, webhooksRepo: webhooksRepo}
 }
 
 type Provider struct {
+	requestsRepo payments.RequestRepository
 	webhooksRepo webhooks.WebhookRepository
 }
 
@@ -44,7 +45,7 @@ func (provider Provider) GetWalletApi(request payments.WalletPayment) payments.W
 		shortcodeCfg, _ := provider.GetShortCodeConfig(request.Type)
 		// build the daraja client
 		client := provider.GetDarajaClient(daraja.SandboxUrl, shortcodeCfg)
-		return NewDarajaApi(client, shortcodeCfg)
+		return NewDarajaApi(client, shortcodeCfg, provider.requestsRepo)
 	}
 
 	return nil
