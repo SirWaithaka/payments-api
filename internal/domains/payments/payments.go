@@ -35,6 +35,8 @@ type Payment struct {
 }
 
 type WalletPayment struct {
+	// generate unique id for the payment request
+	PaymentID string
 	// should be one of charge, transfer or payout
 	Type string
 	// code identifying the wallet provider
