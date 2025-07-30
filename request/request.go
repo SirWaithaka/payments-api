@@ -80,6 +80,20 @@ func WithLogger(logger Logger) Option {
 	}
 }
 
+// WithServiceName sets the service name in config
+func WithServiceName(name string) Option {
+	return func(r *Request) {
+		r.Config.ServiceName = name
+	}
+}
+
+// WithRequestID sets the request id in config
+func WithRequestID(id string) Option {
+	return func(r *Request) {
+		r.Config.RequestID = id
+	}
+}
+
 // ApplyOptions will apply each option to the request calling them in the order
 // they were provided.
 func (r *Request) ApplyOptions(opts ...Option) {
