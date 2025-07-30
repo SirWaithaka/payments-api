@@ -44,7 +44,7 @@ func TestRequestRecorder_RecordRequest(t *testing.T) {
 	hooks.Send.PushFrontHook(recorder.RecordRequest(payment.PaymentID, requestID))
 
 	// make request
-	cfg := request.Config{RequestID: xid.New().String(), ServiceName: "test"}
+	cfg := request.Config{ServiceName: "test"}
 	req := request.New(cfg, hooks, nil, nil, nil, nil)
 	if err := req.Send(); err != nil {
 		t.Errorf("expected nil error, got %v", err)
@@ -58,7 +58,7 @@ func TestRequestRecorder_RecordRequest(t *testing.T) {
 	}
 
 	// assert values
-	assert.Equal(t, req.Config.RequestID, rq.RequestID)
+	assert.Equal(t, requestID, rq.RequestID)
 
 }
 
@@ -111,7 +111,7 @@ func TestRequestRecorder_UpdateRequestResponse(t *testing.T) {
 		hooks.Complete.PushFrontHook(recorder.UpdateRequestResponse(requestID))
 
 		// configure the request
-		cfg := request.Config{Endpoint: server.URL, DisableSSL: true, HTTPClient: http.DefaultClient, ServiceName: "test", RequestID: xid.New().String()}
+		cfg := request.Config{Endpoint: server.URL, DisableSSL: true, HTTPClient: http.DefaultClient, ServiceName: "test"}
 		op := &request.Operation{Name: "FooBar", Path: "/"}
 		hooks.Send.PushBackHook(corehooks.SendHook)
 
@@ -123,13 +123,13 @@ func TestRequestRecorder_UpdateRequestResponse(t *testing.T) {
 
 		// fetch record
 		rq := postgres.RequestSchema{}
-		result := inf.Storage.PG.Where(postgres.RequestSchema{RequestID: req.Config.RequestID}).First(&rq)
+		result := inf.Storage.PG.Where(postgres.RequestSchema{RequestID: requestID}).First(&rq)
 		if result.Error != nil {
 			t.Errorf("expected nil error, got %v", result.Error)
 		}
 
 		// assert values
-		assert.Equal(t, req.Config.RequestID, rq.RequestID)
+		assert.Equal(t, requestID, rq.RequestID)
 		assert.Equal(t, "completed", rq.Status)
 
 		if rq.Response == nil {
@@ -173,13 +173,13 @@ func TestRequestRecorder_UpdateRequestResponse(t *testing.T) {
 
 		// fetch record
 		rq := postgres.RequestSchema{}
-		result := inf.Storage.PG.Where(postgres.RequestSchema{RequestID: req.Config.RequestID}).First(&rq)
+		result := inf.Storage.PG.Where(postgres.RequestSchema{RequestID: requestID}).First(&rq)
 		if result.Error != nil {
 			t.Errorf("expected nil error, got %v", result.Error)
 		}
 
 		// assert values
-		assert.Equal(t, req.Config.RequestID, rq.RequestID)
+		assert.Equal(t, requestID, rq.RequestID)
 		assert.Equal(t, "completed", rq.Status)
 
 		if rq.Response == nil {
