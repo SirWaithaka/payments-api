@@ -1,4 +1,4 @@
-CREATE TABLE "payment_requests"
+CREATE TABLE public."payment_requests"
 (
     "id"                         uuid,
     "payment_id"                 text,
@@ -16,13 +16,11 @@ CREATE TABLE "payment_requests"
     "status"                     text,
     "created_at"                 timestamp,
     "updated_at"                 timestamp,
-
     PRIMARY KEY ("id"),
-
     CONSTRAINT "uni_payment_requests_payment_id" UNIQUE ("payment_id"),
     CONSTRAINT "uni_payment_requests_client_transaction_id" UNIQUE ("client_transaction_id"),
-    CONSTRAINT "chk_payment_requests_payment_id" CHECK (payment_id <> ''),
     CONSTRAINT "chk_payment_requests_idempotency_id" CHECK (idempotency_id <> ''),
-    CONSTRAINT "chk_payment_requests_payment_reference" CHECK (payment_reference <> ''),
-    CONSTRAINT "chk_payment_requests_client_transaction_id" CHECK (client_transaction_id <> '')
-)
+    CONSTRAINT "chk_payment_requests_payment_id" CHECK (payment_id <> ''),
+    CONSTRAINT "chk_payment_requests_client_transaction_id" CHECK (client_transaction_id <> ''),
+    CONSTRAINT "chk_payment_requests_payment_reference" CHECK (payment_reference <> '')
+);
