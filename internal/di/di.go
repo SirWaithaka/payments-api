@@ -20,8 +20,10 @@ type DI struct {
 
 func New(cfg config.Config, db *storage.Database, pub events.Publisher) *DI {
 	paymentsRepository := postgres.NewPaymentsRepository(db.PG)
+	requestsRepository := postgres.NewRequestRepository(db.PG)
+	webhooksRepository := postgres.NewWebhookRepository(db.PG)
 
-	apiProvider := services.NewProvider()
+	apiProvider := services.NewProvider(requestsRepository, webhooksRepository)
 
 	walletsService := payments.NewWalletService(apiProvider, paymentsRepository)
 	webhooksService := webhooks.NewProcessor(apiProvider, pub)
