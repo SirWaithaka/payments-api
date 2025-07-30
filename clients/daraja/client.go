@@ -122,6 +122,9 @@ func (client Client) C2BExpressRequest(input RequestC2BExpress, opts ...request.
 
 	cfg := request.Config{Endpoint: client.endpoint}
 
+	// append to request options
+	opts = append(opts, request.WithRequestHeader("Content-Type", "application/json"))
+
 	output := ResponseC2BExpress{}
 	req := request.New(cfg, client.Hooks, nil, op, input, &output)
 	req.ApplyOptions(opts...)
@@ -130,7 +133,7 @@ func (client Client) C2BExpressRequest(input RequestC2BExpress, opts ...request.
 }
 
 func (client Client) C2BExpress(ctx context.Context, payload RequestC2BExpress) (ResponseC2BExpress, error) {
-	req, out := client.C2BExpressRequest(payload, request.WithRequestHeader("Content-Type", "application/json"))
+	req, out := client.C2BExpressRequest(payload)
 	req.WithContext(ctx)
 
 	if err := req.Send(); err != nil {

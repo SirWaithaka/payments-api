@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	jsoniter "github.com/json-iterator/go"
+	"github.com/rs/xid"
 	"github.com/rs/zerolog"
 
 	"github.com/SirWaithaka/payments-api/clients/daraja"
@@ -18,6 +19,10 @@ import (
 	"github.com/SirWaithaka/payments-api/internal/domains/webhooks"
 	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
 	"github.com/SirWaithaka/payments-api/request"
+)
+
+const (
+	serviceName = "daraja"
 )
 
 type Status string
@@ -82,15 +87,16 @@ func webhook(baseUrl string, action string) string {
 	return u.String()
 }
 
-func NewDarajaApi(client *daraja.Client, shortcode ShortCodeConfig) DarajaApi {
-	return DarajaApi{client: client, shortcode: shortcode}
+func NewDarajaApi(client *daraja.Client, shortcode ShortCodeConfig, repo payments.RequestRepository) DarajaApi {
+	return DarajaApi{client: client, shortcode: shortcode, requestRepo: repo}
 }
 
 // DarajaApi provides an interface to the mpesa wallet
 // through the daraja platform
 type DarajaApi struct {
-	client    *daraja.Client
-	shortcode ShortCodeConfig
+	client      *daraja.Client
+	shortcode   ShortCodeConfig
+	requestRepo payments.RequestRepository
 }
 
 func (api DarajaApi) C2B(ctx context.Context, payment payments.WalletPayment) error {
@@ -117,12 +123,21 @@ func (api DarajaApi) C2B(ctx context.Context, payment payments.WalletPayment) er
 	}
 	l.Debug().Any(logger.LData, payload).Msg("request payload")
 
-	res, err := api.client.C2BExpress(ctx, payload)
-	if err != nil {
+	// initialize request recorder
+	recorder := NewRequestRecorder(api.requestRepo)
+
+	// create an instance of request and add a request recorder hook
+	requestID := xid.New().String()
+	req, out := api.client.C2BExpressRequest(payload, request.WithServiceName(serviceName))
+	req.WithContext(ctx)
+	req.Hooks.Send.PushFrontHook(recorder.RecordRequest(payment.PaymentID, requestID))
+	req.Hooks.Complete.PushFrontHook(recorder.UpdateRequestResponse(requestID))
+
+	if err := req.Send(); err != nil {
 		l.Error().Err(err).Msg("client error")
 		return err
 	}
-	l.Debug().Any(logger.LData, res).Msg("c2b response")
+	l.Debug().Any(logger.LData, out).Msg("c2b response")
 
 	return nil
 
