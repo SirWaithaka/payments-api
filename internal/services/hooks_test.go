@@ -39,11 +39,9 @@ func TestRequestRecorder_RecordRequest(t *testing.T) {
 		t.Errorf("expected nil error, got %v", err)
 	}
 
+	requestID := xid.New().String()
 	hooks := request.Hooks{}
-	hooks.Build.PushFront(func(r *request.Request) {
-		r.Config.RequestID = xid.New().String()
-	})
-	hooks.Send.PushFrontHook(recorder.RecordRequest(payment.PaymentID))
+	hooks.Send.PushFrontHook(recorder.RecordRequest(payment.PaymentID, requestID))
 
 	// make request
 	cfg := request.Config{RequestID: xid.New().String(), ServiceName: "test"}
@@ -106,13 +104,11 @@ func TestRequestRecorder_UpdateRequestResponse(t *testing.T) {
 
 	t.Run("test on a success response", func(t *testing.T) {
 
+		requestID := xid.New().String()
 		// create request hooks for
 		hooks := request.Hooks{}
-		hooks.Build.PushFront(func(r *request.Request) {
-			r.Config.RequestID = xid.New().String()
-		})
-		hooks.Send.PushFrontHook(recorder.RecordRequest(payment.PaymentID))
-		hooks.Complete.PushFrontHook(recorder.UpdateRequestResponse())
+		hooks.Send.PushFrontHook(recorder.RecordRequest(payment.PaymentID, requestID))
+		hooks.Complete.PushFrontHook(recorder.UpdateRequestResponse(requestID))
 
 		// configure the request
 		cfg := request.Config{Endpoint: server.URL, DisableSSL: true, HTTPClient: http.DefaultClient, ServiceName: "test", RequestID: xid.New().String()}
@@ -144,13 +140,11 @@ func TestRequestRecorder_UpdateRequestResponse(t *testing.T) {
 
 	t.Run("test on an error response", func(t *testing.T) {
 
+		requestID := xid.New().String()
 		// create request hooks for
 		hooks := request.Hooks{}
-		hooks.Build.PushFront(func(r *request.Request) {
-			r.Config.RequestID = xid.New().String()
-		})
-		hooks.Send.PushFrontHook(recorder.RecordRequest(payment.PaymentID))
-		hooks.Complete.PushFrontHook(recorder.UpdateRequestResponse())
+		hooks.Send.PushFrontHook(recorder.RecordRequest(payment.PaymentID, requestID))
+		hooks.Complete.PushFrontHook(recorder.UpdateRequestResponse(requestID))
 
 		// configure the request
 		cfg := request.Config{Endpoint: server.URL, DisableSSL: true, HTTPClient: http.DefaultClient, ServiceName: "test", RequestID: xid.New().String()}

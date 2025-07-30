@@ -16,11 +16,11 @@ type RequestRecorder struct {
 
 // RecordRequest hooks saves all outgoing requests before the http request is sent to the
 // external api.
-func (recorder RequestRecorder) RecordRequest(paymentID string) request.Hook {
+func (recorder RequestRecorder) RecordRequest(paymentID, requestID string) request.Hook {
 	return request.Hook{Name: "RequestRecorder.RecordRequest", Fn: func(r *request.Request) {
 
 		req := payments.Request{
-			RequestID: r.Config.RequestID,
+			RequestID: requestID,
 			PaymentID: paymentID,
 			Partner:   r.Config.ServiceName,
 			Status:    "received",
@@ -38,12 +38,12 @@ func (recorder RequestRecorder) RecordRequest(paymentID string) request.Hook {
 
 // UpdateRequestResponse updates a request record after the http request is made and a response
 // is/is not received.
-func (recorder RequestRecorder) UpdateRequestResponse() request.Hook {
+func (recorder RequestRecorder) UpdateRequestResponse(requestID string) request.Hook {
 	return request.Hook{Name: "RequestRecorder.UpdateRequestResponse", Fn: func(r *request.Request) {
 		opts := payments.OptionsUpdateRequest{}
 
 		defer func() {
-			err := recorder.repository.UpdateRequest(r.Context(), r.Config.RequestID, opts)
+			err := recorder.repository.UpdateRequest(r.Context(), requestID, opts)
 			if err != nil {
 				r.Error = err
 				return
