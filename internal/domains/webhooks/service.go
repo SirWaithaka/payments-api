@@ -11,6 +11,7 @@ import (
 	pkgevents "github.com/SirWaithaka/payments-api/internal/pkg/events"
 	"github.com/SirWaithaka/payments-api/internal/pkg/events/payloads"
 	"github.com/SirWaithaka/payments-api/internal/pkg/events/subjects"
+	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
 )
 
 func NewService(repository Repository, requestsRepo requests.Repository, paymentsRepo payments.Repository, provider requests.Provider, publisher events.Publisher) WebhookService {
@@ -60,6 +61,7 @@ func (service WebhookService) Confirm(ctx context.Context, result *requests.Webh
 // the webhook is parsed then used to update the payment.
 func (service WebhookService) Process(ctx context.Context, result *requests.WebhookResult) error {
 	l := zerolog.Ctx(ctx)
+	l.Debug().Any(logger.LData, result).Msg("processing webhook")
 
 	// get the specific client that should process the service's webhook
 	client := service.provider.GetWebhookClient(result.Service)

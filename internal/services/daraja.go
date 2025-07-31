@@ -623,6 +623,7 @@ func (processor WebhookProcessor) Process(ctx context.Context, result *requests.
 	// assign to Data field
 	result.Data = wb
 
+	// set payment update options depending on status
 	options := requests.OptionsUpdatePayment{}
 	if wb.Status == StatusFailed {
 		status := requests.StatusFailed
