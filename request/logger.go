@@ -20,6 +20,10 @@ const (
 	// LogSilent state used to disable all logging. This is the default state
 	LogSilent LogLevel = iota * 0x1000
 
+	// LogError state used to log when service requests fail
+	// to build, send, validate, or unmarshal.
+	LogError
+
 	// LogDebug state can be used for debug output to inspect requests
 	// made and responses received.
 	LogDebug
@@ -36,10 +40,6 @@ const (
 	// be retried. This should be used to log when you want to log when service
 	// requests are being retried. Will also enable LogDebug.
 	LogDebugWithRequestRetries
-
-	// LogDebugWithRequestErrors state used to log when service requests fail
-	// to build, send, validate, or unmarshal.
-	LogDebugWithRequestErrors
 )
 
 type Logger interface {
@@ -58,7 +58,7 @@ func (f LoggerFunc) Log(args ...any) {
 // use same formatting runes as the stdlib log.Logger
 func NewDefaultLogger() Logger {
 	return &defaultLogger{
-		logger: log.New(os.Stdout, "", log.LstdFlags),
+		logger: log.New(os.Stdout, "", log.LstdFlags|log.Llongfile),
 	}
 }
 

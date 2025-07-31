@@ -7,15 +7,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-playground/assert/v2"
+	"github.com/rs/xid"
+
 	"github.com/SirWaithaka/payments-api/corehooks"
 	"github.com/SirWaithaka/payments-api/request"
 )
-
-func assertEquals(t *testing.T, expected, actual any) {
-	if expected != actual {
-		t.Errorf("expected %v, got %v", expected, actual)
-	}
-}
 
 func TestAddScheme(t *testing.T) {
 	tcs := map[string]struct {
@@ -48,9 +45,7 @@ func TestAddScheme(t *testing.T) {
 	for name, tc := range tcs {
 		t.Run(name, func(t *testing.T) {
 			endpoint := corehooks.AddScheme(tc.Endpoint, tc.DisableSSL)
-			if e, v := tc.Expected, endpoint; e != v {
-				assertEquals(t, e, v)
-			}
+			assert.Equal(t, tc.Expected, endpoint)
 		})
 	}
 }
@@ -112,7 +107,7 @@ func TestSendHook(t *testing.T) {
 				}
 
 				// check response status
-				assertEquals(t, tc.ExpectedStatus, req.Response.StatusCode)
+				assert.Equal(t, tc.ExpectedStatus, req.Response.StatusCode)
 
 			})
 		}
@@ -153,7 +148,28 @@ func TestSendHook(t *testing.T) {
 			if req.Response == nil {
 				t.Errorf("expected response, got nil")
 			}
-			assertEquals(t, 0, req.Response.StatusCode)
+			assert.Equal(t, 0, req.Response.StatusCode)
 		})
 	})
+}
+
+func TestSetRequestID(t *testing.T) {
+	rid := xid.New().String()
+
+	generator := func() string {
+		return rid
+	}
+
+	// build request hooks
+	hooks := request.Hooks{}
+	hooks.Build.PushFrontHook(corehooks.SetRequestID(generator))
+	hooks.Complete.PushFront(func(r *request.Request) {
+		assert.Equal(t, rid, r.Config.RequestID)
+	})
+
+	req := request.New(request.Config{}, hooks, nil, nil, nil, nil)
+	err := req.Send()
+	if err != nil {
+		t.Errorf("expected nil error, got %v", err)
+	}
 }

@@ -1,5 +1,9 @@
 package request
 
+import (
+	"strings"
+)
+
 type (
 	Hook struct {
 		Name string
@@ -22,11 +26,11 @@ type (
 
 func (l *HookList) copy() HookList {
 	n := HookList{}
-	if len(l.list) == 0 {
+	if l.Len() == 0 {
 		return n
 	}
 
-	n.list = append(make([]Hook, 0, len(l.list)), l.list...)
+	n.list = append(make([]Hook, 0, l.Len()), l.list...)
 	return n
 }
 
@@ -59,7 +63,7 @@ func (l *HookList) PushFront(f func(*Request)) {
 
 // PushFrontHook pushes hook h to the front of the hook list
 func (l *HookList) PushFrontHook(h Hook) {
-	if cap(l.list) == len(l.list) {
+	if cap(l.list) == l.Len() {
 		// allocating a new list required
 		l.list = append([]Hook{h}, l.list...)
 	} else {
@@ -72,15 +76,15 @@ func (l *HookList) PushFrontHook(h Hook) {
 
 // Remove removes a Hook by name
 func (l *HookList) Remove(name string) {
-	for i := 0; i < len(l.list); i++ {
+	for i := 0; i < l.Len(); i++ {
 		m := l.list[i]
 		if m.Name == name {
 			// shift slice elements in place
 			copy(l.list[i:], l.list[i+1:])
 			// zero last element
-			l.list[len(l.list)-1] = Hook{}
+			l.list[l.Len()-1] = Hook{}
 			// clear last element
-			l.list = l.list[:len(l.list)-1]
+			l.list = l.list[:l.Len()-1]
 
 			i--
 		}
@@ -93,7 +97,7 @@ func (l *HookList) RemoveHook(h Hook) {
 }
 
 func (l *HookList) Swap(name string, replace Hook) {
-	for i := 0; i < len(l.list); i++ {
+	for i := 0; i < l.Len(); i++ {
 		if l.list[i].Name == name {
 			l.list[i] = replace
 		}
@@ -105,6 +109,18 @@ func (l *HookList) Run(r *Request) {
 	for _, h := range l.list {
 		h.Fn(r)
 	}
+}
+
+func (l *HookList) Debug() string {
+	hooks := make([]string, l.Len())
+	for _, h := range l.list {
+		name := h.Name
+		if name == "" {
+			name = "__anonymous"
+		}
+		hooks = append(hooks, name)
+	}
+	return strings.Join(hooks, " ")
 }
 
 // Copy returns a copy of these hooks' lists
@@ -140,4 +156,15 @@ func (h *Hooks) IsEmpty() bool {
 		return false
 	}
 	return true
+}
+
+func (h *Hooks) Debug() map[string]string {
+	hooks := make(map[string]string)
+	hooks["validate"] = h.Validate.Debug()
+	hooks["build"] = h.Build.Debug()
+	hooks["send"] = h.Send.Debug()
+	hooks["unmarshal"] = h.Unmarshal.Debug()
+	hooks["retry"] = h.Retry.Debug()
+	hooks["complete"] = h.Complete.Debug()
+	return hooks
 }
