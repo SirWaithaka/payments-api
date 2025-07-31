@@ -6,17 +6,18 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 
+	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	"github.com/SirWaithaka/payments-api/internal/domains/webhooks"
 )
 
-func NewWebhookHandlers(processor webhooks.WebhookProcessor) WebhookHandlers {
+func NewWebhookHandlers(service webhooks.Service) WebhookHandlers {
 	return WebhookHandlers{
-		webhook: processor,
+		service: service,
 	}
 }
 
 type WebhookHandlers struct {
-	webhook webhooks.WebhookProcessor
+	service webhooks.Service
 }
 
 func (handler WebhookHandlers) Daraja(c *gin.Context) {
@@ -27,7 +28,7 @@ func (handler WebhookHandlers) Daraja(c *gin.Context) {
 	action := c.Param("action")
 
 	// TODO: Make partner argument into type
-	err := handler.webhook.Process(c.Request.Context(), webhooks.NewWebhookResult("daraja", action, c.Request.Body))
+	err := handler.service.Confirm(c.Request.Context(), requests.NewWebhookResult("daraja", action, c.Request.Body))
 	if err != nil {
 		l.Warn().Err(err).Msg("error processing webhook")
 		c.String(http.StatusAccepted, "accepted")
