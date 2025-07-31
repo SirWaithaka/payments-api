@@ -9,9 +9,12 @@ import (
 	"github.com/go-playground/assert/v2"
 	"github.com/gofrs/uuid/v5"
 	"github.com/oklog/ulid/v2"
+
+	"github.com/SirWaithaka/payments-api/clients/daraja"
+	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 )
 
-func Int(v int) *int {
+func Ptr[T any](v T) *T {
 	return &v
 }
 
@@ -369,4 +372,82 @@ func TestTransactionStatusWebhookResult(t *testing.T) {
 		}
 
 	})
+}
+
+func TestWebhookProcessor_Process(t *testing.T) {
+	expressSuccessBody := `{"Body":{"stkCallback":{"MerchantRequestID":"%s","CheckoutRequestID":"ws_CO_02072024204225888790902376","ResultCode":%d,"ResultDesc":"The service request is processed successfully.","CallbackMetadata":{"Item":[{"Name":"Amount","Value":100},{"Name":"MpesaReceiptNumber","Value":"%s"},{"Name":"Balance"},{"Name":"TransactionDate","Value":20240702204236},{"Name":"PhoneNumber","Value":254790902376}]}}}}`
+	expressFailedBody := `{"Body":{"stkCallback":{"MerchantRequestID":"%s","CheckoutRequestID":"ws_CO_02072024204225888790902376","ResultCode":%d,"ResultDesc":"The service request is processed successfully."}}}`
+	b2cSuccessBody := `{"Result":{"ResultType":0,"ResultCode":%d,"ResultDesc":"The service request is processed successfully.","OriginatorConversationID":"%s","ConversationID":"AG_20240703_204072a2b81ca27558c6","TransactionID":"SG31FWI0VP","ResultParameters":{"ResultParameter":[{"Key":"TransactionAmount","Value":100},{"Key":"TransactionReceipt","Value":"%s"},{"Key":"ReceiverPartyPublicName","Value":""},{"Key":"TransactionCompletedDateTime","Value":"03.07.2024 14:30:21"},{"Key":"B2CUtilityAccountAvailableFunds","Value":4905135},{"Key":"B2CWorkingAccountAvailableFunds","Value":0},{"Key":"B2CRecipientIsRegisteredCustomer","Value":"Y"},{"Key":"B2CChargesPaidAccountAvailableFunds","Value":0}]},"ReferenceData":{"ReferenceItem":{"Key":"QueueTimeoutURL","Value":"http://internalapi.safaricom.co.ke/mpesa/b2cresults/v1/submit"}}}}`
+	b2cFailedBody := `{"Result":{"ResultType":0,"ResultCode":%d,"ResultDesc":"The service request is processed successfully.","OriginatorConversationID":"%s","ConversationID":"AG_20240703_204072a2b81ca27558c6","TransactionID":"SG31FWI0VP","ReferenceData":{"ReferenceItem":{"Key":"QueueTimeoutURL","Value":"http://internalapi.safaricom.co.ke/mpesa/b2cresults/v1/submit"}}}}`
+	b2bSuccessBody := `{"Result":{"ResultType":0,"ResultCode":%d,"ResultDesc":"The service request is processed successfully.","OriginatorConversationID":"%s","ConversationID":"AG_20240903_20100d107ffe523be186","TransactionID":"%s","ResultParameters":{"ResultParameter":[{"Key":"Currency","Value":"KES"},{"Key":"ReceiverPartyPublicName","Value":""},{"Key":"DebitPartyCharges"},{"Key":"TransCompletedTime","Value":20240903093417},{"Key":"DebitPartyAffectedAccountBalance","Value":"Working Account|KES|199979.00|199979.00|0.00|0.00"},{"Key":"Amount","Value":100},{"Key":"DebitAccountCurrentBalance","Value":"{Amount={CurrencyCode=KES, MinimumAmount=19997900, BasicAmount=199979.00}}"},{"Key":"InitiatorAccountCurrentBalance","Value":"{Amount={CurrencyCode=KES, MinimumAmount=19997900, BasicAmount=199979.00}}"}]},"ReferenceData":{"ReferenceItem":[{"Key":"BillReferenceNumber","Value":1},{"Key":"QueueTimeoutURL","Value":"https://internalsandbox"}]}}}`
+	b2bFailedBody := `{"Result":{"ResultType":0,"ResultCode":%d,"ResultDesc":"The service request is processed successfully.","OriginatorConversationID":"%s","ConversationID":"AG_20240703_204072a2b81ca27558c6","TransactionID":"SG31FWI0VP","ReferenceData":{"ReferenceItem":[{"Key":"QueueTimeoutURL","Value":"http://internalapi.safaricom.co.ke/mpesa/b2bresults/v1/submit"}]}}}`
+	transactionStatusSuccessBody := `{"Result":{"ResultType":0,"ResultCode":%d,"ResultDesc":"The service request is processed successfully.","OriginatorConversationID":"9f6c92024b39880271","ConversationID":"AG_20240702_20303738b089a9fb5233","TransactionID":"SG20000000","ResultParameters":{"ResultParameter":[{"Key":"DebitPartyName","Value":""},{"Key":"CreditPartyName","Value":"000000 - agg"},{"Key":"OriginatorConversationID","Value":"%s"},{"Key":"InitiatedTime","Value":20250415083421},{"Key":"CreditPartyCharges"},{"Key":"DebitAccountType","Value":"MMF Account For Customer"},{"Key":"TransactionReason"},{"Key":"ReasonType","Value":"Pay Bill Online"},{"Key":"TransactionStatus","Value":"Completed"},{"Key":"FinalisedTime","Value":20240629184302},{"Key":"Amount","Value":100},{"Key":"ConversationID","Value":"AG_20240629_2040165691b903e92930"},{"Key":"ReceiptNo","Value":"%s"}]},"ReferenceData":{"ReferenceItem":{"Key":"Occasion","Value":"OK"}}}}`
+	transactionStatusFailedBody := `{"Result":{"ResultType":0,"ResultCode":%d,"ResultDesc":"The service request is processed successfully.","OriginatorConversationID":"9f6c92024b39880271","ConversationID":"AG_20240702_20303738b089a9fb5233","TransactionID":"SG20000000","ResultParameters":{"ResultParameter":[{"Key":"DebitPartyName","Value":""},{"Key":"CreditPartyName","Value":"000000 - agg"},{"Key":"OriginatorConversationID","Value":"%s"},{"Key":"InitiatedTime","Value":20250415083421},{"Key":"CreditPartyCharges"},{"Key":"DebitAccountType","Value":"MMF Account For Customer"},{"Key":"TransactionReason"},{"Key":"ReasonType","Value":"Pay Bill Online"},{"Key":"TransactionStatus","Value":"%s"},{"Key":"FinalisedTime","Value":20240629184302},{"Key":"Amount","Value":100},{"Key":"ConversationID","Value":"AG_20240629_2040165691b903e92930"},{"Key":"ReceiptNo","Value":"%s"}]},"ReferenceData":{"ReferenceItem":{"Key":"Occasion","Value":"OK"}}}}`
+	//transactionStatusFailedBody := `{"Result":{"ResultType":0,"ResultCode":%d,"ResultDesc":"The service request is processed successfully.","OriginatorConversationID":"%s","ConversationID":"AG_20240702_20303738b089a9fb5233","TransactionID":"SG20000000","ReferenceData":{"ReferenceItem":{"Key":"Occasion","Value":"OK"}}}}`
+
+	paymentRef := ulid.Make().String()
+	externalID := ulid.Make().String()
+
+	testcases := []struct {
+		name     string
+		input    *requests.WebhookResult
+		expected requests.OptionsUpdatePayment
+	}{
+		{
+			name:     "test a successful daraja express webhook",
+			input:    requests.NewWebhookResult("test", daraja.OperationC2BExpress, strings.NewReader(fmt.Sprintf(expressSuccessBody, externalID, daraja.ResultCodeSuccess, paymentRef))),
+			expected: requests.OptionsUpdatePayment{PaymentReference: &paymentRef, Status: Ptr(requests.StatusSucceeded)},
+		},
+		{
+			name:     "test a failed daraja express webhook",
+			input:    requests.NewWebhookResult("test", daraja.OperationC2BExpress, strings.NewReader(fmt.Sprintf(expressFailedBody, externalID, daraja.ResultCodeCancelledRequest))),
+			expected: requests.OptionsUpdatePayment{Status: Ptr(requests.StatusFailed)},
+		},
+		{
+			name:     "test a successful daraja b2c webhook",
+			input:    requests.NewWebhookResult("test", daraja.OperationB2C, strings.NewReader(fmt.Sprintf(b2cSuccessBody, daraja.ResultCodeSuccess, externalID, paymentRef))),
+			expected: requests.OptionsUpdatePayment{PaymentReference: &paymentRef, Status: Ptr(requests.StatusSucceeded)},
+		},
+		{
+			name:     "test a failed daraja b2c webhook",
+			input:    requests.NewWebhookResult("test", daraja.OperationB2C, strings.NewReader(fmt.Sprintf(b2cFailedBody, daraja.ResultCodeCancelledRequest, externalID))),
+			expected: requests.OptionsUpdatePayment{Status: Ptr(requests.StatusFailed)},
+		},
+		{
+			name:     "test a successful daraja b2b webhook",
+			input:    requests.NewWebhookResult("test", daraja.OperationB2B, strings.NewReader(fmt.Sprintf(b2bSuccessBody, daraja.ResultCodeSuccess, externalID, paymentRef))),
+			expected: requests.OptionsUpdatePayment{PaymentReference: &paymentRef, Status: Ptr(requests.StatusSucceeded)},
+		},
+		{
+			name:     "test a failed daraja b2b webhook",
+			input:    requests.NewWebhookResult("test", daraja.OperationB2B, strings.NewReader(fmt.Sprintf(b2bFailedBody, daraja.ResultCodeCancelledRequest, externalID))),
+			expected: requests.OptionsUpdatePayment{Status: Ptr(requests.StatusFailed)},
+		},
+		{
+			name:     "test a successful daraja transaction status webhook",
+			input:    requests.NewWebhookResult("test", daraja.OperationTransactionStatus, strings.NewReader(fmt.Sprintf(transactionStatusSuccessBody, daraja.ResultCodeSuccess, externalID, paymentRef))),
+			expected: requests.OptionsUpdatePayment{PaymentReference: &paymentRef, Status: Ptr(requests.StatusSucceeded)},
+		},
+		{
+			name:     "test a failed daraja transaction status webhook",
+			input:    requests.NewWebhookResult("test", daraja.OperationTransactionStatus, strings.NewReader(fmt.Sprintf(transactionStatusFailedBody, daraja.ResultCodeSuccess, externalID, StatusFailed, paymentRef))),
+			expected: requests.OptionsUpdatePayment{Status: Ptr(requests.StatusFailed)},
+		},
+	}
+
+	processor := NewWebhookProcessor()
+
+	for _, tc := range testcases {
+
+		t.Run(tc.name, func(t *testing.T) {
+			opts, err := processor.Process(t.Context(), tc.input)
+			if err != nil {
+				t.Errorf("expected nil error, got %v", err)
+			}
+
+			assert.Equal(t, tc.expected, opts)
+
+		})
+	}
+
 }

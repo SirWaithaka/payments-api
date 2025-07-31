@@ -55,7 +55,7 @@ func (provider Provider) GetWalletApi(request payments.WalletPayment) payments.W
 func (provider Provider) GetWebhookClient(service string) requests.WebhookProcessor {
 	switch service {
 	case "daraja":
-		return NewWebhookProcessor(provider.webhooksRepo)
+		return NewWebhookProcessor()
 	default:
 		return nil
 	}

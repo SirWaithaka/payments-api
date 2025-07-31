@@ -17,7 +17,6 @@ import (
 	"github.com/SirWaithaka/payments-api/clients/daraja"
 	"github.com/SirWaithaka/payments-api/internal/domains/payments"
 	"github.com/SirWaithaka/payments-api/internal/domains/requests"
-	"github.com/SirWaithaka/payments-api/internal/domains/webhooks"
 	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
 	"github.com/SirWaithaka/payments-api/request"
 )
@@ -546,6 +545,8 @@ func transactionStatusWebhookResult(body io.Reader) (WebhookResult, error) {
 	wb.ConversationID = searchResult.Result.ConversationID
 
 	// check if result code is success
+	// unlike other webhooks, non-success result code does not mean the payment
+	// request failed.
 	if searchResult.Result.ResultCode != daraja.ResultCodeSuccess {
 		return wb, nil
 	}
@@ -584,14 +585,13 @@ func transactionStatusWebhookResult(body io.Reader) (WebhookResult, error) {
 	return wb, nil
 }
 
-func NewWebhookProcessor(repo webhooks.Repository) WebhookProcessor {
-	return WebhookProcessor{repo}
+func NewWebhookProcessor() WebhookProcessor {
+	return WebhookProcessor{}
 }
 
-type WebhookProcessor struct {
-	repository webhooks.Repository
-}
+type WebhookProcessor struct{}
 
+// Process takes in the webhook data as io.Reader, parses into a struct and sets the requests.WebhookResult Data field
 func (processor WebhookProcessor) Process(ctx context.Context, result *requests.WebhookResult) (requests.OptionsUpdatePayment, error) {
 	l := zerolog.Ctx(ctx)
 
@@ -618,6 +618,7 @@ func (processor WebhookProcessor) Process(ctx context.Context, result *requests.
 		l.Error().Err(err).Msg("error processing webhook")
 		return requests.OptionsUpdatePayment{}, err
 	}
+	l.Debug().Any(logger.LData, wb).Msg("webhook result")
 
 	// assign to Data field
 	result.Data = wb
