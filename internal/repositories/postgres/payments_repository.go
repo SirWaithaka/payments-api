@@ -8,7 +8,7 @@ import (
 	"github.com/rs/zerolog"
 	"gorm.io/gorm"
 
-	"github.com/SirWaithaka/payments-api/internal/domains/payments"
+	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
 )
 
@@ -37,20 +37,27 @@ func (PaymentSchema) TableName() string {
 	return "payment_requests"
 }
 
-func (schema PaymentSchema) ToEntity() payments.Payment {
+func (schema PaymentSchema) ToEntity() requests.Payment {
 	// TODO: Revisit these fields
-	return payments.Payment{
+	payment := requests.Payment{
 		BankCode:                 schema.Bank,
 		PaymentID:                schema.PaymentID,
 		ClientTransactionID:      schema.ClientTransactionID,
 		IdempotencyID:            schema.IdempotencyID,
-		PaymentReference:         *schema.PaymentReference,
 		SourceAccountNumber:      schema.SourceAccountNumber,
 		DestinationAccountNumber: schema.DestinationAccountNumber,
 		Beneficiary:              schema.BeneficiaryAccountNumber,
 		Amount:                   schema.Amount,
 		Description:              schema.Description,
+		Status:                   schema.Status,
 	}
+
+	// check if pointer values are nil
+	if schema.PaymentReference != nil {
+		payment.PaymentReference = *schema.PaymentReference
+	}
+
+	return payment
 }
 
 func (schema *PaymentSchema) BeforeCreate(tx *gorm.DB) (err error) {
@@ -67,7 +74,7 @@ func (schema *PaymentSchema) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
 
-func (schema *PaymentSchema) FindOptions(opts payments.OptionsFindOnePayment) {
+func (schema *PaymentSchema) FindOptions(opts requests.OptionsFindOnePayment) {
 	// configure find options
 	if opts.PaymentID != nil {
 		schema.PaymentID = *opts.PaymentID
@@ -75,8 +82,8 @@ func (schema *PaymentSchema) FindOptions(opts payments.OptionsFindOnePayment) {
 	if opts.IdempotencyID != nil {
 		schema.IdempotencyID = *opts.IdempotencyID
 	}
-	if opts.TransactionID != nil {
-		schema.ClientTransactionID = *opts.TransactionID
+	if opts.ClientTransactionID != nil {
+		schema.ClientTransactionID = *opts.ClientTransactionID
 	}
 	if opts.PaymentReference != nil {
 		schema.PaymentReference = opts.PaymentReference
@@ -91,7 +98,7 @@ type PaymentsRepository struct {
 	db *gorm.DB
 }
 
-func (repo PaymentsRepository) AddPayment(ctx context.Context, payment payments.Payment) error {
+func (repo PaymentsRepository) AddPayment(ctx context.Context, payment requests.Payment) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Any(logger.LData, payment).Msg("saving payment")
 
@@ -123,7 +130,7 @@ func (repo PaymentsRepository) AddPayment(ctx context.Context, payment payments.
 	return nil
 }
 
-func (repo PaymentsRepository) FindOnePayment(ctx context.Context, opts payments.OptionsFindOnePayment) (payments.Payment, error) {
+func (repo PaymentsRepository) FindOnePayment(ctx context.Context, opts requests.OptionsFindOnePayment) (requests.Payment, error) {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Any(logger.LData, opts).Msg("find options")
 
@@ -136,9 +143,34 @@ func (repo PaymentsRepository) FindOnePayment(ctx context.Context, opts payments
 	result := repo.db.WithContext(ctx).Where(where).First(&record)
 	if err := result.Error; err != nil {
 		l.Error().Err(err).Msg("error fetching record")
-		return payments.Payment{}, Error{Err: err}
+		return requests.Payment{}, Error{Err: err}
 	}
 	l.Info().Any(logger.LData, record).Msg("fetched record")
 
 	return record.ToEntity(), nil
+}
+
+func (repo PaymentsRepository) UpdatePayment(ctx context.Context, id string, opts requests.OptionsUpdatePayment) error {
+	l := zerolog.Ctx(ctx)
+	l.Debug().Any(logger.LData, opts).Msg("updating payment")
+
+	values := PaymentSchema{}
+	if opts.Status != nil {
+		values.Status = string(*opts.Status)
+	}
+	if opts.PaymentReference != nil {
+		values.PaymentReference = opts.PaymentReference
+	}
+
+	result := repo.db.WithContext(ctx).
+		Where(PaymentSchema{PaymentID: id}).
+		Updates(values)
+
+	if err := result.Error; err != nil {
+		l.Error().Err(err).Msg("error updating record")
+		return Error{Err: err}
+	}
+	l.Info().Msg("record updated")
+
+	return nil
 }

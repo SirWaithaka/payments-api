@@ -9,7 +9,7 @@ import (
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 
-	"github.com/SirWaithaka/payments-api/internal/domains/payments"
+	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
 )
 
@@ -54,8 +54,8 @@ func (schema *RequestSchema) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
 
-func (schema RequestSchema) ToEntity() payments.Request {
-	request := payments.Request{
+func (schema RequestSchema) ToEntity() requests.Request {
+	request := requests.Request{
 		RequestID: schema.RequestID,
 		Partner:   schema.Partner,
 		Latency:   time.Duration(schema.Latency) * time.Millisecond,
@@ -96,7 +96,7 @@ type RequestRepository struct {
 	db *gorm.DB
 }
 
-func (repository RequestRepository) Add(ctx context.Context, req payments.Request) error {
+func (repository RequestRepository) Add(ctx context.Context, req requests.Request) error {
 	l := zerolog.Ctx(ctx)
 	l.Info().Interface(logger.LData, req).Msg("saving api request ...")
 
@@ -120,7 +120,7 @@ func (repository RequestRepository) Add(ctx context.Context, req payments.Reques
 	return nil
 }
 
-func (repository RequestRepository) FindOneRequest(ctx context.Context, opts payments.OptionsFindOneRequest) (payments.Request, error) {
+func (repository RequestRepository) FindOneRequest(ctx context.Context, opts requests.OptionsFindOneRequest) (requests.Request, error) {
 	l := zerolog.Ctx(ctx)
 	l.Info().Any(logger.LData, opts).Msg("fetch payment request by reference")
 
@@ -141,7 +141,7 @@ func (repository RequestRepository) FindOneRequest(ctx context.Context, opts pay
 		Order("created_at desc")
 	if err := result.Error; err != nil {
 		l.Error().Err(err).Msg("error fetching record")
-		return payments.Request{}, Error{Err: err}
+		return requests.Request{}, Error{Err: err}
 	}
 	l.Info().Any(logger.LData, record).Msg("record fetched")
 
@@ -149,7 +149,7 @@ func (repository RequestRepository) FindOneRequest(ctx context.Context, opts pay
 
 }
 
-func (repository RequestRepository) UpdateRequest(ctx context.Context, id string, opts payments.OptionsUpdateRequest) error {
+func (repository RequestRepository) UpdateRequest(ctx context.Context, id string, opts requests.OptionsUpdateRequest) error {
 	l := zerolog.Ctx(ctx)
 	l.Info().Msg("updating api request")
 

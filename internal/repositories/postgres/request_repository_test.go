@@ -10,12 +10,12 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/oklog/ulid/v2"
 
-	"github.com/SirWaithaka/payments-api/internal/domains/payments"
+	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	"github.com/SirWaithaka/payments-api/internal/repositories/postgres"
 	"github.com/SirWaithaka/payments-api/internal/testdata"
 )
 
-func StringPtr(s string) *string {
+func Ptr[T any](s T) *T {
 	return &s
 }
 
@@ -35,7 +35,7 @@ func TestRequestRepository_AddRequest(t *testing.T) {
 
 		repo := postgres.NewRequestRepository(inf.Storage.PG)
 
-		record := payments.Request{
+		record := requests.Request{
 			RequestID: ulid.Make().String(),
 			Status:    "success",
 			Partner:   "test",
@@ -59,7 +59,7 @@ func TestRequestRepository_AddRequest(t *testing.T) {
 
 		repo := postgres.NewRequestRepository(inf.Storage.PG)
 
-		record := payments.Request{
+		record := requests.Request{
 			RequestID: ulid.Make().String(),
 			Response:  response,
 		}
@@ -83,21 +83,21 @@ func TestRequestRepository_AddRequest(t *testing.T) {
 
 func TestRequestRepository_FindOneRequest(t *testing.T) {
 	ctx := context.Background()
-	t.Cleanup(func() { testdata.ResetTables(inf) })
 
 	paymentsRepo := postgres.NewPaymentsRepository(inf.Storage.PG)
 	repo := postgres.NewRequestRepository(inf.Storage.PG)
 
 	t.Run("test that it appends payment details to api request", func(t *testing.T) {
+		defer testdata.ResetTables(inf)
 
-		record := payments.Payment{
+		record := requests.Payment{
 			PaymentID:           ulid.Make().String(),
 			PaymentReference:    ulid.Make().String(),
 			ClientTransactionID: ulid.Make().String(),
 			IdempotencyID:       ulid.Make().String(),
 		}
 
-		apiRequest := payments.Request{
+		apiRequest := requests.Request{
 			RequestID:  ulid.Make().String(),
 			ExternalID: ulid.Make().String(),
 			Partner:    "fake_partner",
@@ -118,7 +118,7 @@ func TestRequestRepository_FindOneRequest(t *testing.T) {
 		}
 
 		// now test the find
-		request, err := repo.FindOneRequest(ctx, payments.OptionsFindOneRequest{RequestID: &apiRequest.RequestID})
+		request, err := repo.FindOneRequest(ctx, requests.OptionsFindOneRequest{RequestID: &apiRequest.RequestID})
 		if err != nil {
 			t.Errorf("expected nil error, got %v", err)
 		}
@@ -132,6 +132,32 @@ func TestRequestRepository_FindOneRequest(t *testing.T) {
 		}
 
 	})
+
+	t.Run("test that it finds by external id", func(t *testing.T) {
+		defer testdata.ResetTables(inf)
+
+		apiRequest := requests.Request{
+			RequestID:  ulid.Make().String(),
+			ExternalID: ulid.Make().String(),
+			Partner:    "fake_partner",
+			Status:     "received",
+			Latency:    1000,
+			Response:   nil,
+		}
+		err := repo.Add(ctx, apiRequest)
+		if err != nil {
+			t.Errorf("expected nil error, got %v", err)
+		}
+
+		req, err := repo.FindOneRequest(t.Context(), requests.OptionsFindOneRequest{ExternalID: &apiRequest.ExternalID})
+		if err != nil {
+			t.Errorf("expected nil error, got %v", err)
+		}
+
+		assert.Equal(t, apiRequest.RequestID, req.RequestID)
+		assert.Equal(t, apiRequest.ExternalID, req.ExternalID)
+
+	})
 }
 
 func TestRequestRepository_UpdateRequest(t *testing.T) {
@@ -142,33 +168,33 @@ func TestRequestRepository_UpdateRequest(t *testing.T) {
 
 	testcases := []struct {
 		name  string
-		input payments.OptionsUpdateRequest
+		input requests.OptionsUpdateRequest
 	}{
 		{
 			name: "test all values provided",
-			input: payments.OptionsUpdateRequest{
-				ExternalID: StringPtr(ulid.Make().String()),
-				Status:     StringPtr("status"),
+			input: requests.OptionsUpdateRequest{
+				ExternalID: Ptr(ulid.Make().String()),
+				Status:     Ptr("status"),
 				Response:   map[string]any{"key": "value"},
 			},
 		},
 		{
 			name:  "test externalID provided",
-			input: payments.OptionsUpdateRequest{ExternalID: StringPtr(ulid.Make().String())},
+			input: requests.OptionsUpdateRequest{ExternalID: Ptr(ulid.Make().String())},
 		},
 		{
 			name:  "test status provided",
-			input: payments.OptionsUpdateRequest{Status: StringPtr("status")},
+			input: requests.OptionsUpdateRequest{Status: Ptr("status")},
 		},
 		{
 			name: "test response provided",
-			input: payments.OptionsUpdateRequest{
+			input: requests.OptionsUpdateRequest{
 				Response: map[string]any{"key": "value"},
 			},
 		},
 		{
 			name: "test response map with multiple keys",
-			input: payments.OptionsUpdateRequest{
+			input: requests.OptionsUpdateRequest{
 				Response: map[string]any{
 					"key1": "value1",
 					"key2": "value2",
@@ -178,7 +204,7 @@ func TestRequestRepository_UpdateRequest(t *testing.T) {
 		},
 		{
 			name: "test response map with nested values",
-			input: payments.OptionsUpdateRequest{
+			input: requests.OptionsUpdateRequest{
 				Response: map[string]any{
 					"key": map[string]any{
 						"nested": "value",
@@ -192,7 +218,7 @@ func TestRequestRepository_UpdateRequest(t *testing.T) {
 
 		t.Run(tc.name, func(t *testing.T) {
 			// create and save a request record
-			req := payments.Request{
+			req := requests.Request{
 				RequestID: ulid.Make().String(),
 				Partner:   "daraja",
 			}
