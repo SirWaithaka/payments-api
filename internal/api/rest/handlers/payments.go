@@ -29,13 +29,13 @@ func (handler PaymentHandlers) Charge(c *gin.Context) {
 	}
 
 	payment, err := handler.service.Charge(c.Request.Context(), payments.WalletPayment{
-		Type:                  "CHARGE",
-		BankCode:              params.BankCode,
-		ExternalAccountNumber: params.ExternalAccountID,
-		Amount:                params.Amount,
-		Description:           params.Description,
-		TransactionID:         params.TransactionID,
-		IdempotencyID:         params.IdempotencyID,
+		Type:                     "CHARGE",
+		BankCode:                 params.BankCode,
+		DestinationAccountNumber: params.ExternalAccountID,
+		Amount:                   params.Amount,
+		Description:              params.Description,
+		ClientTransactionID:      params.TransactionID,
+		IdempotencyID:            params.IdempotencyID,
 	})
 	if err != nil {
 		err = c.Error(err)
@@ -57,13 +57,13 @@ func (handler PaymentHandlers) Payout(c *gin.Context) {
 	}
 
 	payment, err := handler.service.Payout(c.Request.Context(), payments.WalletPayment{
-		Type:                  "PAYOUT",
-		BankCode:              params.BankCode,
-		TransactionID:         params.TransactionID,
-		IdempotencyID:         params.IdempotencyID,
-		Amount:                params.Amount,
-		Description:           params.Description,
-		ExternalAccountNumber: params.ExternalAccountID,
+		Type:                     "PAYOUT",
+		BankCode:                 params.BankCode,
+		ClientTransactionID:      params.TransactionID,
+		IdempotencyID:            params.IdempotencyID,
+		Amount:                   params.Amount,
+		Description:              params.Description,
+		DestinationAccountNumber: params.ExternalAccountID,
 	})
 	if err != nil {
 		err = c.Error(err)
