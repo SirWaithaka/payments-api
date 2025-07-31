@@ -15,7 +15,7 @@ type DI struct {
 	Publisher events.Publisher
 
 	Wallets payments.WalletService
-	Webhook webhooks.WebhookProcessor
+	Webhook webhooks.Service
 }
 
 func New(cfg config.Config, db *storage.Database, pub events.Publisher) *DI {
@@ -26,7 +26,7 @@ func New(cfg config.Config, db *storage.Database, pub events.Publisher) *DI {
 	apiProvider := services.NewProvider(requestsRepository, webhooksRepository)
 
 	walletsService := payments.NewWalletService(apiProvider, paymentsRepository)
-	webhooksService := webhooks.NewProcessor(apiProvider, pub)
+	webhooksService := webhooks.NewService(webhooksRepository, requestsRepository, paymentsRepository, apiProvider, pub)
 
 	return &DI{
 		Cfg:       &cfg,
