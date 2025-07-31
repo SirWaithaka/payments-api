@@ -13,6 +13,7 @@ import (
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
+	"github.com/rs/xid"
 
 	"github.com/SirWaithaka/payments-api/request"
 )
@@ -35,7 +36,7 @@ func DefaultHooks() request.Hooks {
 
 // SetBasicAuth modifies the http.Request headers and adds basic auth credentials
 func SetBasicAuth(username, password string) request.Hook {
-	return request.Hook{Fn: func(r *request.Request) {
+	return request.Hook{Name: "core.BasicAuth", Fn: func(r *request.Request) {
 		r.Request.SetBasicAuth(username, password)
 	}}
 }
@@ -57,13 +58,13 @@ func AddScheme(endpoint string, disableSSL bool) string {
 	return endpoint
 }
 
-var ResolveEndpoint = request.Hook{Fn: func(r *request.Request) {
+var ResolveEndpoint = request.Hook{Name: "core.ResolveEndpoint", Fn: func(r *request.Request) {
 	r.Config.Endpoint = AddScheme(r.Config.Endpoint, r.Config.DisableSSL)
 }}
 
 // EncodeRequestBody converts the value in r.Params into an io reader and adds it
 // to the http.Request instance
-var EncodeRequestBody = request.Hook{Fn: func(r *request.Request) {
+var EncodeRequestBody = request.Hook{Name: "core.EncodeRequestBody", Fn: func(r *request.Request) {
 	if r.Params == nil {
 		return
 	}
@@ -81,7 +82,7 @@ var EncodeRequestBody = request.Hook{Fn: func(r *request.Request) {
 
 var reStatusCode = regexp.MustCompile(`^(\d{3})`)
 
-var SendHook = request.Hook{Fn: func(r *request.Request) {
+var SendHook = request.Hook{Name: "core.Send", Fn: func(r *request.Request) {
 	sender := sendFollowRedirects
 	if r.Config.DisableFollowRedirects {
 		sender = sendWithoutFollowRedirects
@@ -210,7 +211,7 @@ func (r RetryHook) nextDelay(cfg request.RetryConfig) time.Duration {
 }
 
 func (r *RetryHook) Retry() request.Hook {
-	return request.Hook{Fn: func(req *request.Request) {
+	return request.Hook{Name: "core.Retry", Fn: func(req *request.Request) {
 		// increment retry count
 		req.RetryConfig.RetryCount += 1
 
@@ -240,14 +241,14 @@ func (r *RetryHook) Retry() request.Hook {
 
 // Close stops the timer. Call close as a complete hook to ensure the timer is stopped.
 func (r *RetryHook) Close() request.Hook {
-	return request.Hook{Fn: func(_ *request.Request) {
+	return request.Hook{Name: "core.RetryClose", Fn: func(_ *request.Request) {
 		r.timer.Stop()
 	}}
 }
 
 // LogHTTPRequest is a hook to log the HTTP request sent to a service. If log level
 // matches request.LogDebugWithHTTPBody, the request body will be included.
-var LogHTTPRequest = request.Hook{Fn: logRequest}
+var LogHTTPRequest = request.Hook{Name: "core.LogHTTPRequest", Fn: logRequest}
 
 func logRequest(r *request.Request) {
 	if !r.Config.LogLevel.AtLeast(request.LogDebug) || r.Config.Logger == nil {
@@ -265,4 +266,16 @@ func logRequest(r *request.Request) {
 	r.Config.Logger.Log(fmt.Sprintf("DEBUG: %s, %s",
 		r.Operation.Name, string(b)))
 
+}
+
+// SetRequestID will set a default request id to the request if no id generator
+// function is given
+func SetRequestID(fn ...func() string) request.Hook {
+	return request.Hook{Name: "core.SetRequestID", Fn: func(r *request.Request) {
+		if len(fn) == 0 {
+			r.Config.RequestID = xid.New().String()
+			return
+		}
+		r.Config.RequestID = fn[0]()
+	}}
 }
