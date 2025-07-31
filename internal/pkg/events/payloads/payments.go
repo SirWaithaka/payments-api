@@ -15,6 +15,16 @@ type PaymentCompleted struct {
 	}
 }
 
+type PaymentStatusUpdated struct {
+	PaymentID           string `json:"payment_id"`
+	ClientTransactionID string `json:"client_transaction_id"`
+	IdempotencyID       string `json:"idempotency_id"`
+	Status              string `json:"status"`
+	Amount              string `json:"amount"`
+	Description         string `json:"description"`
+	PaymentReference    string `json:"payment_reference"`
+}
+
 // WebhookReceived payload for received webhook requests
 type WebhookReceived[T any] struct {
 	Content T `json:"content"`
