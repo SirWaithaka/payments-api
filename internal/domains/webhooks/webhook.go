@@ -23,4 +23,5 @@ type Repository interface {
 
 type Service interface {
 	Confirm(ctx context.Context, result *requests.WebhookResult) error
+	Process(ctx context.Context, result *requests.WebhookResult) error
 }
