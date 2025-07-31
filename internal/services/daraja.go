@@ -16,6 +16,7 @@ import (
 
 	"github.com/SirWaithaka/payments-api/clients/daraja"
 	"github.com/SirWaithaka/payments-api/internal/domains/payments"
+	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	"github.com/SirWaithaka/payments-api/internal/domains/webhooks"
 	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
 	"github.com/SirWaithaka/payments-api/request"
@@ -45,6 +46,36 @@ func ToStatus(status string) Status {
 	}
 }
 
+// RESPONSE MODELS
+
+type ResponseDefault daraja.ResponseDefault
+
+func (response ResponseDefault) ExternalID() string { return response.OriginatorConversationID }
+
+type ResponseC2BExpressQuery daraja.ResponseC2BExpressQuery
+
+func (response ResponseC2BExpressQuery) ExternalID() string {
+	return response.MerchantRequestID
+}
+
+type ResponseC2BExpress daraja.ResponseC2BExpress
+
+func (response ResponseC2BExpress) ExternalID() string {
+	return response.MerchantRequestID
+}
+
+type ResponseOrgNameCheck daraja.ResponseOrgInfoQuery
+
+func (response ResponseOrgNameCheck) ExternalID() string {
+	return response.ConversationID
+}
+
+type OrgNameCheckResponse daraja.ResponseOrgInfoQuery
+
+func (response OrgNameCheckResponse) ExternalID() string {
+	return response.ConversationID
+}
+
 // WEBHOOK REQUEST MODELS
 
 type PaymentAttributes struct {
@@ -67,6 +98,10 @@ type WebhookResult struct {
 	Attributes     any               `json:"attributes"`
 }
 
+func (result WebhookResult) ExternalID() string {
+	return result.ConversationID
+}
+
 // adds action to the path of base url
 // https://<baseurl>/:action
 func webhook(baseUrl string, action string) string {
@@ -87,7 +122,7 @@ func webhook(baseUrl string, action string) string {
 	return u.String()
 }
 
-func NewDarajaApi(client *daraja.Client, shortcode ShortCodeConfig, repo payments.RequestRepository) DarajaApi {
+func NewDarajaApi(client *daraja.Client, shortcode ShortCodeConfig, repo requests.Repository) DarajaApi {
 	return DarajaApi{client: client, shortcode: shortcode, requestRepo: repo}
 }
 
@@ -96,7 +131,7 @@ func NewDarajaApi(client *daraja.Client, shortcode ShortCodeConfig, repo payment
 type DarajaApi struct {
 	client      *daraja.Client
 	shortcode   ShortCodeConfig
-	requestRepo payments.RequestRepository
+	requestRepo requests.Repository
 }
 
 func (api DarajaApi) C2B(ctx context.Context, payment payments.WalletPayment) error {
@@ -113,11 +148,11 @@ func (api DarajaApi) C2B(ctx context.Context, payment payments.WalletPayment) er
 		Timestamp:         timestamp,
 		TransactionType:   daraja.TypeCustomerPayBillOnline,
 		Amount:            payment.Amount,
-		PartyA:            payment.ExternalAccountNumber,
+		PartyA:            payment.DestinationAccountNumber,
 		PartyB:            api.shortcode.ShortCode,
-		PhoneNumber:       payment.ExternalAccountNumber,
+		PhoneNumber:       payment.DestinationAccountNumber,
 		CallBackURL:       webhook(api.shortcode.CallbackURL, daraja.OperationC2BExpress),
-		AccountReference:  payment.TransactionID,
+		AccountReference:  payment.ClientTransactionID,
 		TransactionDesc:   payment.Description,
 		//TransactionDesc:   fmt.Sprintf("C2B REF %s ID %s", payment.TransactionID, payment.PaymentID),
 	}
@@ -128,8 +163,10 @@ func (api DarajaApi) C2B(ctx context.Context, payment payments.WalletPayment) er
 
 	// create an instance of request and add a request recorder hook
 	requestID := xid.New().String()
-	req, out := api.client.C2BExpressRequest(payload, request.WithServiceName(serviceName))
+	out := &ResponseC2BExpress{}
+	req, _ := api.client.C2BExpressRequest(payload, request.WithServiceName(serviceName))
 	req.WithContext(ctx)
+	req.Data = out
 	req.Hooks.Send.PushFrontHook(recorder.RecordRequest(payment.PaymentID, requestID))
 	req.Hooks.Complete.PushFrontHook(recorder.UpdateRequestResponse(requestID))
 
@@ -154,13 +191,13 @@ func (api DarajaApi) B2C(ctx context.Context, payment payments.WalletPayment) er
 	}
 
 	payload := daraja.RequestB2C{
-		OriginatorConversationID: payment.TransactionID,
+		OriginatorConversationID: payment.ClientTransactionID,
 		InitiatorName:            api.shortcode.InitiatorName,
 		SecurityCredential:       credential,
 		CommandID:                daraja.CommandBusinessPayment,
 		Amount:                   payment.Amount,
 		PartyA:                   api.shortcode.ShortCode,
-		PartyB:                   payment.ExternalAccountNumber,
+		PartyB:                   payment.DestinationAccountNumber,
 		QueueTimeOutURL:          webhook(api.shortcode.CallbackURL, daraja.OperationB2C),
 		ResultURL:                webhook(api.shortcode.CallbackURL, daraja.OperationB2C),
 		Remarks:                  payment.Description,
@@ -197,8 +234,8 @@ func (api DarajaApi) B2B(ctx context.Context, payment payments.WalletPayment) er
 		RecieverIdentifierType: daraja.IdentifierOrgShortCode,
 		Amount:                 payment.Amount,
 		PartyA:                 api.shortcode.ShortCode,
-		PartyB:                 payment.ExternalAccountNumber,
-		AccountReference:       payment.BeneficiaryAccountNumber,
+		PartyB:                 payment.DestinationAccountNumber,
+		AccountReference:       payment.Beneficiary,
 		QueueTimeOutURL:        webhook(api.shortcode.CallbackURL, daraja.OperationB2B),
 		ResultURL:              webhook(api.shortcode.CallbackURL, daraja.OperationB2B),
 		Remarks:                payment.Description,
@@ -213,7 +250,7 @@ func (api DarajaApi) B2B(ctx context.Context, payment payments.WalletPayment) er
 	return nil
 }
 
-func (api DarajaApi) Reversal(ctx context.Context, payment payments.Payment) error {
+func (api DarajaApi) Reversal(ctx context.Context, payment requests.Payment) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling reversal")
 
@@ -248,7 +285,7 @@ func (api DarajaApi) Reversal(ctx context.Context, payment payments.Payment) err
 }
 
 // Status calls the api to check transaction status
-func (api DarajaApi) Status(ctx context.Context, payment payments.Payment) error {
+func (api DarajaApi) Status(ctx context.Context, payment requests.Payment) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling transaction status")
 
@@ -547,41 +584,69 @@ func transactionStatusWebhookResult(body io.Reader) (WebhookResult, error) {
 	return wb, nil
 }
 
-func NewWebhookProcessor(repo webhooks.WebhookRepository) WebhookProcessor {
+func NewWebhookProcessor(repo webhooks.Repository) WebhookProcessor {
 	return WebhookProcessor{repo}
 }
 
 type WebhookProcessor struct {
-	repository webhooks.WebhookRepository
+	repository webhooks.Repository
 }
 
-func (wp WebhookProcessor) Process(ctx context.Context, result *webhooks.WebhookResult) error {
+func (processor WebhookProcessor) Process(ctx context.Context, result *requests.WebhookResult) (requests.OptionsUpdatePayment, error) {
+	l := zerolog.Ctx(ctx)
 
-	// save the webhook result
-	err := wp.repository.Add(ctx, result.Service, result.Action, result.Bytes())
-	if err != nil {
-		// I think we should fail if saving fails
-		return err
-	}
+	var wb WebhookResult
+	var err error
 
 	r := bytes.NewReader(result.Bytes())
 	switch result.Action {
 	case string(daraja.OperationC2BExpress):
-		result.Data, err = c2bWebHookResult(r)
-		return err
+		wb, err = c2bWebHookResult(r)
 	case string(daraja.OperationB2C):
-		result.Data, err = b2cWebhookResult(r)
-		return err
+		wb, err = b2cWebhookResult(r)
 	case string(daraja.OperationB2B):
-		result.Data, err = b2bWebhookResult(r)
-		return err
+		wb, err = b2bWebhookResult(r)
 	case string(daraja.OperationTransactionStatus):
-		result.Data, err = transactionStatusWebhookResult(r)
-		return err
+		wb, err = transactionStatusWebhookResult(r)
 	case string(daraja.OperationReversal):
 		//TODO: Create for reversal
-		return errors.New("webhook processor for reversal not created")
+		return requests.OptionsUpdatePayment{}, errors.New("webhook processor for reversal not created")
 	default:
-		return errors.New("action processor not defined")
+		return requests.OptionsUpdatePayment{}, errors.New("action processor not defined")
 	}
+	if err != nil {
+		l.Error().Err(err).Msg("error processing webhook")
+		return requests.OptionsUpdatePayment{}, err
+	}
+
+	// assign to Data field
+	result.Data = wb
+
+	options := requests.OptionsUpdatePayment{}
+	if wb.Status == StatusFailed {
+		status := requests.StatusFailed
+		options.Status = &status
+
+		return options, nil
+	}
+
+	// update payment status
+	status := requests.StatusSucceeded
+	options.Status = &status
+
+	// retrieve payment details
+	var attributes PaymentAttributes
+	var ok bool
+	if attributes, ok = wb.Attributes.(PaymentAttributes); !ok {
+		return requests.OptionsUpdatePayment{}, nil
+	}
+
+	options.PaymentReference = &attributes.MpesaReceiptID
+	//options.SenderAccountName = &attributes.SenderName
+	//options.SenderAccountNo = &attributes.SenderNo
+	//options.RecipientAccountName = &attributes.RecipientName
+	//options.RecipientAccountNo = &attributes.RecipientNo
+
+	return options, nil
+
 }
