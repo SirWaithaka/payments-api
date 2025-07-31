@@ -5,21 +5,22 @@ import (
 
 	"github.com/rs/zerolog"
 
+	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	"github.com/SirWaithaka/payments-api/internal/domains/webhooks"
 	"github.com/SirWaithaka/payments-api/internal/pkg/events"
 	"github.com/SirWaithaka/payments-api/internal/pkg/events/payloads"
 	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
 )
 
-func NewHandler(webhook webhooks.WebhookProcessor) Handler {
+func NewHandler(service webhooks.Service) Handler {
 	return Handler{
-		webhook: webhook,
+		webhook: service,
 	}
 }
 
 // Handler that declares methods that handle events
 type Handler struct {
-	webhook webhooks.WebhookProcessor
+	webhook webhooks.Service
 }
 
 func (handler Handler) PaymentCompleted() (events.EventMessage, func(ctx context.Context) error) {
@@ -35,7 +36,7 @@ func (handler Handler) PaymentCompleted() (events.EventMessage, func(ctx context
 }
 
 func (handler Handler) WebhookReceived() (events.EventMessage, func(ctx context.Context) error) {
-	evt := &events.Event[payloads.WebhookReceived[webhooks.WebhookResult]]{}
+	evt := &events.Event[payloads.WebhookReceived[requests.WebhookResult]]{}
 
 	fn := func(ctx context.Context) error {
 		l := zerolog.Ctx(ctx)

@@ -13,7 +13,7 @@ import (
 	"github.com/rs/xid"
 
 	"github.com/SirWaithaka/payments-api/corehooks"
-	"github.com/SirWaithaka/payments-api/internal/domains/payments"
+	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	"github.com/SirWaithaka/payments-api/internal/repositories/postgres"
 	"github.com/SirWaithaka/payments-api/internal/services"
 	"github.com/SirWaithaka/payments-api/internal/testdata"
@@ -28,7 +28,7 @@ func TestRequestRecorder_RecordRequest(t *testing.T) {
 	recorder := services.NewRequestRecorder(repository)
 
 	// fake payment
-	payment := payments.Payment{
+	payment := requests.Payment{
 		PaymentID:           ulid.Make().String(),
 		ClientTransactionID: ulid.Make().String(),
 		IdempotencyID:       ulid.Make().String(),
@@ -91,7 +91,7 @@ func TestRequestRecorder_UpdateRequestResponse(t *testing.T) {
 	recorder := services.NewRequestRecorder(repository)
 
 	// fake payment
-	payment := payments.Payment{
+	payment := requests.Payment{
 		PaymentID:           ulid.Make().String(),
 		ClientTransactionID: ulid.Make().String(),
 		IdempotencyID:       ulid.Make().String(),

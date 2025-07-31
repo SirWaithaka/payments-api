@@ -6,6 +6,7 @@ import (
 	"github.com/SirWaithaka/payments-api/clients/daraja"
 	"github.com/SirWaithaka/payments-api/corehooks"
 	"github.com/SirWaithaka/payments-api/internal/domains/payments"
+	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	"github.com/SirWaithaka/payments-api/internal/domains/webhooks"
 	"github.com/SirWaithaka/payments-api/request"
 )
@@ -30,13 +31,13 @@ type ShortCodeConfig struct {
 	CallbackURL       string // callback url for shortcode async responses
 }
 
-func NewProvider(requestsRepo payments.RequestRepository, webhooksRepo webhooks.WebhookRepository) *Provider {
+func NewProvider(requestsRepo requests.Repository, webhooksRepo webhooks.Repository) *Provider {
 	return &Provider{requestsRepo: requestsRepo, webhooksRepo: webhooksRepo}
 }
 
 type Provider struct {
-	requestsRepo payments.RequestRepository
-	webhooksRepo webhooks.WebhookRepository
+	requestsRepo requests.Repository
+	webhooksRepo webhooks.Repository
 }
 
 func (provider Provider) GetWalletApi(request payments.WalletPayment) payments.WalletApi {
@@ -51,7 +52,7 @@ func (provider Provider) GetWalletApi(request payments.WalletPayment) payments.W
 	return nil
 }
 
-func (provider Provider) GetWebhookClient(service string) webhooks.WebhookProcessor {
+func (provider Provider) GetWebhookClient(service string) requests.WebhookProcessor {
 	switch service {
 	case "daraja":
 		return NewWebhookProcessor(provider.webhooksRepo)

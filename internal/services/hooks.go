@@ -1,17 +1,17 @@
 package services
 
 import (
-	"github.com/SirWaithaka/payments-api/internal/domains/payments"
+	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	pkgerrors "github.com/SirWaithaka/payments-api/internal/pkg/errors"
 	"github.com/SirWaithaka/payments-api/request"
 )
 
-func NewRequestRecorder(repository payments.RequestRepository) RequestRecorder {
+func NewRequestRecorder(repository requests.Repository) RequestRecorder {
 	return RequestRecorder{repository: repository}
 }
 
 type RequestRecorder struct {
-	repository payments.RequestRepository
+	repository requests.Repository
 }
 
 // RecordRequest hooks saves all outgoing requests before the http request is sent to the
@@ -19,7 +19,7 @@ type RequestRecorder struct {
 func (recorder RequestRecorder) RecordRequest(paymentID, requestID string) request.Hook {
 	return request.Hook{Name: "RequestRecorder.RecordRequest", Fn: func(r *request.Request) {
 
-		req := payments.Request{
+		req := requests.Request{
 			RequestID: requestID,
 			PaymentID: paymentID,
 			Partner:   r.Config.ServiceName,
@@ -40,7 +40,7 @@ func (recorder RequestRecorder) RecordRequest(paymentID, requestID string) reque
 // is/is not received.
 func (recorder RequestRecorder) UpdateRequestResponse(requestID string) request.Hook {
 	return request.Hook{Name: "RequestRecorder.UpdateRequestResponse", Fn: func(r *request.Request) {
-		opts := payments.OptionsUpdateRequest{}
+		opts := requests.OptionsUpdateRequest{}
 
 		defer func() {
 			err := recorder.repository.UpdateRequest(r.Context(), requestID, opts)
