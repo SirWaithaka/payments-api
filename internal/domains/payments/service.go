@@ -24,7 +24,7 @@ func (service WalletService) Charge(ctx context.Context, req WalletPayment) (req
 	l := zerolog.Ctx(ctx)
 	l.Debug().Any(logger.LData, req).Msg("charge params")
 
-	// create new payment and save it
+	// create a new payment and save it
 	payment := requests.Payment{
 		BankCode:            req.BankCode,
 		PaymentID:           ulid.Make().String(),
@@ -48,6 +48,8 @@ func (service WalletService) Charge(ctx context.Context, req WalletPayment) (req
 		return requests.Payment{}, errors.New("api not configured")
 	}
 
+	// set payment id in request
+	req.PaymentID = payment.PaymentID
 	err = api.C2B(ctx, req)
 	if err != nil {
 		return requests.Payment{}, err
@@ -60,7 +62,7 @@ func (service WalletService) Payout(ctx context.Context, req WalletPayment) (req
 	l := zerolog.Ctx(ctx)
 	l.Debug().Any(logger.LData, req).Msg("payout params")
 
-	// create new payment and save it
+	// create a new payment and save it
 	payment := requests.Payment{}
 	err := service.repository.AddPayment(ctx, payment)
 	if err != nil {
