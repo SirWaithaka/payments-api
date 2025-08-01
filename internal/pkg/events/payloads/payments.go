@@ -25,7 +25,15 @@ type PaymentStatusUpdated struct {
 	PaymentReference    string `json:"payment_reference"`
 }
 
+type Bytes []byte
+
+func (b Bytes) String() string {
+	return string(b)
+}
+
 // WebhookReceived payload for received webhook requests
 type WebhookReceived[T any] struct {
-	Content T `json:"content"`
+	Action  string `json:"action"`
+	Service string `json:"service"`
+	Content T      `json:"content"`
 }
