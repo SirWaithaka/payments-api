@@ -5,8 +5,6 @@ import (
 	"context"
 	"io"
 	"time"
-
-	jsoniter "github.com/json-iterator/go"
 )
 
 type Status string
@@ -103,35 +101,6 @@ func (result WebhookResult) Bytes() []byte {
 func (result WebhookResult) Reader() io.Reader {
 	return bytes.NewReader(result.Bytes())
 }
-
-func (result WebhookResult) MarshalJSON() ([]byte, error) {
-	r := struct {
-		Action  string
-		Body    io.Reader
-		Service string
-	}{
-		Action:  result.Action,
-		Body:    result.Reader(),
-		Service: result.Service,
-	}
-
-	return jsoniter.Marshal(r)
-}
-
-//func (result *WebhookResult) UnmarshalJSON(data []byte) error {
-//	r := struct {
-//		Action  string
-//		Body    any
-//		Service string
-//	}{}
-//	if err := jsoniter.Unmarshal(data, &r); err != nil {
-//		return err
-//	}
-//	result.Action = r.Action
-//	result.Service = r.Service
-//	result.Body = r.Body
-//	return nil
-//}
 
 func NewWebhookResult(partner string, action string, body io.Reader) *WebhookResult {
 	buf := new(bytes.Buffer)
