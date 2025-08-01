@@ -98,7 +98,7 @@ type WebhookResult struct {
 }
 
 func (result WebhookResult) ExternalID() string {
-	return result.ConversationID
+	return result.OriginationID
 }
 
 // adds action to the path of base url
