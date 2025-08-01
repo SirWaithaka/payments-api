@@ -45,7 +45,12 @@ func (service WebhookService) Confirm(ctx context.Context, result *requests.Webh
 	}
 
 	// publish webhook event
-	event := pkgevents.NewEvent(subjects.WebhookReceived, payloads.WebhookReceived[requests.WebhookResult]{Content: *result})
+	payload := payloads.WebhookReceived[[]byte]{
+		Action:  result.Action,
+		Service: result.Service,
+		Content: result.Bytes(),
+	}
+	event := pkgevents.NewEvent(subjects.WebhookReceived, payload)
 	err = service.publisher.Publish(ctx, event)
 	if err != nil {
 		l.Error().Err(err).Msg("error publishing event")
