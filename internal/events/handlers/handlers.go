@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 
 	"github.com/rs/zerolog"
@@ -36,13 +37,14 @@ func (handler Handler) PaymentCompleted() (events.EventMessage, func(ctx context
 }
 
 func (handler Handler) WebhookReceived() (events.EventMessage, func(ctx context.Context) error) {
-	evt := &events.Event[payloads.WebhookReceived[requests.WebhookResult]]{}
+	evt := &events.Event[payloads.WebhookReceived[payloads.Bytes]]{}
 
 	fn := func(ctx context.Context) error {
 		l := zerolog.Ctx(ctx)
-		l.Info().Any(logger.LData, evt).Msg("processing webhook received event")
+		l.Info().Msgf("webhook received event: %s - %s", evt.Payload.Service, evt.Payload.Action)
 
-		if err := handler.webhook.Process(ctx, &evt.Payload.Content); err != nil {
+		result := requests.NewWebhookResult(evt.Payload.Service, evt.Payload.Action, bytes.NewReader(evt.Payload.Content))
+		if err := handler.webhook.Process(ctx, result); err != nil {
 			l.Error().Err(err).Msg("error processing webhook")
 			return err
 		}
