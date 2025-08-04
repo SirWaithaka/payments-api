@@ -40,10 +40,10 @@ type Provider struct {
 	webhooksRepo webhooks.Repository
 }
 
-func (provider Provider) GetWalletApi(request payments.WalletPayment) payments.WalletApi {
+func (provider Provider) GetWalletApi(bankCode string, reqType payments.RequestType) payments.WalletApi {
 
-	if request.BankCode == payments.BankMpesa {
-		shortcodeCfg, _ := provider.GetShortCodeConfig(request.Type)
+	if bankCode == payments.BankMpesa {
+		shortcodeCfg, _ := provider.GetShortCodeConfig(reqType)
 		// build the daraja client
 		client := provider.GetDarajaClient(daraja.SandboxUrl, shortcodeCfg)
 		return NewDarajaApi(client, shortcodeCfg, provider.requestsRepo)
@@ -72,9 +72,9 @@ func (provider Provider) GetDarajaClient(endpoint string, cfg ShortCodeConfig) *
 
 }
 
-func (provider Provider) GetShortCodeConfig(name string) (ShortCodeConfig, error) {
+func (provider Provider) GetShortCodeConfig(name payments.RequestType) (ShortCodeConfig, error) {
 	switch name {
-	case "CHARGE":
+	case payments.RequestTypeWalletCharge:
 		return ShortCodeConfig{
 			ShortCode:         "174379",
 			InitiatorName:     "testapi",
@@ -85,7 +85,7 @@ func (provider Provider) GetShortCodeConfig(name string) (ShortCodeConfig, error
 			CallbackURL:       "https://webhook.sirwaithaka.space/webhooks/daraja",
 		}, nil
 
-	case "PAYOUT":
+	case payments.RequestTypeWalletPayout:
 		return ShortCodeConfig{
 			ShortCode:         "000000",
 			InitiatorName:     "testapi",
@@ -94,7 +94,16 @@ func (provider Provider) GetShortCodeConfig(name string) (ShortCodeConfig, error
 			ConsumerSecret:    "CtpMOjvk47jm6A5hmCzaQjQTBOWAwK1LM95awGNLSTGawbGNPsy9f8Eabsr1Lg7Q",
 			CallbackURL:       "https://webhook.sirwaithaka.space/webhooks/daraja",
 		}, nil
-	case "TRANSFER":
+	case payments.RequestTypeWalletTransfer:
+		return ShortCodeConfig{
+			ShortCode:         "000000",
+			InitiatorName:     "testapi",
+			InitiatorPassword: "Safaricom999!*!",
+			ConsumerKey:       "GW0TvN2gUTakps3b1AbAw48no1Yogu92oXI0N55fmlEVK40p",
+			ConsumerSecret:    "CtpMOjvk47jm6A5hmCzaQjQTBOWAwK1LM95awGNLSTGawbGNPsy9f8Eabsr1Lg7Q",
+			CallbackURL:       "https://webhook.sirwaithaka.space/webhooks/daraja",
+		}, nil
+	case payments.RequestTypePaymentStatus:
 		return ShortCodeConfig{
 			ShortCode:         "000000",
 			InitiatorName:     "testapi",

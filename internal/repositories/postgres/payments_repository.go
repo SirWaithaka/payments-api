@@ -49,7 +49,7 @@ func (schema PaymentSchema) ToEntity() requests.Payment {
 		Beneficiary:              schema.BeneficiaryAccountNumber,
 		Amount:                   schema.Amount,
 		Description:              schema.Description,
-		Status:                   schema.Status,
+		Status:                   requests.ToStatus(schema.Status),
 	}
 
 	// check if pointer values are nil
