@@ -7,10 +7,12 @@ import (
 	"time"
 )
 
+// Status type describes the lifecycle of a payment request or api request
 type Status string
 
 const (
 	StatusReceived  Status = "received"
+	StatusSend      Status = "sent"
 	StatusSucceeded Status = "succeeded"
 	StatusFailed    Status = "failed"
 	StatusDeclined  Status = "declined"
@@ -18,6 +20,28 @@ const (
 
 func (s Status) String() string {
 	return string(s)
+}
+
+// Final returns true if status equals to a final state of request
+func (s Status) Final() bool {
+	return s == StatusSucceeded || s == StatusFailed || s == StatusDeclined
+}
+
+func ToStatus(s string) Status {
+	switch s {
+	case string(StatusReceived):
+		return StatusReceived
+	case string(StatusSend):
+		return StatusSend
+	case string(StatusSucceeded):
+		return StatusSucceeded
+	case string(StatusFailed):
+		return StatusFailed
+	case string(StatusDeclined):
+		return StatusDeclined
+	default:
+		return "unknown"
+	}
 }
 
 type Payment struct {
@@ -42,7 +66,7 @@ type Payment struct {
 	// short description for payment
 	Description string
 	// status of the payment, "received", "pending", "completed", "failed", "refunded"
-	Status string // TODO: Use enum type
+	Status Status
 }
 
 type OptionsFindOnePayment struct {
