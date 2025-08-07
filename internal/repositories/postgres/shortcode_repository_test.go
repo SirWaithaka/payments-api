@@ -19,7 +19,7 @@ func TestShortCodeRepository_Add(t *testing.T) {
 	t.Run("test that it saves record", func(t *testing.T) {
 		defer testdata.ResetTables(inf)
 
-		shortcode := mpesa.ShortCodeConfig{
+		shortcode := mpesa.ShortCode{
 			ShortCodeID:       ulid.Make().String(),
 			ShortCode:         "000000",
 			Service:           "daraja",
@@ -36,7 +36,7 @@ func TestShortCodeRepository_Add(t *testing.T) {
 		}
 
 		// fetch records
-		record := postgres.ShortcodeSchema{}
+		record := postgres.ShortCodeSchema{}
 		result := inf.Storage.PG.First(&record)
 		if err = result.Error; err != nil {
 			t.Errorf("expected nil error, got %v", err)
@@ -50,11 +50,11 @@ func TestShortCodeRepository_Add(t *testing.T) {
 
 		testcases := []struct {
 			name  string
-			input mpesa.ShortCodeConfig
+			input mpesa.ShortCode
 		}{
 			{
 				name: "test check constraint on shortcode",
-				input: mpesa.ShortCodeConfig{
+				input: mpesa.ShortCode{
 					ShortCodeID:       ulid.Make().String(),
 					ShortCode:         "",
 					Service:           "daraja",
@@ -68,7 +68,7 @@ func TestShortCodeRepository_Add(t *testing.T) {
 			},
 			{
 				name: "test check constraint on service",
-				input: mpesa.ShortCodeConfig{
+				input: mpesa.ShortCode{
 					ShortCodeID:       ulid.Make().String(),
 					ShortCode:         "000000",
 					Service:           "",
@@ -82,7 +82,7 @@ func TestShortCodeRepository_Add(t *testing.T) {
 			},
 			{
 				name: "test check constraint on key",
-				input: mpesa.ShortCodeConfig{
+				input: mpesa.ShortCode{
 					ShortCodeID:       ulid.Make().String(),
 					ShortCode:         "000000",
 					Service:           "daraja",
@@ -96,7 +96,7 @@ func TestShortCodeRepository_Add(t *testing.T) {
 			},
 			{
 				name: "test check constraint on secret",
-				input: mpesa.ShortCodeConfig{
+				input: mpesa.ShortCode{
 					ShortCodeID:       ulid.Make().String(),
 					ShortCode:         "000000",
 					Service:           "daraja",
@@ -132,13 +132,13 @@ func TestShortCodeRepository_Add(t *testing.T) {
 	})
 }
 
-func TestShortCodeRepository_Find(t *testing.T) {
+func TestShortCodeRepository_FindOne(t *testing.T) {
 	repo := postgres.NewShortCodeRepository(inf.Storage.PG)
 
 	t.Run("test that it finds records", func(t *testing.T) {
 		defer testdata.ResetTables(inf)
 
-		shortcode := mpesa.ShortCodeConfig{
+		shortcode := mpesa.ShortCode{
 			ShortCodeID:       ulid.Make().String(),
 			ShortCode:         "000000",
 			Service:           "daraja",
@@ -155,7 +155,7 @@ func TestShortCodeRepository_Find(t *testing.T) {
 		}
 
 		// fetch records
-		result, err := repo.Find(t.Context(), shortcode.ShortCodeID)
+		result, err := repo.FindOne(t.Context(), mpesa.OptionsFindShortCodes{ShortCodeID: &shortcode.ShortCodeID})
 		if err != nil {
 			t.Errorf("expected nil error, got %v", err)
 		}
