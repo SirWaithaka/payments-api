@@ -14,7 +14,7 @@ type DI struct {
 	Cfg       *config.Config
 	Publisher events.Publisher
 
-	Wallets payments.WalletService
+	Wallets payments.Wallet
 	Webhook webhooks.Service
 }
 
