@@ -151,8 +151,11 @@ func (client Client) ReversalRequest(input RequestReversal, opts ...request.Opti
 	}
 
 	cfg := request.Config{Endpoint: client.endpoint}
-	output := &ResponseReversal{}
 
+	// append to request options
+	opts = append(opts, request.WithRequestHeader("Content-Type", "application/json"))
+
+	output := &ResponseReversal{}
 	req := request.New(cfg, client.Hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
@@ -160,7 +163,7 @@ func (client Client) ReversalRequest(input RequestReversal, opts ...request.Opti
 }
 
 func (client Client) Reverse(ctx context.Context, payload RequestReversal) (ResponseReversal, error) {
-	req, out := client.ReversalRequest(payload, request.WithRequestHeader("Content-Type", "application/json"))
+	req, out := client.ReversalRequest(payload)
 	req.WithContext(ctx)
 
 	if err := req.Send(); err != nil {
@@ -178,8 +181,11 @@ func (client Client) B2CRequest(input RequestB2C, opts ...request.Option) (*requ
 	}
 
 	cfg := request.Config{Endpoint: client.endpoint}
-	output := &ResponseB2C{}
 
+	// append to request options
+	opts = append(opts, request.WithRequestHeader("Content-Type", "application/json"))
+
+	output := &ResponseB2C{}
 	req := request.New(cfg, client.Hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
@@ -187,7 +193,7 @@ func (client Client) B2CRequest(input RequestB2C, opts ...request.Option) (*requ
 }
 
 func (client Client) B2C(ctx context.Context, payload RequestB2C) (ResponseB2C, error) {
-	req, out := client.B2CRequest(payload, request.WithRequestHeader("Content-Type", "application/json"))
+	req, out := client.B2CRequest(payload)
 	req.WithContext(ctx)
 
 	if err := req.Send(); err != nil {
@@ -205,17 +211,19 @@ func (client Client) B2BRequest(input RequestB2B, opts ...request.Option) (*requ
 	}
 
 	cfg := request.Config{Endpoint: client.endpoint}
-	output := &ResponseB2B{}
 
+	// append to request options
+	opts = append(opts, request.WithRequestHeader("Content-Type", "application/json"))
+
+	output := &ResponseB2B{}
 	req := request.New(cfg, client.Hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
 	return req, output
 }
 
-func (client Client) B2B(ctx context.Context, payload RequestB2B, opts ...request.Option) (ResponseB2B, error) {
-	opts = append(opts, request.WithRequestHeader("Content-Type", "application/json"))
-	req, out := client.B2BRequest(payload, opts...)
+func (client Client) B2B(ctx context.Context, payload RequestB2B) (ResponseB2B, error) {
+	req, out := client.B2BRequest(payload)
 	req.WithContext(ctx)
 
 	if err := req.Send(); err != nil {
@@ -233,8 +241,11 @@ func (client Client) TransactionStatusRequest(input RequestTransactionStatus, op
 	}
 
 	cfg := request.Config{Endpoint: client.endpoint}
-	output := &ResponseTransactionStatus{}
 
+	// append to request options
+	opts = append(opts, request.WithRequestHeader("Content-Type", "application/json"))
+
+	output := &ResponseTransactionStatus{}
 	req := request.New(cfg, client.Hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
@@ -242,7 +253,7 @@ func (client Client) TransactionStatusRequest(input RequestTransactionStatus, op
 }
 
 func (client Client) TransactionStatus(ctx context.Context, payload RequestTransactionStatus) (ResponseTransactionStatus, error) {
-	req, out := client.TransactionStatusRequest(payload, request.WithRequestHeader("Content-Type", "application/json"))
+	req, out := client.TransactionStatusRequest(payload)
 	req.WithContext(ctx)
 
 	if err := req.Send(); err != nil {
@@ -260,8 +271,11 @@ func (client Client) BalanceRequest(input RequestBalance, opts ...request.Option
 	}
 
 	cfg := request.Config{Endpoint: client.endpoint}
-	output := &ResponseBalance{}
 
+	// append to request options
+	opts = append(opts, request.WithRequestHeader("Content-Type", "application/json"))
+
+	output := &ResponseBalance{}
 	req := request.New(cfg, client.Hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
@@ -269,7 +283,7 @@ func (client Client) BalanceRequest(input RequestBalance, opts ...request.Option
 }
 
 func (client Client) Balance(ctx context.Context, payload RequestBalance) (ResponseBalance, error) {
-	req, out := client.BalanceRequest(payload, request.WithRequestHeader("Content-Type", "application/json"))
+	req, out := client.BalanceRequest(payload)
 	req.WithContext(ctx)
 
 	if err := req.Send(); err != nil {
@@ -287,8 +301,11 @@ func (client Client) QueryOrgInfoRequest(input RequestOrgInfoQuery, opts ...requ
 	}
 
 	cfg := request.Config{Endpoint: client.endpoint}
-	output := &ResponseOrgInfoQuery{}
 
+	// append to request options
+	opts = append(opts, request.WithRequestHeader("Content-Type", "application/json"))
+
+	output := &ResponseOrgInfoQuery{}
 	req := request.New(cfg, client.Hooks, nil, op, input, output)
 	req.ApplyOptions(opts...)
 
@@ -296,7 +313,7 @@ func (client Client) QueryOrgInfoRequest(input RequestOrgInfoQuery, opts ...requ
 }
 
 func (client Client) QueryOrgInfo(ctx context.Context, payload RequestOrgInfoQuery) (ResponseOrgInfoQuery, error) {
-	req, out := client.QueryOrgInfoRequest(payload, request.WithRequestHeader("Content-Type", "application/json"))
+	req, out := client.QueryOrgInfoRequest(payload)
 	req.WithContext(ctx)
 
 	if err := req.Send(); err != nil {

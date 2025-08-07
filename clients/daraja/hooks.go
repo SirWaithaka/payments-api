@@ -111,9 +111,3 @@ func Authenticate(reqFn AuthenticationRequestFunc) request.Hook {
 
 		}}
 }
-
-func RecordRequest() request.Hook {
-	return request.Hook{Fn: func(r *request.Request) {
-
-	}}
-}
