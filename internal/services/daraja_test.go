@@ -369,6 +369,9 @@ func TestTransactionStatusWebhookResult(t *testing.T) {
 			if result.Attributes != nil {
 				t.Errorf("expected nil value, got %v", result.Attributes)
 			}
+
+			// check that originator id is an empty string
+			assert.Equal(t, tc.input.originatorID, result.OriginationID)
 		}
 
 	})
