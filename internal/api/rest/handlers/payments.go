@@ -74,3 +74,55 @@ func (handler PaymentHandlers) Payout(c *gin.Context) {
 
 	c.JSON(http.StatusOK, payment)
 }
+
+func (handler PaymentHandlers) Transfer(c *gin.Context) {
+	l := zerolog.Ctx(c.Request.Context())
+	l.Debug().Msg("wallet transfer request")
+
+	var params requests.RequestWalletPayment
+	if err := c.ShouldBindBodyWithJSON(&params); err != nil {
+		handleRequestParsingError(c, err)
+		return
+	}
+
+	payment, err := handler.service.Transfer(c.Request.Context(), payments.WalletPayment{
+		Type:                  payments.RequestTypeWalletTransfer,
+		BankCode:              params.BankCode,
+		ClientTransactionID:   params.TransactionID,
+		IdempotencyID:         params.IdempotencyID,
+		Amount:                params.Amount,
+		Description:           params.Description,
+		ExternalAccountNumber: params.ExternalAccountID,
+		Beneficiary:           params.Beneficiary,
+	})
+	if err != nil {
+		err = c.Error(err)
+		return
+	}
+	l.Debug().Any(logger.LData, payment).Msg("payment")
+
+	c.JSON(http.StatusOK, payment)
+}
+
+func (handler PaymentHandlers) PaymentStatus(c *gin.Context) {
+	l := zerolog.Ctx(c.Request.Context())
+	l.Debug().Msg("wallet payment status request")
+
+	var params requests.RequestPaymentStatus
+	if err := c.ShouldBindBodyWithJSON(&params); err != nil {
+		handleRequestParsingError(c, err)
+		return
+	}
+
+	payment, err := handler.service.Status(c.Request.Context(), payments.WalletPayment{
+		PaymentID:           params.PaymentID,
+		ClientTransactionID: params.TransactionID,
+	})
+	if err != nil {
+		err = c.Error(err)
+		return
+	}
+	l.Debug().Any(logger.LData, payment).Msg("payment")
+
+	c.JSON(http.StatusOK, payment)
+}

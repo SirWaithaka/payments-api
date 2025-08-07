@@ -16,6 +16,8 @@ func routes(router *gin.Engine, di *dipkg.DI) {
 
 	group.POST("/charge", paymentHandlers.Charge)
 	group.POST("/payout", paymentHandlers.Payout)
+	group.POST("/transfer", paymentHandlers.Transfer)
+	group.POST("/status", paymentHandlers.PaymentStatus)
 }
 
 func webhookRoutes(router *gin.Engine, di *dipkg.DI) {
