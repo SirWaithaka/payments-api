@@ -13,7 +13,7 @@ import (
 	"github.com/SirWaithaka/payments-api/internal/testdata"
 )
 
-func TestRequestRepository_AddPayment(t *testing.T) {
+func TestPaymentsRepository_AddPayment(t *testing.T) {
 	ctx := context.Background()
 	t.Cleanup(func() { testdata.ResetTables(inf) })
 
@@ -74,7 +74,7 @@ func TestRequestRepository_AddPayment(t *testing.T) {
 	})
 }
 
-func TestRequestRepository_FindOnePayment(t *testing.T) {
+func TestPaymentsRepository_FindOnePayment(t *testing.T) {
 	ctx := context.Background()
 
 	repo := postgres.NewPaymentsRepository(inf.Storage.PG)
@@ -136,7 +136,7 @@ func TestRequestRepository_FindOnePayment(t *testing.T) {
 	})
 }
 
-func TestRequestRepository_UpdatePayment(t *testing.T) {
+func TestPaymentsRepository_UpdatePayment(t *testing.T) {
 	ctx := context.Background()
 
 	repo := postgres.NewPaymentsRepository(inf.Storage.PG)

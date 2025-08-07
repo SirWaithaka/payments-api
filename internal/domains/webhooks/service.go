@@ -82,7 +82,7 @@ func (service WebhookService) Process(ctx context.Context, result *requests.Webh
 	// check if the webhook is tied to a request
 	var in interface{ ExternalID() string }
 	var ok bool
-	if in, ok = result.Data.(interface{ ExternalID() string }); !ok {
+	if in, ok = result.Data.(interface{ ExternalID() string }); !ok || in.ExternalID() == "" {
 		// TODO: do something else with webhook if its not registered
 		l.Warn().Msg("webhook not registered")
 		return nil

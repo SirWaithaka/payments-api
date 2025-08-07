@@ -10,7 +10,7 @@ ifeq ($(shell which stringer 2>/dev/null),)
 endif
 
 install-deps: install-tools
-	export GOPRIVATE=github.com/fingoafrica && \
+	export GOPRIVATE=github.com/SirWaithaka && \
 	go mod download
 
 generate: install-tools

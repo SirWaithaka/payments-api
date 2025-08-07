@@ -16,7 +16,7 @@ import (
 func WithLogger() request.Option {
 	return func(r *request.Request) {
 		l := zerolog.Ctx(r.Context()).With().CallerWithSkipFrameCount(3).Logger()
-		lg := NewLogger(&l)
+		lg := NewLogger(&l, r.Config.LogLevel)
 		r.Config.Logger = lg
 	}
 }
@@ -40,10 +40,10 @@ type Provider struct {
 	webhooksRepo webhooks.Repository
 }
 
-func (provider Provider) GetWalletApi(request payments.WalletPayment) payments.WalletApi {
+func (provider Provider) GetWalletApi(bankCode string, reqType payments.RequestType) payments.WalletApi {
 
-	if request.BankCode == payments.BankMpesa {
-		shortcodeCfg, _ := provider.GetShortCodeConfig(request.Type)
+	if bankCode == payments.BankMpesa {
+		shortcodeCfg, _ := provider.GetShortCodeConfig(reqType)
 		// build the daraja client
 		client := provider.GetDarajaClient(daraja.SandboxUrl, shortcodeCfg)
 		return NewDarajaApi(client, shortcodeCfg, provider.requestsRepo)
@@ -64,43 +64,52 @@ func (provider Provider) GetWebhookClient(service string) requests.WebhookProces
 func (provider Provider) GetDarajaClient(endpoint string, cfg ShortCodeConfig) *daraja.Client {
 
 	client := daraja.New(daraja.Config{Endpoint: endpoint, LogLevel: request.LogError})
+	client.Hooks.Build.PushFront(WithLogger())
 	client.Hooks.Build.PushBackHook(daraja.Authenticate(client.AuthenticationRequest(cfg.ConsumerKey, cfg.ConsumerSecret)))
-	client.Hooks.Build.PushBack(WithLogger())
 	client.Hooks.Send.PushFrontHook(corehooks.LogHTTPRequest)
 
 	return &client
 
 }
 
-func (provider Provider) GetShortCodeConfig(name string) (ShortCodeConfig, error) {
+func (provider Provider) GetShortCodeConfig(name payments.RequestType) (ShortCodeConfig, error) {
 	switch name {
-	case "CHARGE":
+	case payments.RequestTypeWalletCharge:
 		return ShortCodeConfig{
 			ShortCode:         "174379",
 			InitiatorName:     "testapi",
-			InitiatorPassword: "Safaricom999!*!%",
+			InitiatorPassword: "Safaricom123!!",
 			Passphrase:        "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919",
-			ConsumerKey:       "GW0TvN2gUTakps3b1AbAw48no1Yogu92oXI0N55fmlEVK40p",
-			ConsumerSecret:    "CtpMOjvk47jm6A5hmCzaQjQTBOWAwK1LM95awGNLSTGawbGNPsy9f8Eabsr1Lg7Q",
+			ConsumerKey:       "7nRVPmgCrfIEseRTTmkLDDqAYAKhhS9KWx0AfYLGj9NVE2C2",
+			ConsumerSecret:    "Cyq7VrtT1vzQAmPQV1zlrC9MZ2n6py6qqaLYzNgFAx6uDG8sTKYSVoCh8sdplZF7",
 			CallbackURL:       "https://webhook.sirwaithaka.space/webhooks/daraja",
 		}, nil
 
-	case "PAYOUT":
+	case payments.RequestTypeWalletPayout:
 		return ShortCodeConfig{
-			ShortCode:         "000000",
+			ShortCode:         "600991",
 			InitiatorName:     "testapi",
-			InitiatorPassword: "Safaricom999!*!%",
-			ConsumerKey:       "GW0TvN2gUTakps3b1AbAw48no1Yogu92oXI0N55fmlEVK40p",
-			ConsumerSecret:    "CtpMOjvk47jm6A5hmCzaQjQTBOWAwK1LM95awGNLSTGawbGNPsy9f8Eabsr1Lg7Q",
+			InitiatorPassword: "Safaricom123!!",
+			ConsumerKey:       "7nRVPmgCrfIEseRTTmkLDDqAYAKhhS9KWx0AfYLGj9NVE2C2",
+			ConsumerSecret:    "Cyq7VrtT1vzQAmPQV1zlrC9MZ2n6py6qqaLYzNgFAx6uDG8sTKYSVoCh8sdplZF7",
 			CallbackURL:       "https://webhook.sirwaithaka.space/webhooks/daraja",
 		}, nil
-	case "TRANSFER":
+	case payments.RequestTypeWalletTransfer:
+		return ShortCodeConfig{
+			ShortCode:         "600979",
+			InitiatorName:     "testapi",
+			InitiatorPassword: "Safaricom123!!",
+			ConsumerKey:       "7nRVPmgCrfIEseRTTmkLDDqAYAKhhS9KWx0AfYLGj9NVE2C2",
+			ConsumerSecret:    "Cyq7VrtT1vzQAmPQV1zlrC9MZ2n6py6qqaLYzNgFAx6uDG8sTKYSVoCh8sdplZF7",
+			CallbackURL:       "https://webhook.sirwaithaka.space/webhooks/daraja",
+		}, nil
+	case payments.RequestTypePaymentStatus:
 		return ShortCodeConfig{
 			ShortCode:         "000000",
 			InitiatorName:     "testapi",
-			InitiatorPassword: "Safaricom999!*!",
-			ConsumerKey:       "GW0TvN2gUTakps3b1AbAw48no1Yogu92oXI0N55fmlEVK40p",
-			ConsumerSecret:    "CtpMOjvk47jm6A5hmCzaQjQTBOWAwK1LM95awGNLSTGawbGNPsy9f8Eabsr1Lg7Q",
+			InitiatorPassword: "Safaricom123!!",
+			ConsumerKey:       "7nRVPmgCrfIEseRTTmkLDDqAYAKhhS9KWx0AfYLGj9NVE2C2",
+			ConsumerSecret:    "Cyq7VrtT1vzQAmPQV1zlrC9MZ2n6py6qqaLYzNgFAx6uDG8sTKYSVoCh8sdplZF7",
 			CallbackURL:       "https://webhook.sirwaithaka.space/webhooks/daraja",
 		}, nil
 	default:

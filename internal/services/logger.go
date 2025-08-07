@@ -9,8 +9,8 @@ import (
 	"github.com/SirWaithaka/payments-api/request"
 )
 
-func NewLogger(logger *zerolog.Logger) Logger {
-	return Logger{logger: logger, level: request.LogError}
+func NewLogger(logger *zerolog.Logger, lvl request.LogLevel) Logger {
+	return Logger{logger: logger, level: lvl}
 }
 
 type Logger struct {
