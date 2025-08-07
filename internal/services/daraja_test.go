@@ -281,7 +281,7 @@ func TestTransactionStatusWebhookResult(t *testing.T) {
 	}
 
 	t.Run("test success case", func(t *testing.T) {
-		successTestBody := `{"Result":{"ResultType":0,"ResultCode":%d,"ResultDesc":"The service request is processed successfully.","OriginatorConversationID":"9f6c92024b39880271","ConversationID":"AG_20240702_20303738b089a9fb5233","TransactionID":"SG20000000","ResultParameters":{"ResultParameter":[{"Key":"DebitPartyName","Value":"%s"},{"Key":"CreditPartyName","Value":"490742 - FINGO  AFRICA BY ECOBANK"},{"Key":"OriginatorConversationID","Value":"%s"},{"Key":"InitiatedTime","Value":%d},{"Key":"CreditPartyCharges"},{"Key":"DebitAccountType","Value":"MMF Account For Customer"},{"Key":"TransactionReason"},{"Key":"ReasonType","Value":"Pay Bill Online"},{"Key":"TransactionStatus","Value":"%s"},{"Key":"FinalisedTime","Value":20240629184302},{"Key":"Amount","Value":%d},{"Key":"ConversationID","Value":"AG_20240629_2040165691b903e92930"},{"Key":"ReceiptNo","Value":"%s"}]},"ReferenceData":{"ReferenceItem":{"Key":"Occasion","Value":"OK"}}}}`
+		successTestBody := `{"Result":{"ResultType":0,"ResultCode":%d,"ResultDesc":"The service request is processed successfully.","OriginatorConversationID":"9f6c92024b39880271","ConversationID":"AG_20240702_20303738b089a9fb5233","TransactionID":"SG20000000","ResultParameters":{"ResultParameter":[{"Key":"DebitPartyName","Value":"%s"},{"Key":"CreditPartyName","Value":"000000 - agg"},{"Key":"OriginatorConversationID","Value":"%s"},{"Key":"InitiatedTime","Value":%d},{"Key":"CreditPartyCharges"},{"Key":"DebitAccountType","Value":"MMF Account For Customer"},{"Key":"TransactionReason"},{"Key":"ReasonType","Value":"Pay Bill Online"},{"Key":"TransactionStatus","Value":"%s"},{"Key":"FinalisedTime","Value":20240629184302},{"Key":"Amount","Value":%d},{"Key":"ConversationID","Value":"AG_20240629_2040165691b903e92930"},{"Key":"ReceiptNo","Value":"%s"}]},"ReferenceData":{"ReferenceItem":{"Key":"Occasion","Value":"OK"}}}}`
 
 		tcs := []struct {
 			input tcInput
@@ -369,6 +369,9 @@ func TestTransactionStatusWebhookResult(t *testing.T) {
 			if result.Attributes != nil {
 				t.Errorf("expected nil value, got %v", result.Attributes)
 			}
+
+			// check that originator id is an empty string
+			assert.Equal(t, tc.input.originatorID, result.OriginationID)
 		}
 
 	})

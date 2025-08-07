@@ -147,9 +147,9 @@ func (api DarajaApi) C2B(ctx context.Context, payment payments.WalletPayment) er
 		Timestamp:         timestamp,
 		TransactionType:   daraja.TypeCustomerPayBillOnline,
 		Amount:            payment.Amount,
-		PartyA:            payment.DestinationAccountNumber,
+		PartyA:            payment.ExternalAccountNumber,
 		PartyB:            api.shortcode.ShortCode,
-		PhoneNumber:       payment.DestinationAccountNumber,
+		PhoneNumber:       payment.ExternalAccountNumber,
 		CallBackURL:       webhook(api.shortcode.CallbackURL, daraja.OperationC2BExpress),
 		AccountReference:  payment.ClientTransactionID,
 		TransactionDesc:   payment.Description,
@@ -196,7 +196,7 @@ func (api DarajaApi) B2C(ctx context.Context, payment payments.WalletPayment) er
 		CommandID:                daraja.CommandBusinessPayment,
 		Amount:                   payment.Amount,
 		PartyA:                   api.shortcode.ShortCode,
-		PartyB:                   payment.DestinationAccountNumber,
+		PartyB:                   payment.ExternalAccountNumber,
 		QueueTimeOutURL:          webhook(api.shortcode.CallbackURL, daraja.OperationB2C),
 		ResultURL:                webhook(api.shortcode.CallbackURL, daraja.OperationB2C),
 		Remarks:                  payment.Description,
@@ -204,13 +204,24 @@ func (api DarajaApi) B2C(ctx context.Context, payment payments.WalletPayment) er
 		//Remarks:                  fmt.Sprintf("B2C REF %s ID %s", payment.TransactionID, payment.PaymentID),
 		//Occasion:                 fmt.Sprintf("B2C REF %s ID %s", payment.TransactionID, payment.PaymentID),
 	}
+	l.Debug().Any(logger.LData, payload).Msg("request payload")
 
-	res, err := api.client.B2C(ctx, payload)
-	if err != nil {
+	// configure and add a hook to record this request attempt
+	recorder := NewRequestRecorder(api.requestRepo)
+	// create an instance of request and add the request recorder
+	requestID := xid.New().String()
+	out := &ResponseDefault{}
+	req, _ := api.client.B2CRequest(payload, request.WithServiceName(serviceName))
+	req.WithContext(ctx)
+	req.Data = out
+	req.Hooks.Send.PushFrontHook(recorder.RecordRequest(payment.PaymentID, requestID))
+	req.Hooks.Complete.PushFrontHook(recorder.UpdateRequestResponse(requestID))
+
+	if err = req.Send(); err != nil {
 		l.Error().Err(err).Msg("client error")
 		return err
 	}
-	l.Debug().Any(logger.LData, res).Msg("b2c response")
+	l.Debug().Any(logger.LData, out).Msg("b2c response")
 
 	return nil
 }
@@ -233,18 +244,30 @@ func (api DarajaApi) B2B(ctx context.Context, payment payments.WalletPayment) er
 		RecieverIdentifierType: daraja.IdentifierOrgShortCode,
 		Amount:                 payment.Amount,
 		PartyA:                 api.shortcode.ShortCode,
-		PartyB:                 payment.DestinationAccountNumber,
+		PartyB:                 payment.ExternalAccountNumber,
 		AccountReference:       payment.Beneficiary,
 		QueueTimeOutURL:        webhook(api.shortcode.CallbackURL, daraja.OperationB2B),
 		ResultURL:              webhook(api.shortcode.CallbackURL, daraja.OperationB2B),
 		Remarks:                payment.Description,
 	}
-	res, err := api.client.B2B(ctx, payload, request.WithLogger(request.NewDefaultLogger()), request.WithLogLevel(request.LogError))
-	if err != nil {
+	l.Debug().Any(logger.LData, payload).Msg("request payload")
+
+	// configure and add a hook to record this request attempt
+	recorder := NewRequestRecorder(api.requestRepo)
+	// create an instance of request and add the request recorder
+	requestID := xid.New().String()
+	out := &ResponseDefault{}
+	req, _ := api.client.B2BRequest(payload, request.WithServiceName(serviceName))
+	req.WithContext(ctx)
+	req.Data = out
+	req.Hooks.Send.PushFrontHook(recorder.RecordRequest(payment.PaymentID, requestID))
+	req.Hooks.Complete.PushFrontHook(recorder.UpdateRequestResponse(requestID))
+
+	if err = req.Send(); err != nil {
 		l.Error().Err(err).Msg("client error")
 		return err
 	}
-	l.Debug().Any(logger.LData, res).Msg("b2b response")
+	l.Debug().Any(logger.LData, out).Msg("b2b response")
 
 	return nil
 }
@@ -271,13 +294,25 @@ func (api DarajaApi) Reversal(ctx context.Context, payment requests.Payment) err
 		QueueTimeOutURL:        webhook(api.shortcode.CallbackURL, daraja.OperationReversal),
 		Remarks:                fmt.Sprintf("REVERSAL REF %s ID %s", payment.ClientTransactionID, payment.PaymentID),
 	}
+	l.Debug().Any(logger.LData, payload).Msg("request payload")
 
-	res, err := api.client.Reverse(ctx, payload)
-	if err != nil {
+	// create an instance of request and add the request recorder
+	out := &ResponseDefault{}
+	req, _ := api.client.ReversalRequest(payload, request.WithServiceName(serviceName))
+	req.WithContext(ctx)
+	req.Data = out
+	// generate a unique request id
+	requestID := xid.New().String()
+	// create new instance of request record and add as hook
+	recorder := NewRequestRecorder(api.requestRepo)
+	req.Hooks.Send.PushFrontHook(recorder.RecordRequest(payment.PaymentID, requestID))
+	req.Hooks.Complete.PushFrontHook(recorder.UpdateRequestResponse(requestID))
+
+	if err = req.Send(); err != nil {
 		l.Error().Err(err).Msg("client error")
 		return err
 	}
-	l.Debug().Any(logger.LData, res).Msg("reverse response")
+	l.Debug().Any(logger.LData, out).Msg("reverse response")
 
 	return nil
 
@@ -324,7 +359,7 @@ func (api DarajaApi) Status(ctx context.Context, payment requests.Payment) error
 
 }
 
-func (api DarajaApi) Balance(ctx context.Context, shortcode ShortCodeConfig) error {
+func (api DarajaApi) Balance(ctx context.Context) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling balance")
 
@@ -541,7 +576,6 @@ func transactionStatusWebhookResult(body io.Reader) (WebhookResult, error) {
 
 	wb.ResultCode = searchResult.Result.ResultCode
 	wb.ResultMessage = searchResult.Result.ResultDesc
-	wb.OriginationID = searchResult.Result.OriginatorConversationID
 	wb.ConversationID = searchResult.Result.ConversationID
 
 	// check if result code is success

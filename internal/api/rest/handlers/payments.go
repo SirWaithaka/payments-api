@@ -8,14 +8,15 @@ import (
 
 	"github.com/SirWaithaka/payments-api/internal/api/rest/requests"
 	"github.com/SirWaithaka/payments-api/internal/domains/payments"
+	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
 )
 
-func NewPaymentHandlers(service payments.WalletService) PaymentHandlers {
+func NewPaymentHandlers(service payments.Wallet) PaymentHandlers {
 	return PaymentHandlers{service}
 }
 
 type PaymentHandlers struct {
-	service payments.WalletService
+	service payments.Wallet
 }
 
 func (handler PaymentHandlers) Charge(c *gin.Context) {
@@ -29,19 +30,19 @@ func (handler PaymentHandlers) Charge(c *gin.Context) {
 	}
 
 	payment, err := handler.service.Charge(c.Request.Context(), payments.WalletPayment{
-		Type:                     "CHARGE",
-		BankCode:                 params.BankCode,
-		DestinationAccountNumber: params.ExternalAccountID,
-		Amount:                   params.Amount,
-		Description:              params.Description,
-		ClientTransactionID:      params.TransactionID,
-		IdempotencyID:            params.IdempotencyID,
+		Type:                  payments.RequestTypeWalletCharge,
+		BankCode:              params.BankCode,
+		ExternalAccountNumber: params.ExternalAccountID,
+		Amount:                params.Amount,
+		Description:           params.Description,
+		ClientTransactionID:   params.TransactionID,
+		IdempotencyID:         params.IdempotencyID,
 	})
 	if err != nil {
 		err = c.Error(err)
 		return
 	}
-	l.Debug().Interface("payment", payment).Msg("payment")
+	l.Debug().Any(logger.LData, payment).Msg("payment")
 
 	c.JSON(http.StatusOK, payment)
 }
@@ -57,19 +58,71 @@ func (handler PaymentHandlers) Payout(c *gin.Context) {
 	}
 
 	payment, err := handler.service.Payout(c.Request.Context(), payments.WalletPayment{
-		Type:                     "PAYOUT",
-		BankCode:                 params.BankCode,
-		ClientTransactionID:      params.TransactionID,
-		IdempotencyID:            params.IdempotencyID,
-		Amount:                   params.Amount,
-		Description:              params.Description,
-		DestinationAccountNumber: params.ExternalAccountID,
+		Type:                  payments.RequestTypeWalletPayout,
+		BankCode:              params.BankCode,
+		ClientTransactionID:   params.TransactionID,
+		IdempotencyID:         params.IdempotencyID,
+		Amount:                params.Amount,
+		Description:           params.Description,
+		ExternalAccountNumber: params.ExternalAccountID,
 	})
 	if err != nil {
 		err = c.Error(err)
 		return
 	}
-	l.Debug().Interface("payment", payment).Msg("payment")
+	l.Debug().Any(logger.LData, payment).Msg("payment")
+
+	c.JSON(http.StatusOK, payment)
+}
+
+func (handler PaymentHandlers) Transfer(c *gin.Context) {
+	l := zerolog.Ctx(c.Request.Context())
+	l.Debug().Msg("wallet transfer request")
+
+	var params requests.RequestWalletPayment
+	if err := c.ShouldBindBodyWithJSON(&params); err != nil {
+		handleRequestParsingError(c, err)
+		return
+	}
+
+	payment, err := handler.service.Transfer(c.Request.Context(), payments.WalletPayment{
+		Type:                  payments.RequestTypeWalletTransfer,
+		BankCode:              params.BankCode,
+		ClientTransactionID:   params.TransactionID,
+		IdempotencyID:         params.IdempotencyID,
+		Amount:                params.Amount,
+		Description:           params.Description,
+		ExternalAccountNumber: params.ExternalAccountID,
+		Beneficiary:           params.Beneficiary,
+	})
+	if err != nil {
+		err = c.Error(err)
+		return
+	}
+	l.Debug().Any(logger.LData, payment).Msg("payment")
+
+	c.JSON(http.StatusOK, payment)
+}
+
+func (handler PaymentHandlers) PaymentStatus(c *gin.Context) {
+	l := zerolog.Ctx(c.Request.Context())
+	l.Debug().Msg("wallet payment status request")
+
+	var params requests.RequestPaymentStatus
+	if err := c.ShouldBindBodyWithJSON(&params); err != nil {
+		handleRequestParsingError(c, err)
+		return
+	}
+
+	payment, err := handler.service.Status(c.Request.Context(), payments.WalletPayment{
+		PaymentID:           params.PaymentID,
+		ClientTransactionID: params.TransactionID,
+	})
+	if err != nil {
+		err = c.Error(err)
+		return
+	}
+	l.Debug().Any(logger.LData, payment).Msg("payment")
 
 	c.JSON(http.StatusOK, payment)
 }

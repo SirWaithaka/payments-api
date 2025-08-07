@@ -26,6 +26,14 @@ type RequestWalletPayment struct {
 	Amount string `json:"amount" binding:"required"`
 	// customer account that will be charged
 	ExternalAccountID string `json:"external_account_id" binding:"required"`
+	// account number or name of the payment beneficiary
+	Beneficiary string `json:"beneficiary"`
 	// payment description
 	Description string `json:"description"`
+}
+
+type RequestPaymentStatus struct {
+	PaymentID        string `json:"payment_id"`
+	TransactionID    string `json:"transaction_id"`
+	PaymentReference string `json:"payment_reference"`
 }

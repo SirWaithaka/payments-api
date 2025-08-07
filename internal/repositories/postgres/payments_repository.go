@@ -49,7 +49,7 @@ func (schema PaymentSchema) ToEntity() requests.Payment {
 		Beneficiary:              schema.BeneficiaryAccountNumber,
 		Amount:                   schema.Amount,
 		Description:              schema.Description,
-		Status:                   schema.Status,
+		Status:                   requests.ToStatus(schema.Status),
 	}
 
 	// check if pointer values are nil
@@ -75,6 +75,8 @@ func (schema *PaymentSchema) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 func (schema *PaymentSchema) FindOptions(opts requests.OptionsFindOnePayment) {
+	// by default, gorm ignores zero value struct properties in the where clause
+
 	// configure find options
 	if opts.PaymentID != nil {
 		schema.PaymentID = *opts.PaymentID
