@@ -75,6 +75,8 @@ func (schema *PaymentSchema) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 func (schema *PaymentSchema) FindOptions(opts requests.OptionsFindOnePayment) {
+	// by default, gorm ignores zero value struct properties in the where clause
+
 	// configure find options
 	if opts.PaymentID != nil {
 		schema.PaymentID = *opts.PaymentID
