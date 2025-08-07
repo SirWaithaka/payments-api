@@ -65,7 +65,7 @@ type Wallet interface {
 	Charge(context.Context, WalletPayment) (requests.Payment, error)
 	Payout(context.Context, WalletPayment) (requests.Payment, error)
 	Transfer(context.Context, WalletPayment) (requests.Payment, error)
-	Status(context.Context, requests.OptionsFindOnePayment) (requests.Payment, error)
+	Status(context.Context, WalletPayment) (requests.Payment, error)
 }
 
 type WalletApi interface {
