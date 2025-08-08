@@ -9,6 +9,7 @@ import (
 	"github.com/oklog/ulid/v2"
 
 	"github.com/SirWaithaka/payments-api/internal/domains/mpesa"
+	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	"github.com/SirWaithaka/payments-api/internal/repositories/postgres"
 	"github.com/SirWaithaka/payments-api/internal/testdata"
 )
@@ -22,7 +23,7 @@ func TestShortCodeRepository_Add(t *testing.T) {
 		shortcode := mpesa.ShortCode{
 			ShortCodeID:       ulid.Make().String(),
 			ShortCode:         "000000",
-			Service:           "daraja",
+			Service:           requests.PartnerDaraja,
 			InitiatorName:     "fake name",
 			InitiatorPassword: "fake_password",
 			Passphrase:        "fake_passphrase",
@@ -57,7 +58,7 @@ func TestShortCodeRepository_Add(t *testing.T) {
 				input: mpesa.ShortCode{
 					ShortCodeID:       ulid.Make().String(),
 					ShortCode:         "",
-					Service:           "daraja",
+					Service:           requests.PartnerDaraja,
 					InitiatorName:     "fake name",
 					InitiatorPassword: "fake_password",
 					Passphrase:        "fake_passphrase",
@@ -69,9 +70,9 @@ func TestShortCodeRepository_Add(t *testing.T) {
 			{
 				name: "test check constraint on service",
 				input: mpesa.ShortCode{
-					ShortCodeID:       ulid.Make().String(),
-					ShortCode:         "000000",
-					Service:           "",
+					ShortCodeID: ulid.Make().String(),
+					ShortCode:   "000000",
+					//Service:           "",
 					InitiatorName:     "fake name",
 					InitiatorPassword: "fake_password",
 					Passphrase:        "fake_passphrase",
@@ -85,7 +86,7 @@ func TestShortCodeRepository_Add(t *testing.T) {
 				input: mpesa.ShortCode{
 					ShortCodeID:       ulid.Make().String(),
 					ShortCode:         "000000",
-					Service:           "daraja",
+					Service:           requests.PartnerDaraja,
 					InitiatorName:     "fake name",
 					InitiatorPassword: "fake_password",
 					Passphrase:        "fake_passphrase",
@@ -99,7 +100,7 @@ func TestShortCodeRepository_Add(t *testing.T) {
 				input: mpesa.ShortCode{
 					ShortCodeID:       ulid.Make().String(),
 					ShortCode:         "000000",
-					Service:           "daraja",
+					Service:           requests.PartnerDaraja,
 					InitiatorName:     "fake name",
 					InitiatorPassword: "fake_password",
 					Passphrase:        "fake_passphrase",
@@ -141,7 +142,7 @@ func TestShortCodeRepository_FindOne(t *testing.T) {
 		shortcode := mpesa.ShortCode{
 			ShortCodeID:       ulid.Make().String(),
 			ShortCode:         "000000",
-			Service:           "daraja",
+			Service:           requests.PartnerDaraja,
 			InitiatorName:     "fake name",
 			InitiatorPassword: "fake_password",
 			Passphrase:        "fake_passphrase",

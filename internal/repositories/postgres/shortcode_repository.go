@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/SirWaithaka/payments-api/internal/domains/mpesa"
+	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
 )
 
@@ -35,7 +36,7 @@ func (schema ShortCodeSchema) ToEntity() mpesa.ShortCode {
 	shortcode := mpesa.ShortCode{
 		ShortCodeID: schema.ShortCodeID,
 		ShortCode:   schema.ShortCode,
-		Service:     schema.Service,
+		Service:     requests.ToPartner(schema.Service),
 		Type:        schema.Type,
 		Key:         schema.Key,
 		Secret:      schema.Secret,
@@ -82,7 +83,7 @@ func (schema *ShortCodeSchema) FindOptions(opts mpesa.OptionsFindShortCodes) {
 		schema.ShortCodeID = *opts.ShortCodeID
 	}
 	if opts.Service != nil {
-		schema.Service = *opts.Service
+		schema.Service = opts.Service.String()
 	}
 	if opts.Type != nil {
 		schema.Type = *opts.Type
@@ -106,7 +107,7 @@ func (repository ShortCodeRepository) Add(ctx context.Context, shortcode mpesa.S
 
 	record := ShortCodeSchema{
 		ShortCodeID:       shortcode.ShortCodeID,
-		Service:           shortcode.Service,
+		Service:           shortcode.Service.String(),
 		Type:              shortcode.Type,
 		ShortCode:         shortcode.ShortCode,
 		InitiatorName:     &shortcode.InitiatorName,
