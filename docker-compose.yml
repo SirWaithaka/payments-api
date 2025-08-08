@@ -12,6 +12,22 @@ services:
     networks:
       - apps
 
+  seeds:
+    image: payments-api-seeds
+    container_name: payments-api-seeds
+    build:
+      context: .
+      dockerfile: seeds/Dockerfile
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_HOST=postgres
+    networks:
+      - apps
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+
   payments-api:
     hostname: payments-api
     container_name: payments-api

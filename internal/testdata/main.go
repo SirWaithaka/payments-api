@@ -120,6 +120,8 @@ func Setup(cfg *config.Config) (*Infrastructure, error) {
 		&postgres.PaymentSchema{},
 		&postgres.RequestSchema{},
 		&postgres.WebhookRequestSchema{},
+		&postgres.ShortCodeSchema{},
+		&postgres.MpesaPaymentSchema{},
 	); err != nil {
 		return nil, err
 	}
@@ -142,6 +144,8 @@ func ResetTables(inf *Infrastructure) {
 	inf.Storage.PG.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&postgres.RequestSchema{})
 	inf.Storage.PG.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&postgres.PaymentSchema{})
 	inf.Storage.PG.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&postgres.WebhookRequestSchema{})
+	inf.Storage.PG.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&postgres.ShortCodeSchema{})
+	inf.Storage.PG.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&postgres.MpesaPaymentSchema{})
 
 }
 

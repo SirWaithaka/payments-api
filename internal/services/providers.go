@@ -5,6 +5,7 @@ import (
 
 	"github.com/SirWaithaka/payments-api/clients/daraja"
 	"github.com/SirWaithaka/payments-api/corehooks"
+	"github.com/SirWaithaka/payments-api/internal/domains/mpesa"
 	"github.com/SirWaithaka/payments-api/internal/domains/payments"
 	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	"github.com/SirWaithaka/payments-api/internal/domains/webhooks"
@@ -40,13 +41,24 @@ type Provider struct {
 	webhooksRepo webhooks.Repository
 }
 
-func (provider Provider) GetWalletApi(bankCode string, reqType payments.RequestType) payments.WalletApi {
+//func (provider Provider) GetWalletApi(bankCode string, reqType payments.RequestType) payments.WalletApi {
+//
+//	if bankCode == payments.BankMpesa {
+//		shortcodeCfg, _ := provider.GetShortCodeConfig(reqType)
+//		// build the daraja client
+//		client := provider.GetDarajaClient(daraja.SandboxUrl, shortcodeCfg)
+//		return NewDarajaApi(client, shortcodeCfg, provider.requestsRepo)
+//	}
+//
+//	return nil
+//}
 
-	if bankCode == payments.BankMpesa {
-		shortcodeCfg, _ := provider.GetShortCodeConfig(reqType)
+func (provider Provider) GetMpesaApi(shortcode mpesa.ShortCode) mpesa.API {
+	// build client depending on service
+	if shortcode.Service == requests.PartnerDaraja {
 		// build the daraja client
-		client := provider.GetDarajaClient(daraja.SandboxUrl, shortcodeCfg)
-		return NewDarajaApi(client, shortcodeCfg, provider.requestsRepo)
+		client := provider.GetDarajaClient(daraja.SandboxUrl, shortcode)
+		return NewDarajaApi(client, shortcode, provider.requestsRepo)
 	}
 
 	return nil
@@ -61,11 +73,11 @@ func (provider Provider) GetWebhookClient(service string) requests.WebhookProces
 	}
 }
 
-func (provider Provider) GetDarajaClient(endpoint string, cfg ShortCodeConfig) *daraja.Client {
+func (provider Provider) GetDarajaClient(endpoint string, cfg mpesa.ShortCode) *daraja.Client {
 
 	client := daraja.New(daraja.Config{Endpoint: endpoint, LogLevel: request.LogError})
 	client.Hooks.Build.PushFront(WithLogger())
-	client.Hooks.Build.PushBackHook(daraja.Authenticate(client.AuthenticationRequest(cfg.ConsumerKey, cfg.ConsumerSecret)))
+	client.Hooks.Build.PushBackHook(daraja.Authenticate(client.AuthenticationRequest(cfg.Key, cfg.Secret)))
 	client.Hooks.Send.PushFrontHook(corehooks.LogHTTPRequest)
 
 	return &client
