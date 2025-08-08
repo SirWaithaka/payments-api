@@ -157,6 +157,8 @@ func TestPaymentsRepository_UpdatePayment(t *testing.T) {
 	for _, tc := range testcases {
 
 		t.Run(tc.name, func(t *testing.T) {
+			defer testdata.ResetTables(inf)
+
 			// create and save payment record
 
 			payment := requests.Payment{

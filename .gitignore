@@ -27,3 +27,6 @@ go.work.sum
 
 # IDE files/directories
 .idea
+
+# Go generated files
+*_string.go

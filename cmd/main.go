@@ -65,7 +65,7 @@ func main() {
 	g.Go(ln.Close)
 
 	// wait for all goroutines in a g group
-	if err := g.Wait(); err != nil {
+	if err = g.Wait(); err != nil {
 		return
 	}
 	l.Info().Msg("main shutting down")

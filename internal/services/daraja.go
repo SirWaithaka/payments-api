@@ -15,6 +15,7 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/SirWaithaka/payments-api/clients/daraja"
+	"github.com/SirWaithaka/payments-api/internal/domains/mpesa"
 	"github.com/SirWaithaka/payments-api/internal/domains/payments"
 	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
@@ -22,7 +23,7 @@ import (
 )
 
 const (
-	serviceName = "daraja"
+	serviceName = requests.PartnerDaraja
 )
 
 type Status string
@@ -121,7 +122,7 @@ func webhook(baseUrl string, action string) string {
 	return u.String()
 }
 
-func NewDarajaApi(client *daraja.Client, shortcode ShortCodeConfig, repo requests.Repository) DarajaApi {
+func NewDarajaApi(client *daraja.Client, shortcode mpesa.ShortCode, repo requests.Repository) DarajaApi {
 	return DarajaApi{client: client, shortcode: shortcode, requestRepo: repo}
 }
 
@@ -129,7 +130,7 @@ func NewDarajaApi(client *daraja.Client, shortcode ShortCodeConfig, repo request
 // through the daraja platform
 type DarajaApi struct {
 	client      *daraja.Client
-	shortcode   ShortCodeConfig
+	shortcode   mpesa.ShortCode
 	requestRepo requests.Repository
 }
 
@@ -163,7 +164,7 @@ func (api DarajaApi) C2B(ctx context.Context, payment payments.WalletPayment) er
 	// create an instance of request and add a request recorder hook
 	requestID := xid.New().String()
 	out := &ResponseC2BExpress{}
-	req, _ := api.client.C2BExpressRequest(payload, request.WithServiceName(serviceName))
+	req, _ := api.client.C2BExpressRequest(payload, request.WithServiceName(serviceName.String()))
 	req.WithContext(ctx)
 	req.Data = out
 	req.Hooks.Send.PushFrontHook(recorder.RecordRequest(payment.PaymentID, requestID))
@@ -211,7 +212,7 @@ func (api DarajaApi) B2C(ctx context.Context, payment payments.WalletPayment) er
 	// create an instance of request and add the request recorder
 	requestID := xid.New().String()
 	out := &ResponseDefault{}
-	req, _ := api.client.B2CRequest(payload, request.WithServiceName(serviceName))
+	req, _ := api.client.B2CRequest(payload, request.WithServiceName(serviceName.String()))
 	req.WithContext(ctx)
 	req.Data = out
 	req.Hooks.Send.PushFrontHook(recorder.RecordRequest(payment.PaymentID, requestID))
@@ -226,7 +227,7 @@ func (api DarajaApi) B2C(ctx context.Context, payment payments.WalletPayment) er
 	return nil
 }
 
-func (api DarajaApi) B2B(ctx context.Context, payment payments.WalletPayment) error {
+func (api DarajaApi) B2B(ctx context.Context, paymentID string, payment mpesa.PaymentRequest) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling b2b payment")
 
@@ -257,10 +258,10 @@ func (api DarajaApi) B2B(ctx context.Context, payment payments.WalletPayment) er
 	// create an instance of request and add the request recorder
 	requestID := xid.New().String()
 	out := &ResponseDefault{}
-	req, _ := api.client.B2BRequest(payload, request.WithServiceName(serviceName))
+	req, _ := api.client.B2BRequest(payload, request.WithServiceName(serviceName.String()))
 	req.WithContext(ctx)
 	req.Data = out
-	req.Hooks.Send.PushFrontHook(recorder.RecordRequest(payment.PaymentID, requestID))
+	req.Hooks.Send.PushFrontHook(recorder.RecordRequest(paymentID, requestID))
 	req.Hooks.Complete.PushFrontHook(recorder.UpdateRequestResponse(requestID))
 
 	if err = req.Send(); err != nil {
@@ -298,7 +299,7 @@ func (api DarajaApi) Reversal(ctx context.Context, payment requests.Payment) err
 
 	// create an instance of request and add the request recorder
 	out := &ResponseDefault{}
-	req, _ := api.client.ReversalRequest(payload, request.WithServiceName(serviceName))
+	req, _ := api.client.ReversalRequest(payload, request.WithServiceName(serviceName.String()))
 	req.WithContext(ctx)
 	req.Data = out
 	// generate a unique request id
@@ -319,7 +320,7 @@ func (api DarajaApi) Reversal(ctx context.Context, payment requests.Payment) err
 }
 
 // Status calls the api to check transaction status
-func (api DarajaApi) Status(ctx context.Context, payment requests.Payment) error {
+func (api DarajaApi) Status(ctx context.Context, payment mpesa.Payment) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling transaction status")
 
