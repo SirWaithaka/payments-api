@@ -12,7 +12,7 @@ type Status string
 
 const (
 	StatusReceived  Status = "received"
-	StatusSend      Status = "sent"
+	StatusSent      Status = "sent"
 	StatusSucceeded Status = "succeeded"
 	StatusFailed    Status = "failed"
 	StatusDeclined  Status = "declined"
@@ -31,8 +31,8 @@ func ToStatus(s string) Status {
 	switch s {
 	case string(StatusReceived):
 		return StatusReceived
-	case string(StatusSend):
-		return StatusSend
+	case string(StatusSent):
+		return StatusSent
 	case string(StatusSucceeded):
 		return StatusSucceeded
 	case string(StatusFailed):
@@ -41,6 +41,35 @@ func ToStatus(s string) Status {
 		return StatusDeclined
 	default:
 		return "unknown"
+	}
+}
+
+//go:generate stringer -type=Partner -linecomment -output=request_string.go
+
+// Partner is an enum for all external partner apis we support
+type Partner int
+
+const (
+	PartnerUnknown Partner = iota // unknown
+	PartnerDaraja                 // daraja
+	PartnerQuikk                  // quikk
+	PartnerTanda                  // tanda
+)
+
+func (partner Partner) MarshalText() ([]byte, error) {
+	return []byte(partner.String()), nil
+}
+
+func ToPartner(partner string) Partner {
+	switch partner {
+	case PartnerTanda.String():
+		return PartnerTanda
+	case PartnerDaraja.String():
+		return PartnerDaraja
+	case PartnerQuikk.String():
+		return PartnerQuikk
+	default:
+		return PartnerUnknown
 	}
 }
 
