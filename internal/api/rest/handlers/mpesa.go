@@ -23,7 +23,7 @@ func (handler MpesaHandlers) Transfer(c *gin.Context) {
 	l := zerolog.Ctx(c.Request.Context())
 	l.Debug().Msg("mpesa transfer request")
 
-	var params requests.RequestWalletPayment
+	var params requests.RequestMpesaPayment
 	if err := c.ShouldBindBodyWithJSON(&params); err != nil {
 		handleRequestParsingError(c, err)
 		return
