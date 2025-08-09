@@ -1,4 +1,4 @@
-FROM alpine/psql
+FROM alpine/psql:17.5
 
 RUN apk add make
 
