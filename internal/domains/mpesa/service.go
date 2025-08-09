@@ -52,6 +52,7 @@ func (service MpesaService) Transfer(ctx context.Context, req PaymentRequest) (P
 		Beneficiary:         req.Beneficiary,
 		Description:         req.Description,
 		ShortCodeID:         shortcode.ShortCodeID,
+		Status:              requests.StatusReceived,
 	}
 
 	// saving will fail if payment with the same idempotency id already exists
