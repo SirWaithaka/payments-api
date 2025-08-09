@@ -62,10 +62,10 @@ func (partner Partner) MarshalText() ([]byte, error) {
 
 func ToPartner(partner string) Partner {
 	switch partner {
-	case PartnerTanda.String():
-		return PartnerTanda
 	case PartnerDaraja.String():
 		return PartnerDaraja
+	case PartnerTanda.String():
+		return PartnerTanda
 	case PartnerQuikk.String():
 		return PartnerQuikk
 	default:
@@ -119,8 +119,6 @@ type Request struct {
 	Latency    time.Duration
 	Response   map[string]any
 	CreatedAt  time.Time
-
-	Payment *Payment
 }
 
 type OptionsFindOneRequest struct {
@@ -135,7 +133,7 @@ type OptionsUpdateRequest struct {
 }
 
 type WebhookResult struct {
-	Service string
+	Service Partner
 	Action  string
 	Body    io.Reader
 	Data    any
@@ -161,7 +159,7 @@ func NewWebhookResult(partner string, action string, body io.Reader) *WebhookRes
 		buf.Write([]byte{})
 	}
 
-	return &WebhookResult{Service: partner, Action: action, body: buf.Bytes()}
+	return &WebhookResult{Service: ToPartner(partner), Action: action, body: buf.Bytes()}
 }
 
 // Repository defines methods for managing and interacting with Request entities.
@@ -172,9 +170,9 @@ type Repository interface {
 }
 
 type WebhookProcessor interface {
-	Process(ctx context.Context, result *WebhookResult) (OptionsUpdatePayment, error)
+	Process(ctx context.Context, in *WebhookResult, out any) error
 }
 
 type Provider interface {
-	GetWebhookClient(service string) WebhookProcessor
+	GetWebhookClient(service Partner) WebhookProcessor
 }
