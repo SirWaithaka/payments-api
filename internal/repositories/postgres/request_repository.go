@@ -26,8 +26,7 @@ type RequestSchema struct {
 	Response datatypes.JSONMap `gorm:"column:response;type:json"`
 
 	// define a belongsTo relationship
-	PaymentID *string       `gorm:"column:payment_id"`
-	Payment   PaymentSchema `gorm:"references:PaymentID"`
+	PaymentID *string `gorm:"column:payment_id"`
 }
 
 func (RequestSchema) TableName() string {
@@ -75,12 +74,6 @@ func (schema RequestSchema) ToEntity() requests.Request {
 		request.PaymentID = (*schema.PaymentID)
 	}
 
-	// not sure how robust this is
-	if schema.Payment.PaymentID != "" {
-		payment := schema.Payment.ToEntity()
-		request.Payment = &payment
-	}
-
 	if schema.Response != nil {
 		request.Response = schema.Response
 	}
@@ -122,7 +115,7 @@ func (repository RequestRepository) Add(ctx context.Context, req requests.Reques
 
 func (repository RequestRepository) FindOneRequest(ctx context.Context, opts requests.OptionsFindOneRequest) (requests.Request, error) {
 	l := zerolog.Ctx(ctx)
-	l.Info().Any(logger.LData, opts).Msg("fetch payment request by reference")
+	l.Info().Any(logger.LData, opts).Msg("fetch api request by reference")
 
 	// configure find options
 	where := RequestSchema{}
@@ -135,7 +128,6 @@ func (repository RequestRepository) FindOneRequest(ctx context.Context, opts req
 
 	var record RequestSchema
 	result := repository.db.WithContext(ctx).
-		Preload("Payment").
 		Where(where).
 		Take(&record).
 		Order("created_at desc")
