@@ -21,7 +21,7 @@ type DI struct {
 }
 
 func New(cfg config.Config, db *storage.Database, pub events.Publisher) *DI {
-	paymentsRepository := postgres.NewPaymentsRepository(db.PG)
+	//paymentsRepository := postgres.NewPaymentsRepository(db.PG)
 	requestsRepository := postgres.NewRequestRepository(db.PG)
 	webhooksRepository := postgres.NewWebhookRepository(db.PG)
 	shortcodeRepository := postgres.NewShortCodeRepository(db.PG)
@@ -31,7 +31,7 @@ func New(cfg config.Config, db *storage.Database, pub events.Publisher) *DI {
 
 	mpesaService := mpesa.NewMpesaService(mpesaPaymentsRepository, shortcodeRepository, apiProvider)
 	//walletsService := payments.NewWalletService(apiProvider, paymentsRepository)
-	webhooksService := webhooks.NewService(webhooksRepository, requestsRepository, paymentsRepository, apiProvider, pub)
+	webhooksService := webhooks.NewService(webhooksRepository, requestsRepository, mpesaPaymentsRepository, apiProvider, pub)
 
 	return &DI{
 		Cfg:       &cfg,
