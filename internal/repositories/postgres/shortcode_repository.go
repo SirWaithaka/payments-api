@@ -150,7 +150,7 @@ func (repository ShortCodeRepository) FindOne(ctx context.Context, opts mpesa.Op
 
 func (repository ShortCodeRepository) FindMany(ctx context.Context, opts mpesa.OptionsFindShortCodes) ([]mpesa.ShortCode, error) {
 	l := zerolog.Ctx(ctx)
-	l.Info().Any(logger.LData, opts).Msg("find shortcodes")
+	l.Info().Msg("find shortcodes")
 
 	// build find options
 	where := ShortCodeSchema{}

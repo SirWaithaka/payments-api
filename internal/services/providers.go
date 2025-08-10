@@ -64,9 +64,9 @@ func (provider Provider) GetMpesaApi(shortcode mpesa.ShortCode) mpesa.API {
 	return nil
 }
 
-func (provider Provider) GetWebhookClient(service string) requests.WebhookProcessor {
+func (provider Provider) GetWebhookClient(service requests.Partner) requests.WebhookProcessor {
 	switch service {
-	case "daraja":
+	case requests.PartnerDaraja:
 		return NewWebhookProcessor()
 	default:
 		return nil
