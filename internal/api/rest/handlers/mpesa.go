@@ -7,6 +7,7 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/SirWaithaka/payments-api/internal/api/rest/requests"
+	"github.com/SirWaithaka/payments-api/internal/api/rest/responses"
 	"github.com/SirWaithaka/payments-api/internal/domains/mpesa"
 	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
 )
@@ -19,11 +20,71 @@ type MpesaHandlers struct {
 	service mpesa.Service
 }
 
+func (handler MpesaHandlers) Charge(c *gin.Context) {
+	l := zerolog.Ctx(c.Request.Context())
+	l.Debug().Msg("mpesa charge request")
+
+	var params requests.RequestMpesaPayment
+	if err := c.ShouldBindBodyWithJSON(&params); err != nil {
+		handleRequestParsingError(c, err)
+		return
+	}
+
+	payment, err := handler.service.Charge(c.Request.Context(), mpesa.PaymentRequest{
+		IdempotencyID:         params.IdempotencyID,
+		ClientTransactionID:   params.TransactionID,
+		Amount:                params.Amount,
+		ExternalAccountNumber: params.ExternalAccountID,
+		Description:           params.Description,
+	})
+	if err != nil {
+		err = c.Error(err)
+		return
+	}
+	l.Debug().Any(logger.LData, payment).Msg("payment")
+
+	c.JSON(http.StatusOK, responses.MpesaPaymentResponse{
+		PaymentID:     payment.PaymentID,
+		TransactionID: payment.ClientTransactionID,
+		Status:        payment.Status.String(),
+	})
+}
+
+func (handler MpesaHandlers) Payout(c *gin.Context) {
+	l := zerolog.Ctx(c.Request.Context())
+	l.Debug().Msg("mpesa payout request")
+
+	var params requests.RequestMpesaPayment
+	if err := c.ShouldBindBodyWithJSON(&params); err != nil {
+		handleRequestParsingError(c, err)
+		return
+	}
+
+	payment, err := handler.service.Payout(c.Request.Context(), mpesa.PaymentRequest{
+		IdempotencyID:         params.IdempotencyID,
+		ClientTransactionID:   params.TransactionID,
+		Amount:                params.Amount,
+		ExternalAccountNumber: params.ExternalAccountID,
+		Description:           params.Description,
+	})
+	if err != nil {
+		err = c.Error(err)
+		return
+	}
+	l.Debug().Any(logger.LData, payment).Msg("payment")
+
+	c.JSON(http.StatusOK, responses.MpesaPaymentResponse{
+		PaymentID:     payment.PaymentID,
+		TransactionID: payment.ClientTransactionID,
+		Status:        payment.Status.String(),
+	})
+}
+
 func (handler MpesaHandlers) Transfer(c *gin.Context) {
 	l := zerolog.Ctx(c.Request.Context())
 	l.Debug().Msg("mpesa transfer request")
 
-	var params requests.RequestWalletPayment
+	var params requests.RequestMpesaPayment
 	if err := c.ShouldBindBodyWithJSON(&params); err != nil {
 		handleRequestParsingError(c, err)
 		return
@@ -33,6 +94,7 @@ func (handler MpesaHandlers) Transfer(c *gin.Context) {
 		IdempotencyID:         params.IdempotencyID,
 		ClientTransactionID:   params.TransactionID,
 		Amount:                params.Amount,
+		ExternalAccountType:   params.ExternalAccountType,
 		ExternalAccountNumber: params.ExternalAccountID,
 		Beneficiary:           params.Beneficiary,
 		Description:           params.Description,
@@ -43,7 +105,11 @@ func (handler MpesaHandlers) Transfer(c *gin.Context) {
 	}
 	l.Debug().Any(logger.LData, payment).Msg("payment")
 
-	c.JSON(http.StatusOK, payment)
+	c.JSON(http.StatusOK, responses.MpesaPaymentResponse{
+		PaymentID:     payment.PaymentID,
+		TransactionID: payment.ClientTransactionID,
+		Status:        payment.Status.String(),
+	})
 
 }
 

@@ -20,9 +20,10 @@ func routes(router *gin.Engine, di *dipkg.DI) {
 	group.POST("/transfer", paymentHandlers.Transfer)
 	group.POST("/status", paymentHandlers.PaymentStatus)
 
+	// mpesa routes
 	mpesaGroup := group.Group("/mpesa")
-	//mpesaGroup.POST("/charge", mpesaHandlers.Charge)
-	//mpesaGroup.POST("/payout", mpesaHandlers.Payout)
+	mpesaGroup.POST("/charge", mpesaHandlers.Charge)
+	mpesaGroup.POST("/payout", mpesaHandlers.Payout)
 	mpesaGroup.POST("/transfer", mpesaHandlers.Transfer)
 	mpesaGroup.POST("/status", mpesaHandlers.PaymentStatus)
 }

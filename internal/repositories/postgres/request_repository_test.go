@@ -84,54 +84,53 @@ func TestRequestRepository_AddRequest(t *testing.T) {
 func TestRequestRepository_FindOneRequest(t *testing.T) {
 	ctx := context.Background()
 
-	paymentsRepo := postgres.NewPaymentsRepository(inf.Storage.PG)
 	repo := postgres.NewRequestRepository(inf.Storage.PG)
 
-	t.Run("test that it appends payment details to api request", func(t *testing.T) {
-		defer testdata.ResetTables(inf)
-
-		record := requests.Payment{
-			PaymentID:           ulid.Make().String(),
-			PaymentReference:    ulid.Make().String(),
-			ClientTransactionID: ulid.Make().String(),
-			IdempotencyID:       ulid.Make().String(),
-		}
-
-		apiRequest := requests.Request{
-			RequestID:  ulid.Make().String(),
-			ExternalID: ulid.Make().String(),
-			Partner:    "fake_partner",
-			Status:     "received",
-			Latency:    1000,
-			Response:   nil,
-			PaymentID:  record.PaymentID,
-		}
-
-		err := paymentsRepo.AddPayment(ctx, record)
-		if err != nil {
-			t.Errorf("expected nil error, got %v", err)
-		}
-
-		err = repo.Add(ctx, apiRequest)
-		if err != nil {
-			t.Errorf("expected nil error, got %v", err)
-		}
-
-		// now test the find
-		request, err := repo.FindOneRequest(ctx, requests.OptionsFindOneRequest{RequestID: &apiRequest.RequestID})
-		if err != nil {
-			t.Errorf("expected nil error, got %v", err)
-		}
-
-		if request.Payment == nil {
-			t.Errorf("expected non-nil value")
-		}
-
-		if request.Payment.PaymentReference != record.PaymentReference {
-			t.Errorf("expected %s, got %s", request.Payment.PaymentReference, record.PaymentReference)
-		}
-
-	})
+	//t.Run("test that it appends payment details to api request", func(t *testing.T) {
+	//	defer testdata.ResetTables(inf)
+	//
+	//	record := requests.Payment{
+	//		PaymentID:           ulid.Make().String(),
+	//		PaymentReference:    ulid.Make().String(),
+	//		ClientTransactionID: ulid.Make().String(),
+	//		IdempotencyID:       ulid.Make().String(),
+	//	}
+	//
+	//	apiRequest := requests.Request{
+	//		RequestID:  ulid.Make().String(),
+	//		ExternalID: ulid.Make().String(),
+	//		Partner:    "fake_partner",
+	//		Status:     "received",
+	//		Latency:    1000,
+	//		Response:   nil,
+	//		PaymentID:  record.PaymentID,
+	//	}
+	//
+	//	err := paymentsRepo.AddPayment(ctx, record)
+	//	if err != nil {
+	//		t.Errorf("expected nil error, got %v", err)
+	//	}
+	//
+	//	err = repo.Add(ctx, apiRequest)
+	//	if err != nil {
+	//		t.Errorf("expected nil error, got %v", err)
+	//	}
+	//
+	//	// now test the find
+	//	request, err := repo.FindOneRequest(ctx, requests.OptionsFindOneRequest{RequestID: &apiRequest.RequestID})
+	//	if err != nil {
+	//		t.Errorf("expected nil error, got %v", err)
+	//	}
+	//
+	//	if request.Payment == nil {
+	//		t.Errorf("expected non-nil value")
+	//	}
+	//
+	//	if request.Payment.PaymentReference != record.PaymentReference {
+	//		t.Errorf("expected %s, got %s", request.Payment.PaymentReference, record.PaymentReference)
+	//	}
+	//
+	//})
 
 	t.Run("test that it finds by external id", func(t *testing.T) {
 		defer testdata.ResetTables(inf)

@@ -5,7 +5,7 @@ import (
 
 	"github.com/rs/zerolog"
 
-	"github.com/SirWaithaka/payments-api/internal/domains/payments"
+	"github.com/SirWaithaka/payments-api/internal/domains/mpesa"
 	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	"github.com/SirWaithaka/payments-api/internal/events"
 	pkgevents "github.com/SirWaithaka/payments-api/internal/pkg/events"
@@ -14,7 +14,7 @@ import (
 	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
 )
 
-func NewService(repository Repository, requestsRepo requests.Repository, paymentsRepo payments.Repository, provider requests.Provider, publisher events.Publisher) WebhookService {
+func NewService(repository Repository, requestsRepo requests.Repository, paymentsRepo mpesa.Repository, provider requests.Provider, publisher events.Publisher) WebhookService {
 	return WebhookService{
 		repository:   repository,
 		requestsRepo: requestsRepo,
@@ -27,7 +27,7 @@ func NewService(repository Repository, requestsRepo requests.Repository, payment
 type WebhookService struct {
 	repository   Repository
 	requestsRepo requests.Repository
-	paymentsRepo payments.Repository
+	paymentsRepo mpesa.Repository
 	provider     requests.Provider
 	publisher    events.Publisher
 }
@@ -38,7 +38,7 @@ func (service WebhookService) Confirm(ctx context.Context, result *requests.Webh
 	// TODO: Maybe validate against double webhooks before saving and publishing
 
 	// save the webhook result
-	err := service.repository.Add(ctx, result.Service, result.Action, result.Bytes())
+	err := service.repository.Add(ctx, result.Service.String(), result.Action, result.Bytes())
 	if err != nil {
 		// I think we should fail if saving fails
 		return err
@@ -47,7 +47,7 @@ func (service WebhookService) Confirm(ctx context.Context, result *requests.Webh
 	// publish webhook event
 	payload := payloads.WebhookReceived[[]byte]{
 		Action:  result.Action,
-		Service: result.Service,
+		Service: result.Service.String(),
 		Content: result.Bytes(),
 	}
 	event := pkgevents.NewEvent(subjects.WebhookReceived, payload)
@@ -72,7 +72,8 @@ func (service WebhookService) Process(ctx context.Context, result *requests.Webh
 	client := service.provider.GetWebhookClient(result.Service)
 
 	// use client to get necessary data to update payment
-	opts, err := client.Process(ctx, result)
+	opts := &mpesa.OptionsUpdatePayment{}
+	err := client.Process(ctx, result, opts)
 	if err != nil {
 		// if error, do nothing and return
 		l.Warn().Err(err).Msg("error transforming webhook")
@@ -104,7 +105,7 @@ func (service WebhookService) Process(ctx context.Context, result *requests.Webh
 	}
 
 	// update payment record
-	err = service.paymentsRepo.UpdatePayment(ctx, req.PaymentID, opts)
+	err = service.paymentsRepo.Update(ctx, req.PaymentID, *opts)
 	if err != nil {
 		return err
 	}
