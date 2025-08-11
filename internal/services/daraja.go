@@ -16,7 +16,6 @@ import (
 
 	"github.com/SirWaithaka/payments-api/clients/daraja"
 	"github.com/SirWaithaka/payments-api/internal/domains/mpesa"
-	"github.com/SirWaithaka/payments-api/internal/domains/payments"
 	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
 	"github.com/SirWaithaka/payments-api/request"
@@ -134,7 +133,7 @@ type DarajaApi struct {
 	requestRepo requests.Repository
 }
 
-func (api DarajaApi) C2B(ctx context.Context, payment payments.WalletPayment) error {
+func (api DarajaApi) C2B(ctx context.Context, paymentID string, payment mpesa.PaymentRequest) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling c2b payment")
 
@@ -167,7 +166,7 @@ func (api DarajaApi) C2B(ctx context.Context, payment payments.WalletPayment) er
 	req, _ := api.client.C2BExpressRequest(payload, request.WithServiceName(serviceName.String()))
 	req.WithContext(ctx)
 	req.Data = out
-	req.Hooks.Send.PushFrontHook(recorder.RecordRequest(payment.PaymentID, requestID))
+	req.Hooks.Send.PushFrontHook(recorder.RecordRequest(paymentID, requestID))
 	req.Hooks.Complete.PushFrontHook(recorder.UpdateRequestResponse(requestID))
 
 	if err := req.Send(); err != nil {
@@ -180,7 +179,7 @@ func (api DarajaApi) C2B(ctx context.Context, payment payments.WalletPayment) er
 
 }
 
-func (api DarajaApi) B2C(ctx context.Context, payment payments.WalletPayment) error {
+func (api DarajaApi) B2C(ctx context.Context, paymentID string, payment mpesa.PaymentRequest) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling b2c payment")
 
@@ -215,7 +214,7 @@ func (api DarajaApi) B2C(ctx context.Context, payment payments.WalletPayment) er
 	req, _ := api.client.B2CRequest(payload, request.WithServiceName(serviceName.String()))
 	req.WithContext(ctx)
 	req.Data = out
-	req.Hooks.Send.PushFrontHook(recorder.RecordRequest(payment.PaymentID, requestID))
+	req.Hooks.Send.PushFrontHook(recorder.RecordRequest(paymentID, requestID))
 	req.Hooks.Complete.PushFrontHook(recorder.UpdateRequestResponse(requestID))
 
 	if err = req.Send(); err != nil {
