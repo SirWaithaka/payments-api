@@ -24,12 +24,12 @@ type MpesaService struct {
 	provider            Provider
 }
 
-func (service MpesaService) Transfer(ctx context.Context, req PaymentRequest) (Payment, error) {
+func (service MpesaService) Charge(ctx context.Context, req PaymentRequest) (Payment, error) {
 
 	// get shortcode details for this payment type
 	shortcodes, err := service.shortCodeRepository.FindMany(ctx, OptionsFindShortCodes{
 		Service: types.Pointer(requests.PartnerDaraja),
-		Type:    types.Pointer(PaymentTypeWalletTransfer.String()),
+		Type:    types.Pointer(PaymentTypeCharge.String()),
 	})
 	if err != nil {
 		return Payment{}, err
@@ -43,16 +43,136 @@ func (service MpesaService) Transfer(ctx context.Context, req PaymentRequest) (P
 
 	// create a new payment and save it
 	payment := Payment{
-		PaymentID:           ulid.Make().String(),
-		Type:                PaymentTypeWalletTransfer,
-		ClientTransactionID: req.ClientTransactionID,
-		IdempotencyID:       req.IdempotencyID,
-		Amount:              req.Amount,
-		SourceAccountNumber: req.ExternalAccountNumber,
-		Beneficiary:         req.Beneficiary,
-		Description:         req.Description,
-		ShortCodeID:         shortcode.ShortCodeID,
-		Status:              requests.StatusReceived,
+		PaymentID:                ulid.Make().String(),
+		Type:                     PaymentTypeCharge,
+		ClientTransactionID:      req.ClientTransactionID,
+		IdempotencyID:            req.IdempotencyID,
+		Amount:                   req.Amount,
+		SourceAccountNumber:      req.ExternalAccountNumber,
+		DestinationAccountNumber: shortcode.ShortCode,
+		Description:              req.Description,
+		ShortCodeID:              shortcode.ShortCodeID,
+		Status:                   requests.StatusReceived,
+	}
+
+	err = service.repository.Add(ctx, payment)
+	if err != nil {
+		return Payment{}, err
+	}
+
+	// get client api for this payment request
+	api := service.provider.GetMpesaApi(shortcode)
+	if api == nil {
+		return Payment{}, errors.New("api not configured")
+	}
+
+	// make http request to payment processor api
+	err = api.C2B(ctx, payment.PaymentID, req)
+	if err != nil {
+		return Payment{}, err
+	}
+
+	// update payment status
+	err = service.repository.Update(ctx, payment.PaymentID, OptionsUpdatePayment{Status: types.Pointer(requests.StatusSent)})
+	if err != nil {
+		return Payment{}, err
+	}
+
+	// set payment status and return
+	payment.Status = requests.StatusSent
+	return payment, nil
+}
+
+func (service MpesaService) Payout(ctx context.Context, req PaymentRequest) (Payment, error) {
+
+	// get shortcode details for this payment type
+	shortcodes, err := service.shortCodeRepository.FindMany(ctx, OptionsFindShortCodes{
+		Service: types.Pointer(requests.PartnerDaraja),
+		Type:    types.Pointer(PaymentTypePayout.String()),
+	})
+	if err != nil {
+		return Payment{}, err
+	}
+
+	if len(shortcodes) == 0 {
+		return Payment{}, errors.New("no shortcodes configured for payment type")
+	}
+
+	shortcode := shortcodes[0]
+
+	// create a new payment and save it
+	payment := Payment{
+		PaymentID:                ulid.Make().String(),
+		Type:                     PaymentTypePayout,
+		ClientTransactionID:      req.ClientTransactionID,
+		IdempotencyID:            req.IdempotencyID,
+		Amount:                   req.Amount,
+		SourceAccountNumber:      shortcode.ShortCode,
+		DestinationAccountNumber: req.ExternalAccountNumber,
+		Description:              req.Description,
+		ShortCodeID:              shortcode.ShortCodeID,
+		Status:                   requests.StatusReceived,
+	}
+
+	// saving will fail if payment with the same idempotency id already exists
+	err = service.repository.Add(ctx, payment)
+	if err != nil {
+		return Payment{}, err
+	}
+
+	// get client api for this payment request
+	api := service.provider.GetMpesaApi(shortcode)
+	if api == nil {
+		return Payment{}, errors.New("api not configured")
+	}
+
+	// make http request to payment processor api
+	err = api.B2C(ctx, payment.PaymentID, req)
+	if err != nil {
+		return Payment{}, err
+	}
+
+	// update payment status
+	err = service.repository.Update(ctx, payment.PaymentID, OptionsUpdatePayment{Status: types.Pointer(requests.StatusSent)})
+	if err != nil {
+		return Payment{}, err
+	}
+
+	// set payment status and return
+	payment.Status = requests.StatusSent
+	return payment, nil
+}
+
+func (service MpesaService) Transfer(ctx context.Context, req PaymentRequest) (Payment, error) {
+
+	// get shortcode details for this payment type
+	shortcodes, err := service.shortCodeRepository.FindMany(ctx, OptionsFindShortCodes{
+		Service: types.Pointer(requests.PartnerDaraja),
+		Type:    types.Pointer(PaymentTypeTransfer.String()),
+	})
+	if err != nil {
+		return Payment{}, err
+	}
+
+	if len(shortcodes) == 0 {
+		return Payment{}, errors.New("no shortcodes configured for payment type")
+	}
+
+	shortcode := shortcodes[0]
+
+	// create a new payment and save it
+	payment := Payment{
+		PaymentID:                ulid.Make().String(),
+		Type:                     PaymentTypeTransfer,
+		ClientTransactionID:      req.ClientTransactionID,
+		IdempotencyID:            req.IdempotencyID,
+		Amount:                   req.Amount,
+		SourceAccountNumber:      shortcode.ShortCode,
+		DestinationAccountNumber: req.ExternalAccountNumber,
+		Beneficiary:              req.Beneficiary,
+		Description:              req.Description,
+		ShortCodeID:              shortcode.ShortCodeID,
+		Status:                   requests.StatusReceived,
 	}
 
 	// saving will fail if payment with the same idempotency id already exists
@@ -79,6 +199,8 @@ func (service MpesaService) Transfer(ctx context.Context, req PaymentRequest) (P
 		return Payment{}, err
 	}
 
+	// set payment status and return
+	payment.Status = requests.StatusSent
 	return payment, nil
 }
 
