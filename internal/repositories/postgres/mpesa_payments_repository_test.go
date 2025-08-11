@@ -20,7 +20,7 @@ func TestMpesaPaymentRepository_Add(t *testing.T) {
 
 		payment := mpesa.Payment{
 			PaymentID:                ulid.Make().String(),
-			Type:                     mpesa.PaymentTypeWalletTransfer,
+			Type:                     mpesa.PaymentTypeTransfer,
 			Status:                   requests.StatusSent,
 			ClientTransactionID:      ulid.Make().String(),
 			IdempotencyID:            ulid.Make().String(),
