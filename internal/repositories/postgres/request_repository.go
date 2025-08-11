@@ -11,6 +11,7 @@ import (
 
 	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
+	"github.com/SirWaithaka/payments-api/internal/pkg/types"
 )
 
 type RequestSchema struct {
@@ -67,7 +68,7 @@ func (schema RequestSchema) ToEntity() requests.Request {
 	}
 
 	if schema.Status != nil {
-		request.Status = *schema.Status
+		request.Status = requests.ToStatus(*schema.Status)
 	}
 
 	if schema.PaymentID != nil {
@@ -97,7 +98,7 @@ func (repository RequestRepository) Add(ctx context.Context, req requests.Reques
 		RequestID:  req.RequestID,
 		ExternalID: &req.ExternalID,
 		Partner:    req.Partner,
-		Status:     &req.Status,
+		Status:     types.Pointer(req.Status.String()),
 		Latency:    req.Latency.Milliseconds(),
 		Response:   req.Response,
 		PaymentID:  &req.PaymentID,

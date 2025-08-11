@@ -23,7 +23,7 @@ func (recorder RequestRecorder) RecordRequest(paymentID, requestID string) reque
 			RequestID: requestID,
 			PaymentID: paymentID,
 			Partner:   r.Config.ServiceName,
-			Status:    "received",
+			Status:    requests.StatusReceived,
 		}
 
 		// save request
@@ -58,7 +58,7 @@ func (recorder RequestRecorder) UpdateRequestResponse(requestID string) request.
 
 			switch r.Error.(type) {
 			case pkgerrors.Timeout:
-				s := "timeout"
+				s := requests.StatusTimeout.String()
 				opts.Status = &s
 				break
 			case pkgerrors.Temporary:
@@ -66,7 +66,7 @@ func (recorder RequestRecorder) UpdateRequestResponse(requestID string) request.
 				opts.Status = &s
 				break
 			default:
-				s := "error"
+				s := requests.StatusError.String()
 				opts.Status = &s
 				break
 			}
