@@ -135,6 +135,7 @@ type OptionsFindOneRequest struct {
 type OptionsUpdateRequest struct {
 	ExternalID *string
 	Status     *string
+	Latency    *time.Duration
 	Response   map[string]any
 }
 

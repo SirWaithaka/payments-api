@@ -1,8 +1,11 @@
 package services
 
 import (
+	"time"
+
 	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	pkgerrors "github.com/SirWaithaka/payments-api/internal/pkg/errors"
+	"github.com/SirWaithaka/payments-api/internal/pkg/types"
 	"github.com/SirWaithaka/payments-api/request"
 )
 
@@ -85,6 +88,7 @@ func (recorder RequestRecorder) UpdateRequestResponse(requestID string) request.
 
 		s := "completed"
 		opts.Status = &s
+		opts.Latency = types.Pointer(time.Now().Sub(r.AttemptTime))
 		opts.Response = resMap
 	}}
 }

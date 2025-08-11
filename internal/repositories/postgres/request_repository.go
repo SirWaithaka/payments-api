@@ -156,6 +156,9 @@ func (repository RequestRepository) UpdateRequest(ctx context.Context, id string
 	if opts.Response != nil {
 		values.Response = opts.Response
 	}
+	if opts.Latency != nil {
+		values.Latency = opts.Latency.Milliseconds()
+	}
 
 	// when using a struct to update, gorm will ignore zero values
 	result := repository.db.WithContext(ctx).
