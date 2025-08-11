@@ -9,9 +9,9 @@ import (
 type PaymentType string
 
 const (
-	PaymentTypeWalletCharge   PaymentType = "charge"
-	PaymentTypeWalletPayout   PaymentType = "payout"
-	PaymentTypeWalletTransfer PaymentType = "transfer"
+	PaymentTypeCharge   PaymentType = "charge"
+	PaymentTypePayout   PaymentType = "payout"
+	PaymentTypeTransfer PaymentType = "transfer"
 )
 
 func (p PaymentType) String() string {
@@ -20,12 +20,12 @@ func (p PaymentType) String() string {
 
 func ToPaymentType(s string) PaymentType {
 	switch s {
-	case string(PaymentTypeWalletCharge):
-		return PaymentTypeWalletCharge
-	case string(PaymentTypeWalletPayout):
-		return PaymentTypeWalletPayout
-	case string(PaymentTypeWalletTransfer):
-		return PaymentTypeWalletTransfer
+	case string(PaymentTypeCharge):
+		return PaymentTypeCharge
+	case string(PaymentTypePayout):
+		return PaymentTypePayout
+	case string(PaymentTypeTransfer):
+		return PaymentTypeTransfer
 	default:
 		return "unknown"
 	}
@@ -63,6 +63,7 @@ type PaymentRequest struct {
 	IdempotencyID         string
 	ClientTransactionID   string
 	Amount                string
+	ExternalAccountType   string
 	ExternalAccountNumber string
 	Beneficiary           string
 	Description           string
@@ -113,6 +114,8 @@ type ShortCodeRepository interface {
 }
 
 type API interface {
+	C2B(ctx context.Context, paymentID string, req PaymentRequest) error
+	B2C(ctx context.Context, paymentID string, req PaymentRequest) error
 	B2B(ctx context.Context, paymentID string, req PaymentRequest) error
 	Status(ctx context.Context, payment Payment) error
 }
@@ -122,6 +125,8 @@ type Provider interface {
 }
 
 type Service interface {
+	Charge(ctx context.Context, request PaymentRequest) (Payment, error)
+	Payout(ctx context.Context, request PaymentRequest) (Payment, error)
 	Transfer(ctx context.Context, request PaymentRequest) (Payment, error)
 	Status(ctx context.Context, opts OptionsFindPayment) (Payment, error)
 }
