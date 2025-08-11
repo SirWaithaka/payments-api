@@ -15,6 +15,8 @@ const (
 	StatusSent      Status = "sent"
 	StatusSucceeded Status = "succeeded"
 	StatusFailed    Status = "failed"
+	StatusError     Status = "error"
+	StatusTimeout   Status = "timeout"
 	StatusDeclined  Status = "declined"
 )
 
@@ -24,7 +26,7 @@ func (s Status) String() string {
 
 // Final returns true if status equals to a final state of request
 func (s Status) Final() bool {
-	return s == StatusSucceeded || s == StatusFailed || s == StatusDeclined
+	return s == StatusSucceeded || s == StatusFailed || s == StatusDeclined || s == StatusError
 }
 
 func ToStatus(s string) Status {
@@ -37,6 +39,10 @@ func ToStatus(s string) Status {
 		return StatusSucceeded
 	case string(StatusFailed):
 		return StatusFailed
+	case string(StatusError):
+		return StatusError
+	case string(StatusTimeout):
+		return StatusTimeout
 	case string(StatusDeclined):
 		return StatusDeclined
 	default:
@@ -62,10 +68,10 @@ func (partner Partner) MarshalText() ([]byte, error) {
 
 func ToPartner(partner string) Partner {
 	switch partner {
-	case PartnerTanda.String():
-		return PartnerTanda
 	case PartnerDaraja.String():
 		return PartnerDaraja
+	case PartnerTanda.String():
+		return PartnerTanda
 	case PartnerQuikk.String():
 		return PartnerQuikk
 	default:
@@ -115,12 +121,10 @@ type Request struct {
 	PaymentID  string // foreign id tied to the original payment request
 	ExternalID string // request id we get back from partner from response
 	Partner    string
-	Status     string
+	Status     Status
 	Latency    time.Duration
 	Response   map[string]any
 	CreatedAt  time.Time
-
-	Payment *Payment
 }
 
 type OptionsFindOneRequest struct {
@@ -131,11 +135,12 @@ type OptionsFindOneRequest struct {
 type OptionsUpdateRequest struct {
 	ExternalID *string
 	Status     *string
+	Latency    *time.Duration
 	Response   map[string]any
 }
 
 type WebhookResult struct {
-	Service string
+	Service Partner
 	Action  string
 	Body    io.Reader
 	Data    any
@@ -161,7 +166,7 @@ func NewWebhookResult(partner string, action string, body io.Reader) *WebhookRes
 		buf.Write([]byte{})
 	}
 
-	return &WebhookResult{Service: partner, Action: action, body: buf.Bytes()}
+	return &WebhookResult{Service: ToPartner(partner), Action: action, body: buf.Bytes()}
 }
 
 // Repository defines methods for managing and interacting with Request entities.
@@ -172,9 +177,9 @@ type Repository interface {
 }
 
 type WebhookProcessor interface {
-	Process(ctx context.Context, result *WebhookResult) (OptionsUpdatePayment, error)
+	Process(ctx context.Context, in *WebhookResult, out any) error
 }
 
 type Provider interface {
-	GetWebhookClient(service string) WebhookProcessor
+	GetWebhookClient(service Partner) WebhookProcessor
 }

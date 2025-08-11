@@ -11,6 +11,7 @@ import (
 
 	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
+	"github.com/SirWaithaka/payments-api/internal/pkg/types"
 )
 
 type RequestSchema struct {
@@ -26,8 +27,7 @@ type RequestSchema struct {
 	Response datatypes.JSONMap `gorm:"column:response;type:json"`
 
 	// define a belongsTo relationship
-	PaymentID *string       `gorm:"column:payment_id"`
-	Payment   PaymentSchema `gorm:"references:PaymentID"`
+	PaymentID *string `gorm:"column:payment_id"`
 }
 
 func (RequestSchema) TableName() string {
@@ -68,17 +68,11 @@ func (schema RequestSchema) ToEntity() requests.Request {
 	}
 
 	if schema.Status != nil {
-		request.Status = *schema.Status
+		request.Status = requests.ToStatus(*schema.Status)
 	}
 
 	if schema.PaymentID != nil {
 		request.PaymentID = (*schema.PaymentID)
-	}
-
-	// not sure how robust this is
-	if schema.Payment.PaymentID != "" {
-		payment := schema.Payment.ToEntity()
-		request.Payment = &payment
 	}
 
 	if schema.Response != nil {
@@ -104,7 +98,7 @@ func (repository RequestRepository) Add(ctx context.Context, req requests.Reques
 		RequestID:  req.RequestID,
 		ExternalID: &req.ExternalID,
 		Partner:    req.Partner,
-		Status:     &req.Status,
+		Status:     types.Pointer(req.Status.String()),
 		Latency:    req.Latency.Milliseconds(),
 		Response:   req.Response,
 		PaymentID:  &req.PaymentID,
@@ -122,7 +116,7 @@ func (repository RequestRepository) Add(ctx context.Context, req requests.Reques
 
 func (repository RequestRepository) FindOneRequest(ctx context.Context, opts requests.OptionsFindOneRequest) (requests.Request, error) {
 	l := zerolog.Ctx(ctx)
-	l.Info().Any(logger.LData, opts).Msg("fetch payment request by reference")
+	l.Info().Any(logger.LData, opts).Msg("fetch api request by reference")
 
 	// configure find options
 	where := RequestSchema{}
@@ -135,7 +129,6 @@ func (repository RequestRepository) FindOneRequest(ctx context.Context, opts req
 
 	var record RequestSchema
 	result := repository.db.WithContext(ctx).
-		Preload("Payment").
 		Where(where).
 		Take(&record).
 		Order("created_at desc")
@@ -162,6 +155,9 @@ func (repository RequestRepository) UpdateRequest(ctx context.Context, id string
 	}
 	if opts.Response != nil {
 		values.Response = opts.Response
+	}
+	if opts.Latency != nil {
+		values.Latency = opts.Latency.Milliseconds()
 	}
 
 	// when using a struct to update, gorm will ignore zero values

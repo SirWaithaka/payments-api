@@ -16,7 +16,6 @@ import (
 
 	"github.com/SirWaithaka/payments-api/clients/daraja"
 	"github.com/SirWaithaka/payments-api/internal/domains/mpesa"
-	"github.com/SirWaithaka/payments-api/internal/domains/payments"
 	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
 	"github.com/SirWaithaka/payments-api/request"
@@ -134,7 +133,7 @@ type DarajaApi struct {
 	requestRepo requests.Repository
 }
 
-func (api DarajaApi) C2B(ctx context.Context, payment payments.WalletPayment) error {
+func (api DarajaApi) C2B(ctx context.Context, paymentID string, payment mpesa.PaymentRequest) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling c2b payment")
 
@@ -167,7 +166,7 @@ func (api DarajaApi) C2B(ctx context.Context, payment payments.WalletPayment) er
 	req, _ := api.client.C2BExpressRequest(payload, request.WithServiceName(serviceName.String()))
 	req.WithContext(ctx)
 	req.Data = out
-	req.Hooks.Send.PushFrontHook(recorder.RecordRequest(payment.PaymentID, requestID))
+	req.Hooks.Send.PushFrontHook(recorder.RecordRequest(paymentID, requestID))
 	req.Hooks.Complete.PushFrontHook(recorder.UpdateRequestResponse(requestID))
 
 	if err := req.Send(); err != nil {
@@ -180,7 +179,7 @@ func (api DarajaApi) C2B(ctx context.Context, payment payments.WalletPayment) er
 
 }
 
-func (api DarajaApi) B2C(ctx context.Context, payment payments.WalletPayment) error {
+func (api DarajaApi) B2C(ctx context.Context, paymentID string, payment mpesa.PaymentRequest) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling b2c payment")
 
@@ -215,7 +214,7 @@ func (api DarajaApi) B2C(ctx context.Context, payment payments.WalletPayment) er
 	req, _ := api.client.B2CRequest(payload, request.WithServiceName(serviceName.String()))
 	req.WithContext(ctx)
 	req.Data = out
-	req.Hooks.Send.PushFrontHook(recorder.RecordRequest(payment.PaymentID, requestID))
+	req.Hooks.Send.PushFrontHook(recorder.RecordRequest(paymentID, requestID))
 	req.Hooks.Complete.PushFrontHook(recorder.UpdateRequestResponse(requestID))
 
 	if err = req.Send(); err != nil {
@@ -627,8 +626,13 @@ func NewWebhookProcessor() WebhookProcessor {
 type WebhookProcessor struct{}
 
 // Process takes in the webhook data as io.Reader, parses into a struct and sets the requests.WebhookResult Data field
-func (processor WebhookProcessor) Process(ctx context.Context, result *requests.WebhookResult) (requests.OptionsUpdatePayment, error) {
+func (processor WebhookProcessor) Process(ctx context.Context, result *requests.WebhookResult, out any) error {
 	l := zerolog.Ctx(ctx)
+
+	options, ok := (out).(*mpesa.OptionsUpdatePayment)
+	if !ok {
+		return errors.New("invalid type for options")
+	}
 
 	var wb WebhookResult
 	var err error
@@ -645,13 +649,13 @@ func (processor WebhookProcessor) Process(ctx context.Context, result *requests.
 		wb, err = transactionStatusWebhookResult(r)
 	case string(daraja.OperationReversal):
 		//TODO: Create for reversal
-		return requests.OptionsUpdatePayment{}, errors.New("webhook processor for reversal not created")
+		return errors.New("webhook processor for reversal not created")
 	default:
-		return requests.OptionsUpdatePayment{}, errors.New("action processor not defined")
+		return errors.New("action processor not defined")
 	}
 	if err != nil {
 		l.Error().Err(err).Msg("error processing webhook")
-		return requests.OptionsUpdatePayment{}, err
+		return err
 	}
 	l.Debug().Any(logger.LData, wb).Msg("webhook result")
 
@@ -659,12 +663,11 @@ func (processor WebhookProcessor) Process(ctx context.Context, result *requests.
 	result.Data = wb
 
 	// set payment update options depending on status
-	options := requests.OptionsUpdatePayment{}
 	if wb.Status == StatusFailed {
 		status := requests.StatusFailed
 		options.Status = &status
 
-		return options, nil
+		return nil
 	}
 
 	// update payment status
@@ -673,9 +676,8 @@ func (processor WebhookProcessor) Process(ctx context.Context, result *requests.
 
 	// retrieve payment details
 	var attributes PaymentAttributes
-	var ok bool
 	if attributes, ok = wb.Attributes.(PaymentAttributes); !ok {
-		return requests.OptionsUpdatePayment{}, nil
+		return nil
 	}
 
 	options.PaymentReference = &attributes.MpesaReceiptID
@@ -684,6 +686,6 @@ func (processor WebhookProcessor) Process(ctx context.Context, result *requests.
 	//options.RecipientAccountName = &attributes.RecipientName
 	//options.RecipientAccountNo = &attributes.RecipientNo
 
-	return options, nil
+	return nil
 
 }
