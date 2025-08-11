@@ -7,7 +7,7 @@ type RequestMpesaPayment struct {
 	IdempotencyID string `json:"idempotency_id"`
 	// payment amount
 	Amount string `json:"amount"`
-	// (optional) for transfers, this can be till_number or pay_bill
+	// (optional) but required for transfers, this can be till_number or pay_bill
 	ExternalAccountType string `json:"external_account_type"`
 	// customer account that will be charged
 	ExternalAccountID string `json:"external_account_id"`
