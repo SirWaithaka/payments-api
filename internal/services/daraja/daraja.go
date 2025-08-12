@@ -71,18 +71,6 @@ func (response OrgNameCheckResponse) ExternalID() string {
 	return response.ConversationID
 }
 
-// WEBHOOK REQUEST MODELS
-
-type PaymentAttributes struct {
-	SenderNo        string `json:"senderNo"`
-	SenderName      string `json:"senderName"`
-	RecipientNo     string `json:"recipientNo"`
-	RecipientName   string `json:"recipientName"`
-	Amount          string `json:"amount"`
-	MpesaReceiptID  string `json:"mpesaReceiptId"`
-	TransactionDate string `json:"transactionDate"`
-}
-
 // adds action to the path of base url
 // https://<baseurl>/:action
 func webhook(baseUrl string, action string) string {

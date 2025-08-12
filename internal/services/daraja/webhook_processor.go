@@ -16,6 +16,18 @@ import (
 	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
 )
 
+// WEBHOOK REQUEST MODELS
+
+type PaymentAttributes struct {
+	SenderNo        string `json:"senderNo"`
+	SenderName      string `json:"senderName"`
+	RecipientNo     string `json:"recipientNo"`
+	RecipientName   string `json:"recipientName"`
+	Amount          string `json:"amount"`
+	MpesaReceiptID  string `json:"mpesaReceiptId"`
+	TransactionDate string `json:"transactionDate"`
+}
+
 type WebhookResult struct {
 	Type           string            `json:"type"`
 	ResultCode     daraja.ResultCode `json:"resultCode"`
