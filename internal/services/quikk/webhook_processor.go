@@ -8,6 +8,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 
 	"github.com/SirWaithaka/payments-api/clients/quikk"
+	"github.com/SirWaithaka/payments-api/internal/domains/mpesa"
 	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	"github.com/SirWaithaka/payments-api/internal/pkg/types"
 )
@@ -20,7 +21,7 @@ type WebhookProcessor struct{}
 
 func (processor WebhookProcessor) Process(ctx context.Context, result *requests.WebhookResult, out any) error {
 
-	options, ok := (out).(*requests.OptionsUpdatePayment)
+	options, ok := (out).(*mpesa.OptionsUpdatePayment)
 	if !ok {
 		return errors.New("invalid type for options")
 	}
