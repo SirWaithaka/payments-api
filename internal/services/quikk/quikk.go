@@ -21,6 +21,13 @@ const (
 	serviceName = requests.PartnerQuikk
 )
 
+type ResponseDefault quikk.ResponseDefault
+
+func (response ResponseDefault) ExternalID() string { return response.Data.ID }
+
+// QUIKK MPESA API SERVICE
+
+// NewQuikkApi creates a new instance of QuikkApi
 func NewQuikkApi(client *quikk.Client, shortcode mpesa.ShortCode, repo requests.Repository) QuikkApi {
 	return QuikkApi{client: client, shortcode: shortcode, requestRepo: repo}
 }
