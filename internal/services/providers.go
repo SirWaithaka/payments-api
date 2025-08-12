@@ -3,12 +3,14 @@ package services
 import (
 	"github.com/rs/zerolog"
 
-	"github.com/SirWaithaka/payments-api/clients/daraja"
+	clients_daraja "github.com/SirWaithaka/payments-api/clients/daraja"
+	clients_quikk "github.com/SirWaithaka/payments-api/clients/quikk"
 	"github.com/SirWaithaka/payments-api/corehooks"
 	"github.com/SirWaithaka/payments-api/internal/domains/mpesa"
-	"github.com/SirWaithaka/payments-api/internal/domains/payments"
 	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	"github.com/SirWaithaka/payments-api/internal/domains/webhooks"
+	"github.com/SirWaithaka/payments-api/internal/services/daraja"
+	"github.com/SirWaithaka/payments-api/internal/services/quikk"
 	"github.com/SirWaithaka/payments-api/request"
 )
 
@@ -57,8 +59,13 @@ func (provider Provider) GetMpesaApi(shortcode mpesa.ShortCode) mpesa.API {
 	// build client depending on service
 	if shortcode.Service == requests.PartnerDaraja {
 		// build the daraja client
-		client := provider.GetDarajaClient(daraja.SandboxUrl, shortcode)
-		return NewDarajaApi(client, shortcode, provider.requestsRepo)
+		client := provider.GetDarajaClient(clients_daraja.SandboxUrl, shortcode)
+		return daraja.NewDarajaApi(client, shortcode, provider.requestsRepo)
+	}
+	if shortcode.Service == requests.PartnerQuikk {
+		// build the quikk client
+		client := provider.GetQuikkClient(clients_quikk.SandboxUrl, shortcode)
+		return quikk.NewQuikkApi(client, shortcode, provider.requestsRepo)
 	}
 
 	return nil
@@ -67,65 +74,30 @@ func (provider Provider) GetMpesaApi(shortcode mpesa.ShortCode) mpesa.API {
 func (provider Provider) GetWebhookClient(service requests.Partner) requests.WebhookProcessor {
 	switch service {
 	case requests.PartnerDaraja:
-		return NewWebhookProcessor()
+		return daraja.NewWebhookProcessor()
 	default:
 		return nil
 	}
 }
 
-func (provider Provider) GetDarajaClient(endpoint string, cfg mpesa.ShortCode) *daraja.Client {
+func (provider Provider) GetDarajaClient(endpoint string, cfg mpesa.ShortCode) *clients_daraja.Client {
 
-	client := daraja.New(daraja.Config{Endpoint: endpoint, LogLevel: request.LogError})
+	client := clients_daraja.New(clients_daraja.Config{Endpoint: endpoint, LogLevel: request.LogError})
 	client.Hooks.Build.PushFront(WithLogger())
-	client.Hooks.Build.PushBackHook(daraja.Authenticate(client.AuthenticationRequest(cfg.Key, cfg.Secret)))
+	client.Hooks.Build.PushBackHook(clients_daraja.Authenticate(client.AuthenticationRequest(cfg.Key, cfg.Secret)))
 	client.Hooks.Send.PushFrontHook(corehooks.LogHTTPRequest)
 
 	return &client
 
 }
 
-func (provider Provider) GetShortCodeConfig(name payments.RequestType) (ShortCodeConfig, error) {
-	switch name {
-	case payments.RequestTypeWalletCharge:
-		return ShortCodeConfig{
-			ShortCode:         "174379",
-			InitiatorName:     "testapi",
-			InitiatorPassword: "Safaricom123!!",
-			Passphrase:        "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919",
-			ConsumerKey:       "7nRVPmgCrfIEseRTTmkLDDqAYAKhhS9KWx0AfYLGj9NVE2C2",
-			ConsumerSecret:    "Cyq7VrtT1vzQAmPQV1zlrC9MZ2n6py6qqaLYzNgFAx6uDG8sTKYSVoCh8sdplZF7",
-			CallbackURL:       "https://webhook.sirwaithaka.space/webhooks/daraja",
-		}, nil
+func (provider Provider) GetQuikkClient(endpoint string, shortcode mpesa.ShortCode) *clients_quikk.Client {
+	client := clients_quikk.New(clients_quikk.Config{Endpoint: endpoint, LogLevel: request.LogError})
+	client.Hooks.Build.PushFront(WithLogger())
+	client.Hooks.Build.PushBackHook(clients_quikk.Sign(shortcode.Key, shortcode.Secret))
+	client.Hooks.Build.PushFront(request.WithRequestHeader("accept", "application/vnd.api+json"))
+	client.Hooks.Build.PushFront(request.WithRequestHeader("content-type", "application/vnd.api+json"))
+	client.Hooks.Send.PushFrontHook(corehooks.LogHTTPRequest)
 
-	case payments.RequestTypeWalletPayout:
-		return ShortCodeConfig{
-			ShortCode:         "600991",
-			InitiatorName:     "testapi",
-			InitiatorPassword: "Safaricom123!!",
-			ConsumerKey:       "7nRVPmgCrfIEseRTTmkLDDqAYAKhhS9KWx0AfYLGj9NVE2C2",
-			ConsumerSecret:    "Cyq7VrtT1vzQAmPQV1zlrC9MZ2n6py6qqaLYzNgFAx6uDG8sTKYSVoCh8sdplZF7",
-			CallbackURL:       "https://webhook.sirwaithaka.space/webhooks/daraja",
-		}, nil
-	case payments.RequestTypeWalletTransfer:
-		return ShortCodeConfig{
-			ShortCode:         "600979",
-			InitiatorName:     "testapi",
-			InitiatorPassword: "Safaricom123!!",
-			ConsumerKey:       "7nRVPmgCrfIEseRTTmkLDDqAYAKhhS9KWx0AfYLGj9NVE2C2",
-			ConsumerSecret:    "Cyq7VrtT1vzQAmPQV1zlrC9MZ2n6py6qqaLYzNgFAx6uDG8sTKYSVoCh8sdplZF7",
-			CallbackURL:       "https://webhook.sirwaithaka.space/webhooks/daraja",
-		}, nil
-	case payments.RequestTypePaymentStatus:
-		return ShortCodeConfig{
-			ShortCode:         "000000",
-			InitiatorName:     "testapi",
-			InitiatorPassword: "Safaricom123!!",
-			ConsumerKey:       "7nRVPmgCrfIEseRTTmkLDDqAYAKhhS9KWx0AfYLGj9NVE2C2",
-			ConsumerSecret:    "Cyq7VrtT1vzQAmPQV1zlrC9MZ2n6py6qqaLYzNgFAx6uDG8sTKYSVoCh8sdplZF7",
-			CallbackURL:       "https://webhook.sirwaithaka.space/webhooks/daraja",
-		}, nil
-	default:
-		return ShortCodeConfig{}, nil
-	}
-
+	return &client
 }
