@@ -1,6 +1,7 @@
 package quikk
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
@@ -193,4 +194,15 @@ func (client Client) TransactionSearchRequest(input RequestTransactionStatus, re
 	req.ApplyOptions(opts...)
 
 	return req, &output
+}
+
+func (client Client) TransactionSearch(ctx context.Context, input RequestTransactionStatus, ref string) (ResponseDefault, error) {
+	req, out := client.TransactionSearchRequest(input, ref)
+	req.WithContext(ctx)
+
+	if err := req.Send(); err != nil {
+		return ResponseDefault{}, err
+	}
+
+	return *out, nil
 }

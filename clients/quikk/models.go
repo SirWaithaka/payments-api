@@ -31,8 +31,9 @@ type RequestDefault[T any] struct {
 }
 
 type RequestTransactionStatus struct {
-	ShortCode     string `json:"short_code"`
-	Reference     string `json:"q"`
+	ShortCode string `json:"short_code"`
+	Reference string `json:"q"`
+	// can be one of "resource_id", "response_id" or "txn_id"
 	ReferenceType string `json:"on"`
 }
 
@@ -63,7 +64,7 @@ type RequestTransfer struct {
 	AccountNo         string  `json:"reference"`
 	ShortCode         string  `json:"short_code"`
 	RecipientType     string  `json:"recipient_type"`
-	RecipientCategory string  `json:"recipient_category"`
+	RecipientCategory string  `json:"recipient_category"` // one of "till" or "paybill"
 	PostedAt          string  `json:"posted_at"`
 }
 
