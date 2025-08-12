@@ -5,14 +5,29 @@ import (
 	"time"
 )
 
-type Data struct {
-	ID         string      `json:"id"`
-	Type       string      `json:"type"`
-	Attributes interface{} `json:"attributes"`
+// ResultCode represents the code returned from quikk in both an asynchronous
+// and synchronous response. The code is added to the meta object in the response.
+type ResultCode string
+
+const (
+	ResultCodeSuccess                     ResultCode = "0"
+	ResultCodeInsufficientBalance         ResultCode = "1"
+	ResultCodeRuleLimited                 ResultCode = "17"
+	ResultCodeCancelledRequest            ResultCode = "1032"
+	ResultCodeUserUnreachable             ResultCode = "1037"
+	ResultCodeInvalidInitiatorInformation ResultCode = "2001"
+	ResultCodeActivityTimeout             ResultCode = "500.001.1001"
+	ResultCodeServiceUnavailable          ResultCode = "500.002.1001"
+)
+
+type Data[T any] struct {
+	ID         string `json:"id"`
+	Type       string `json:"type"`
+	Attributes T      `json:"attributes"`
 }
 
-type RequestDefault struct {
-	Data Data `json:"data"`
+type RequestDefault[T any] struct {
+	Data Data[T] `json:"data"`
 }
 
 type RequestTransactionStatus struct {
@@ -56,9 +71,9 @@ type RequestTransfer struct {
 
 // meta response can be embedded in any other type of response
 type meta struct {
-	Status string `json:"status,omitempty"`
-	Code   string `json:"code,omitempty"`
-	Detail string `json:"detail,omitempty"`
+	Status string     `json:"status,omitempty"`
+	Code   ResultCode `json:"code,omitempty"`
+	Detail string     `json:"detail,omitempty"`
 }
 
 func (meta meta) Error() string {
@@ -90,9 +105,9 @@ type ErrorResponse struct {
 
 // WEBHOOKS REQUEST MODELS
 
-type WebhookResult struct {
-	Data Data  `json:"data"`
-	Meta *meta `json:"meta,omitempty"`
+type WebhookResult[T any] struct {
+	Data Data[T] `json:"data"`
+	Meta *meta   `json:"meta,omitempty"`
 }
 
 // WebhookAttributesPayinValidation describes the fields of the webhook payload when a direct payin

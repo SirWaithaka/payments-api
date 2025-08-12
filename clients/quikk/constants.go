@@ -7,6 +7,7 @@ const (
 	OperationTransfer          = "transfer"
 	OperationBalance           = "balance"
 	OperationTransactionSearch = "transaction_search"
+	OperationSearch            = "search"
 )
 
 const (

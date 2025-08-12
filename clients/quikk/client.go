@@ -80,8 +80,8 @@ func (client Client) ChargeRequest(input RequestCharge, ref string, opts ...requ
 	//opts = append(opts, request.WithRequestHeader("Content-Type", "application/json"))
 
 	// build actual payload
-	payload := RequestDefault{
-		Data: Data{
+	payload := RequestDefault[RequestCharge]{
+		Data: Data[RequestCharge]{
 			ID:         ref,
 			Type:       "charge",
 			Attributes: input,
@@ -105,8 +105,8 @@ func (client Client) PayoutRequest(input RequestPayout, ref string, opts ...requ
 	cfg := request.Config{Endpoint: client.endpoint}
 
 	// build actual payload
-	payload := RequestDefault{
-		Data: Data{
+	payload := RequestDefault[RequestPayout]{
+		Data: Data[RequestPayout]{
 			ID:         ref,
 			Type:       "payout",
 			Attributes: input,
@@ -130,8 +130,8 @@ func (client Client) TransferRequest(input RequestTransfer, ref string, opts ...
 	cfg := request.Config{Endpoint: client.endpoint}
 
 	// build actual payload
-	payload := RequestDefault{
-		Data: Data{
+	payload := RequestDefault[RequestTransfer]{
+		Data: Data[RequestTransfer]{
 			ID:         ref,
 			Type:       "transfer",
 			Attributes: input,
@@ -155,8 +155,8 @@ func (client Client) BalanceRequest(input RequestAccountBalance, ref string, opt
 	cfg := request.Config{Endpoint: client.endpoint}
 
 	// build actual payload
-	payload := RequestDefault{
-		Data: Data{
+	payload := RequestDefault[RequestAccountBalance]{
+		Data: Data[RequestAccountBalance]{
 			ID:         ref,
 			Type:       "search",
 			Attributes: input,
@@ -180,8 +180,8 @@ func (client Client) TransactionSearchRequest(input RequestTransactionStatus, re
 	cfg := request.Config{Endpoint: client.endpoint}
 
 	// build actual payload
-	payload := RequestDefault{
-		Data: Data{
+	payload := RequestDefault[RequestTransactionStatus]{
+		Data: Data[RequestTransactionStatus]{
 			ID:         ref,
 			Type:       "search",
 			Attributes: input,
