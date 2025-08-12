@@ -1,4 +1,4 @@
-package services
+package daraja
 
 import (
 	"fmt"
@@ -12,11 +12,8 @@ import (
 
 	"github.com/SirWaithaka/payments-api/clients/daraja"
 	"github.com/SirWaithaka/payments-api/internal/domains/requests"
+	"github.com/SirWaithaka/payments-api/internal/pkg/types"
 )
-
-func Ptr[T any](v T) *T {
-	return &v
-}
 
 func TestC2BWebHookResult(t *testing.T) {
 	type testInput struct {
@@ -399,42 +396,42 @@ func TestWebhookProcessor_Process(t *testing.T) {
 		{
 			name:     "test a successful daraja express webhook",
 			input:    requests.NewWebhookResult("test", daraja.OperationC2BExpress, strings.NewReader(fmt.Sprintf(expressSuccessBody, externalID, daraja.ResultCodeSuccess, paymentRef))),
-			expected: requests.OptionsUpdatePayment{PaymentReference: &paymentRef, Status: Ptr(requests.StatusSucceeded)},
+			expected: requests.OptionsUpdatePayment{PaymentReference: &paymentRef, Status: types.Pointer(requests.StatusSucceeded)},
 		},
 		{
 			name:     "test a failed daraja express webhook",
 			input:    requests.NewWebhookResult("test", daraja.OperationC2BExpress, strings.NewReader(fmt.Sprintf(expressFailedBody, externalID, daraja.ResultCodeCancelledRequest))),
-			expected: requests.OptionsUpdatePayment{Status: Ptr(requests.StatusFailed)},
+			expected: requests.OptionsUpdatePayment{Status: types.Pointer(requests.StatusFailed)},
 		},
 		{
 			name:     "test a successful daraja b2c webhook",
 			input:    requests.NewWebhookResult("test", daraja.OperationB2C, strings.NewReader(fmt.Sprintf(b2cSuccessBody, daraja.ResultCodeSuccess, externalID, paymentRef))),
-			expected: requests.OptionsUpdatePayment{PaymentReference: &paymentRef, Status: Ptr(requests.StatusSucceeded)},
+			expected: requests.OptionsUpdatePayment{PaymentReference: &paymentRef, Status: types.Pointer(requests.StatusSucceeded)},
 		},
 		{
 			name:     "test a failed daraja b2c webhook",
 			input:    requests.NewWebhookResult("test", daraja.OperationB2C, strings.NewReader(fmt.Sprintf(b2cFailedBody, daraja.ResultCodeCancelledRequest, externalID))),
-			expected: requests.OptionsUpdatePayment{Status: Ptr(requests.StatusFailed)},
+			expected: requests.OptionsUpdatePayment{Status: types.Pointer(requests.StatusFailed)},
 		},
 		{
 			name:     "test a successful daraja b2b webhook",
 			input:    requests.NewWebhookResult("test", daraja.OperationB2B, strings.NewReader(fmt.Sprintf(b2bSuccessBody, daraja.ResultCodeSuccess, externalID, paymentRef))),
-			expected: requests.OptionsUpdatePayment{PaymentReference: &paymentRef, Status: Ptr(requests.StatusSucceeded)},
+			expected: requests.OptionsUpdatePayment{PaymentReference: &paymentRef, Status: types.Pointer(requests.StatusSucceeded)},
 		},
 		{
 			name:     "test a failed daraja b2b webhook",
 			input:    requests.NewWebhookResult("test", daraja.OperationB2B, strings.NewReader(fmt.Sprintf(b2bFailedBody, daraja.ResultCodeCancelledRequest, externalID))),
-			expected: requests.OptionsUpdatePayment{Status: Ptr(requests.StatusFailed)},
+			expected: requests.OptionsUpdatePayment{Status: types.Pointer(requests.StatusFailed)},
 		},
 		{
 			name:     "test a successful daraja transaction status webhook",
 			input:    requests.NewWebhookResult("test", daraja.OperationTransactionStatus, strings.NewReader(fmt.Sprintf(transactionStatusSuccessBody, daraja.ResultCodeSuccess, externalID, paymentRef))),
-			expected: requests.OptionsUpdatePayment{PaymentReference: &paymentRef, Status: Ptr(requests.StatusSucceeded)},
+			expected: requests.OptionsUpdatePayment{PaymentReference: &paymentRef, Status: types.Pointer(requests.StatusSucceeded)},
 		},
 		{
 			name:     "test a failed daraja transaction status webhook",
 			input:    requests.NewWebhookResult("test", daraja.OperationTransactionStatus, strings.NewReader(fmt.Sprintf(transactionStatusFailedBody, daraja.ResultCodeSuccess, externalID, StatusFailed, paymentRef))),
-			expected: requests.OptionsUpdatePayment{Status: Ptr(requests.StatusFailed)},
+			expected: requests.OptionsUpdatePayment{Status: types.Pointer(requests.StatusFailed)},
 		},
 	}
 
@@ -443,7 +440,8 @@ func TestWebhookProcessor_Process(t *testing.T) {
 	for _, tc := range testcases {
 
 		t.Run(tc.name, func(t *testing.T) {
-			opts, err := processor.Process(t.Context(), tc.input)
+			opts := requests.OptionsUpdatePayment{}
+			err := processor.Process(t.Context(), tc.input, &opts)
 			if err != nil {
 				t.Errorf("expected nil error, got %v", err)
 			}
