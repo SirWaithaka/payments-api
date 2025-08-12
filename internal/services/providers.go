@@ -75,6 +75,8 @@ func (provider Provider) GetWebhookClient(service requests.Partner) requests.Web
 	switch service {
 	case requests.PartnerDaraja:
 		return daraja.NewWebhookProcessor()
+	case requests.PartnerQuikk:
+		return quikk.NewWebhookProcessor()
 	default:
 		return nil
 	}
