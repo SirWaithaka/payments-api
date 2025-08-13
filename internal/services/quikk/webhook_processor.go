@@ -13,6 +13,45 @@ import (
 	"github.com/SirWaithaka/payments-api/internal/pkg/types"
 )
 
+// WEBHOOK REQUEST MODELS
+
+type ChargeWebhook quikk.WebhookResult[quikk.WebhookAttributesCharge]
+
+// ExternalID should match the id returned by the quikk api during the
+// initial payment request. For charge api, this is the TxnChargeID field.
+func (webhook ChargeWebhook) ExternalID() string {
+	return webhook.Data.Attributes.TxnChargeID
+}
+
+type PayoutWebhook quikk.WebhookResult[quikk.WebhookAttributesPayout]
+
+// ExternalID should match the id returned by the quikk api during the
+// initial payment request. For payout api, this is the ResponseID field.
+func (webhook PayoutWebhook) ExternalID() string {
+	return webhook.Data.Attributes.ResponseID
+}
+
+type TransferWebhook quikk.WebhookResult[quikk.WebhookAttributesTransfer]
+
+// ExternalID should match the id returned by the quikk api during the
+// initial payment request. For payout api, this is the ResponseID field.
+func (webhook TransferWebhook) ExternalID() string {
+	return webhook.Data.Attributes.ResponseID
+}
+
+type TransactionSearchWebhook quikk.WebhookResult[quikk.WebhookAttributesTransactionSearch]
+
+// ExternalID should match the id returned during the initial payment request.
+// For search api, check the TxnType field, if the field equals "payin", externalID
+// should be set to the ResourceID, otherwise, externalID should be set to ResponseID
+func (webhook TransactionSearchWebhook) ExternalID() string {
+	// TODO: confirm this is correct
+	if webhook.Data.Attributes.TxnType == "payin" {
+		return webhook.Data.Attributes.ResourceID
+	}
+	return webhook.Data.Attributes.ResponseID
+}
+
 func NewWebhookProcessor() WebhookProcessor {
 	return WebhookProcessor{}
 }
@@ -29,10 +68,11 @@ func (processor WebhookProcessor) Process(ctx context.Context, result *requests.
 	r := bytes.NewReader(result.Bytes())
 	switch result.Action {
 	case quikk.OperationCharge:
-		wb := quikk.WebhookResult[quikk.WebhookAttributesCharge]{}
+		wb := ChargeWebhook{}
 		if err := jsoniter.NewDecoder(r).Decode(&wb); err != nil {
 			return err
 		}
+		result.Data = wb
 
 		// check for failed status
 		if wb.Meta != nil && wb.Meta.Code != quikk.ResultCodeSuccess {
@@ -43,10 +83,11 @@ func (processor WebhookProcessor) Process(ctx context.Context, result *requests.
 		}
 
 	case quikk.OperationPayout:
-		wb := quikk.WebhookResult[quikk.WebhookAttributesPayout]{}
+		wb := PayoutWebhook{}
 		if err := jsoniter.NewDecoder(r).Decode(&wb); err != nil {
 			return err
 		}
+		result.Data = wb
 
 		// check for failed status
 		if wb.Meta != nil && wb.Meta.Code != quikk.ResultCodeSuccess {
@@ -57,10 +98,11 @@ func (processor WebhookProcessor) Process(ctx context.Context, result *requests.
 		}
 
 	case quikk.OperationTransfer:
-		wb := quikk.WebhookResult[quikk.WebhookAttributesTransfer]{}
+		wb := TransferWebhook{}
 		if err := jsoniter.NewDecoder(r).Decode(&wb); err != nil {
 			return err
 		}
+		result.Data = wb
 
 		// check for failed status
 		if wb.Meta != nil && wb.Meta.Code != quikk.ResultCodeSuccess {
@@ -73,10 +115,11 @@ func (processor WebhookProcessor) Process(ctx context.Context, result *requests.
 	case quikk.OperationSearch:
 		// quikk.OperationSearch supports both transaction search and balance search
 		// here the concern is only transaction search
-		wb := quikk.WebhookResult[quikk.WebhookAttributesTransactionSearch]{}
+		wb := TransactionSearchWebhook{}
 		if err := jsoniter.NewDecoder(r).Decode(&wb); err != nil {
 			return err
 		}
+		result.Data = wb
 
 		// if the webhook has Meta field, safely ignore the webhook
 		if wb.Meta != nil && wb.Meta.Code != quikk.ResultCodeSuccess {
