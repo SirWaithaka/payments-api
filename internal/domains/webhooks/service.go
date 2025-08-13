@@ -2,6 +2,7 @@ package webhooks
 
 import (
 	"context"
+	"errors"
 
 	"github.com/rs/zerolog"
 
@@ -70,6 +71,10 @@ func (service WebhookService) Process(ctx context.Context, result *requests.Webh
 
 	// get the specific client that should process the service's webhook
 	client := service.provider.GetWebhookClient(result.Service)
+
+	if client == nil {
+		return errors.New("webhook client not found")
+	}
 
 	// use client to get necessary data to update payment
 	opts := &mpesa.OptionsUpdatePayment{}

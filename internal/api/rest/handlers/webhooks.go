@@ -38,3 +38,20 @@ func (handler WebhookHandlers) Daraja(c *gin.Context) {
 	c.String(http.StatusOK, "OK")
 
 }
+
+func (handler WebhookHandlers) QuikkMpesa(c *gin.Context) {
+	l := zerolog.Ctx(c.Request.Context())
+	l.Info().Msg("quikk mpesa webhook received")
+
+	// get path param
+	action := c.Param("action")
+
+	err := handler.service.Confirm(c.Request.Context(), requests.NewWebhookResult("quikk", action, c.Request.Body))
+	if err != nil {
+		l.Warn().Err(err).Msg("error processing webhook")
+		c.String(http.StatusAccepted, "accepted")
+		return
+	}
+
+	c.String(http.StatusOK, "OK")
+}

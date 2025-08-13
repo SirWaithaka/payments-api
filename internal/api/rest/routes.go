@@ -33,4 +33,5 @@ func webhookRoutes(router *gin.Engine, di *dipkg.DI) {
 
 	webhookHandlers := handlers.NewWebhookHandlers(di.Webhook)
 	webhookGroup.POST("/daraja/:action", webhookHandlers.Daraja)
+	webhookGroup.POST("/quikk/mpesa/:action", webhookHandlers.QuikkMpesa)
 }

@@ -1,4 +1,5 @@
-DELETE FROM public."mpesa_shortcodes";
+DELETE
+FROM public."mpesa_shortcodes";
 
 INSERT INTO public."mpesa_shortcodes" (id, service, type, shortcode, initiator_name, initiator_password, passphrase,
                                        key, secret, callback_url, created_at, updated_at)
@@ -16,4 +17,14 @@ VALUES ('018f7e2a-1b3c-7d4e-9f8a-2c5d6e7f8a9b', 'daraja', 'charge', '174379', 't
         'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919',
         '7nRVPmgCrfIEseRTTmkLDDqAYAKhhS9KWx0AfYLGj9NVE2C2',
         'Cyq7VrtT1vzQAmPQV1zlrC9MZ2n6py6qqaLYzNgFAx6uDG8sTKYSVoCh8sdplZF7',
-        'https://webhook.sirwaithaka.space/webhooks/daraja', current_timestamp, null);
+        'https://webhook.sirwaithaka.space/webhooks/daraja', current_timestamp, null),
+       --- QUIKK shortcodes
+       ('0187cecc-68a0-7900-8bca-12dfb3b978fc', 'quikk', 'charge', '174379', null, null, null,
+        '459e9a652a6e6dfd918aeccdf488e9db',
+        'd54c2d5868650a926864510cf8f1f616', null, current_timestamp, null),
+       ('0187cecc-68a1-7900-916c-05ba965502b0', 'quikk', 'payout', '511382', null, null, null,
+        '459e9a652a6e6dfd918aeccdf488e9db',
+        'd54c2d5868650a926864510cf8f1f616', null, current_timestamp, null),
+       ('0187cecc-68a2-7900-bd65-2a3f8183c0d2', 'quikk', 'transfer', '174379', null, null, null,
+        '459e9a652a6e6dfd918aeccdf488e9db',
+        'd54c2d5868650a926864510cf8f1f616', null, current_timestamp, null);

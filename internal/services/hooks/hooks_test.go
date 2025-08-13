@@ -1,4 +1,4 @@
-package services_test
+package hooks_test
 
 import (
 	"context"
@@ -15,7 +15,7 @@ import (
 	"github.com/SirWaithaka/payments-api/corehooks"
 	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	"github.com/SirWaithaka/payments-api/internal/repositories/postgres"
-	"github.com/SirWaithaka/payments-api/internal/services"
+	"github.com/SirWaithaka/payments-api/internal/services/hooks"
 	"github.com/SirWaithaka/payments-api/internal/testdata"
 	"github.com/SirWaithaka/payments-api/request"
 )
@@ -25,7 +25,7 @@ func TestRequestRecorder_RecordRequest(t *testing.T) {
 
 	repository := postgres.NewRequestRepository(inf.Storage.PG)
 	paymentsRepo := postgres.NewPaymentsRepository(inf.Storage.PG)
-	recorder := services.NewRequestRecorder(repository)
+	recorder := hooks.NewRequestRecorder(repository)
 
 	// fake payment
 	payment := requests.Payment{
@@ -88,7 +88,7 @@ func TestRequestRecorder_UpdateRequestResponse(t *testing.T) {
 	// create an instance of recorder
 	repository := postgres.NewRequestRepository(inf.Storage.PG)
 	paymentsRepo := postgres.NewPaymentsRepository(inf.Storage.PG)
-	recorder := services.NewRequestRecorder(repository)
+	recorder := hooks.NewRequestRecorder(repository)
 
 	// fake payment
 	payment := requests.Payment{
