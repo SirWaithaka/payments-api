@@ -38,6 +38,9 @@ type WebhookResult struct {
 	Attributes     any               `json:"attributes"`
 }
 
+// ExternalID should match the id returned by the payment provider
+// during the initial payment request. For the daraja api, this is the
+// OriginationID field.
 func (result WebhookResult) ExternalID() string {
 	return result.OriginationID
 }
