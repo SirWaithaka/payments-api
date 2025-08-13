@@ -18,17 +18,6 @@ type Config struct {
 	LogLevel request.LogLevel
 }
 
-const (
-	OperationC2BExpress        = "express"
-	OperationC2BQuery          = "stk_query"
-	OperationReversal          = "reversal"
-	OperationB2C               = "b2c"
-	OperationB2B               = "b2b"
-	OperationBalance           = "balance"
-	OperationTransactionStatus = "search"
-	OperationQueryOrgInfo      = "org_info_query"
-)
-
 func DefaultHooks() request.Hooks {
 	// create default hooks
 	hooks := corehooks.DefaultHooks()
@@ -38,7 +27,7 @@ func DefaultHooks() request.Hooks {
 	hooks.Build.PushBackHook(SetEndpoint(SandboxUrl))
 	hooks.Build.PushBackHook(HTTPClient(client))
 	hooks.Build.PushBackHook(corehooks.EncodeRequestBody)
-	hooks.Unmarshal.PushBackHook(DecodeResponse)
+	hooks.Unmarshal.PushBackHook(ResponseDecoder)
 	return hooks
 
 }
@@ -46,29 +35,6 @@ func DefaultHooks() request.Hooks {
 func PasswordEncode(shortcode, passphrase, timestamp string) string {
 	return base64.StdEncoding.EncodeToString([]byte(shortcode + passphrase + timestamp))
 }
-
-//func AuthenticationRequest(endpoint, key, secret string) (*request.Request, *ResponseAuthorization) {
-//	op := &request.Operation{
-//		Name:   "Authenticate",
-//		Method: http.MethodGet,
-//		Path:   EndpointAuthentication + "?grant_type=client_credentials",
-//	}
-//
-//	// create a client with 40 second timeout
-//	client := &http.Client{Timeout: time.Second * 40}
-//	cfg := request.Config{HTTPClient: client, Endpoint: endpoint}
-//
-//	// default hooks
-//	hooks := corehooks.DefaultHooks()
-//	hooks.Build.PushBackHook(corehooks.SetBasicAuth(key, secret))
-//	hooks.Build.PushBackHook(corehooks.EncodeRequestBody)
-//	hooks.Unmarshal.PushBackHook(DecodeResponse)
-//
-//	output := &ResponseAuthorization{}
-//	req := request.New(cfg, hooks, nil, op, nil, output)
-//
-//	return req, output
-//}
 
 // Client provides the API operation methods for making requests
 // to MPESA daraja service.
@@ -104,7 +70,7 @@ func (client Client) AuthenticationRequest(key, secret string) AuthenticationReq
 		hooks := corehooks.DefaultHooks()
 		hooks.Build.PushBackHook(corehooks.SetBasicAuth(key, secret))
 		hooks.Send.PushFrontHook(corehooks.LogHTTPRequest)
-		hooks.Unmarshal.PushBackHook(DecodeResponse)
+		hooks.Unmarshal.PushBackHook(ResponseDecoder)
 
 		output := &ResponseAuthorization{}
 		req := request.New(cfg, hooks, nil, op, nil, output)

@@ -24,22 +24,38 @@ type MpesaService struct {
 	provider            Provider
 }
 
-func (service MpesaService) Charge(ctx context.Context, req PaymentRequest) (Payment, error) {
-
+func (service MpesaService) getShortCode(ctx context.Context, paymentType PaymentType) (ShortCode, error) {
 	// get shortcode details for this payment type
 	shortcodes, err := service.shortCodeRepository.FindMany(ctx, OptionsFindShortCodes{
-		Service: types.Pointer(requests.PartnerDaraja),
-		Type:    types.Pointer(PaymentTypeCharge.String()),
+		//Service: types.Pointer(requests.PartnerDaraja),
+		Type: types.Pointer(paymentType.String()),
 	})
 	if err != nil {
-		return Payment{}, err
+		return ShortCode{}, err
 	}
 
 	if len(shortcodes) == 0 {
-		return Payment{}, errors.New("no shortcodes configured for payment type")
+		return ShortCode{}, errors.New("no shortcodes configured for payment type")
 	}
 
 	shortcode := shortcodes[0]
+	for _, code := range shortcodes {
+		if code.Service == requests.PartnerQuikk {
+			shortcode = code
+			break
+		}
+	}
+
+	return shortcode, nil
+}
+
+func (service MpesaService) Charge(ctx context.Context, req PaymentRequest) (Payment, error) {
+
+	// get shortcode details for this payment type
+	shortcode, err := service.getShortCode(ctx, PaymentTypeCharge)
+	if err != nil {
+		return Payment{}, err
+	}
 
 	// create a new payment and save it
 	payment := Payment{
@@ -86,19 +102,10 @@ func (service MpesaService) Charge(ctx context.Context, req PaymentRequest) (Pay
 func (service MpesaService) Payout(ctx context.Context, req PaymentRequest) (Payment, error) {
 
 	// get shortcode details for this payment type
-	shortcodes, err := service.shortCodeRepository.FindMany(ctx, OptionsFindShortCodes{
-		Service: types.Pointer(requests.PartnerDaraja),
-		Type:    types.Pointer(PaymentTypePayout.String()),
-	})
+	shortcode, err := service.getShortCode(ctx, PaymentTypePayout)
 	if err != nil {
 		return Payment{}, err
 	}
-
-	if len(shortcodes) == 0 {
-		return Payment{}, errors.New("no shortcodes configured for payment type")
-	}
-
-	shortcode := shortcodes[0]
 
 	// create a new payment and save it
 	payment := Payment{
@@ -146,19 +153,10 @@ func (service MpesaService) Payout(ctx context.Context, req PaymentRequest) (Pay
 func (service MpesaService) Transfer(ctx context.Context, req PaymentRequest) (Payment, error) {
 
 	// get shortcode details for this payment type
-	shortcodes, err := service.shortCodeRepository.FindMany(ctx, OptionsFindShortCodes{
-		Service: types.Pointer(requests.PartnerDaraja),
-		Type:    types.Pointer(PaymentTypeTransfer.String()),
-	})
+	shortcode, err := service.getShortCode(ctx, PaymentTypeTransfer)
 	if err != nil {
 		return Payment{}, err
 	}
-
-	if len(shortcodes) == 0 {
-		return Payment{}, errors.New("no shortcodes configured for payment type")
-	}
-
-	shortcode := shortcodes[0]
 
 	// create a new payment and save it
 	payment := Payment{
@@ -222,11 +220,6 @@ func (service MpesaService) Status(ctx context.Context, opts OptionsFindPayment)
 	shortcode, err := service.shortCodeRepository.FindOne(ctx, OptionsFindShortCodes{ShortCodeID: &payment.ShortCodeID})
 	if err != nil {
 		return Payment{}, err
-	}
-
-	// get client api for this payment request
-	if shortcode.Service != requests.PartnerDaraja {
-		return Payment{}, errors.New("api not configured")
 	}
 
 	api := service.provider.GetMpesaApi(shortcode)

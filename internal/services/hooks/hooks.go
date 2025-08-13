@@ -1,4 +1,4 @@
-package services
+package hooks
 
 import (
 	"time"
@@ -59,19 +59,16 @@ func (recorder RequestRecorder) UpdateRequestResponse(requestID string) request.
 		if r.Error != nil {
 			resMap["error"] = r.Error.Error()
 
-			switch r.Error.(type) {
-			case pkgerrors.Timeout:
+			// check if it is a timeout error
+			if etimeout, ok := r.Error.(pkgerrors.Timeout); ok && etimeout.Timeout() {
 				s := requests.StatusTimeout.String()
 				opts.Status = &s
-				break
-			case pkgerrors.Temporary:
+			} else if etemp, ok := r.Error.(pkgerrors.Temporary); ok && etemp.Temporary() {
 				s := "temporary_error"
 				opts.Status = &s
-				break
-			default:
+			} else {
 				s := requests.StatusError.String()
 				opts.Status = &s
-				break
 			}
 
 			opts.Response = resMap

@@ -23,7 +23,8 @@ var schemeRE = regexp.MustCompile("^([^:]+)://")
 func DefaultHooks() request.Hooks {
 	var hooks request.Hooks
 
-	hooks.Build.PushBackHook(ResolveEndpoint)
+	hooks.Build.PushFrontHook(SetHTTPClient(nil))
+	hooks.Build.PushFrontHook(ResolveEndpoint)
 	hooks.Send.PushBackHook(SendHook)
 
 	// new instance of retry hook
@@ -38,6 +39,18 @@ func DefaultHooks() request.Hooks {
 func SetBasicAuth(username, password string) request.Hook {
 	return request.Hook{Name: "core.BasicAuth", Fn: func(r *request.Request) {
 		r.Request.SetBasicAuth(username, password)
+	}}
+}
+
+// SetHTTPClient sets the http.Client to be used for requests.
+// Sets a default http.Client if none is provided with a timeout of 30 seconds.
+func SetHTTPClient(client *http.Client) request.Hook {
+	return request.Hook{Name: "core.SetHTTPClient", Fn: func(r *request.Request) {
+		if client == nil {
+			client = &http.Client{Timeout: 30 * time.Second}
+		}
+
+		r.Config.HTTPClient = client
 	}}
 }
 

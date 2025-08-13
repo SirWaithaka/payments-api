@@ -14,3 +14,14 @@ const (
 	EndpointB2bPayment        = "/mpesa/b2b/v1/paymentrequest"
 	EndpointQueryOrgInfo      = "/sfcverify/v1/query/info"
 )
+
+const (
+	OperationC2BExpress        = "express"
+	OperationC2BQuery          = "stk_query"
+	OperationReversal          = "reversal"
+	OperationB2C               = "b2c"
+	OperationB2B               = "b2b"
+	OperationBalance           = "balance"
+	OperationTransactionStatus = "search"
+	OperationQueryOrgInfo      = "org_info_query"
+)

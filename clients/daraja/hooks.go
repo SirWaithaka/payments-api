@@ -61,11 +61,11 @@ func (r errResponse) Error() string {
 	return fmt.Sprintf("<%s> %s", r.ErrorCode, r.ErrorMessage)
 }
 
-// DecodeResponse parse the http.Response body into the property
+// ResponseDecoder parse the http.Response body into the property
 // request.Request.Data, if the status code is successful
 // Otherwise for
-var DecodeResponse = request.Hook{
-	Name: "daraja.DecodeResponse",
+var ResponseDecoder = request.Hook{
+	Name: "daraja.ResponseDecoder",
 	Fn: func(r *request.Request) {
 		// response formats for non-200 status codes follow the same format
 		if r.Response.StatusCode != http.StatusOK {
