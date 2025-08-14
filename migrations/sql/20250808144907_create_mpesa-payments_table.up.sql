@@ -1,4 +1,4 @@
-CREATE TABLE public."mpesa_payments"
+CREATE TABLE IF NOT EXISTS public."mpesa_payments"
 (
     "id"                         uuid,
     "payment_id"                 text NOT NULL,

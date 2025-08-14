@@ -1,4 +1,4 @@
-CREATE TABLE public."webhook_requests"
+CREATE TABLE IF NOT EXISTS public."webhook_requests"
 (
     "id"         UUID,
     "action"     text,

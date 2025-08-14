@@ -1,4 +1,4 @@
-CREATE TABLE public."payment_requests"
+CREATE TABLE IF NOT EXISTS public."payment_requests"
 (
     "id"                         uuid,
     "payment_id"                 text,
