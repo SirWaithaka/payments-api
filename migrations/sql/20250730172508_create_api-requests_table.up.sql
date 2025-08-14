@@ -1,4 +1,4 @@
-CREATE TABLE public."api_requests"
+CREATE TABLE IF NOT EXISTS public."api_requests"
 (
     "id"          uuid,
     "request_id"  text,

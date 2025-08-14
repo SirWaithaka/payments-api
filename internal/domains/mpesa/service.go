@@ -38,11 +38,11 @@ func (service MpesaService) getShortCode(ctx context.Context, paymentType Paymen
 		return ShortCode{}, errors.New("no shortcodes configured for payment type")
 	}
 
+	// select a shortcode according to priority, low value is higher priority
 	shortcode := shortcodes[0]
 	for _, code := range shortcodes {
-		if code.Service == requests.PartnerQuikk {
+		if code.Priority < shortcode.Priority {
 			shortcode = code
-			break
 		}
 	}
 
