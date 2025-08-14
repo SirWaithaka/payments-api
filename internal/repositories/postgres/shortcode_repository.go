@@ -14,15 +14,16 @@ import (
 
 type ShortCodeSchema struct {
 	ShortCodeID       string  `gorm:"column:id;primaryKey;"`
-	Service           string  `gorm:"column:service;check:service<>'';not null"`
-	Type              string  `gorm:"column:type;check:type<>'';not null"`
-	ShortCode         string  `gorm:"column:shortcode;check:shortcode<>'';not null"`
+	Priority          uint    `gorm:"column:priority;check:priority>0;default:1;uniqueIndex:unique_priority_type"`
+	Service           string  `gorm:"column:service;check:service<>'';not null;uniqueIndex:unique_service_shortcode"`
+	Type              string  `gorm:"column:type;check:type<>'';not null;uniqueIndex:unique_priority_type"`
+	ShortCode         string  `gorm:"column:shortcode;check:shortcode<>'';not null;uniqueIndex:unique_service_shortcode"`
 	InitiatorName     *string `gorm:"column:initiator_name;"`
 	InitiatorPassword *string `gorm:"column:initiator_password;"`
 	Passphrase        *string `gorm:"column:passphrase;"`
 	Key               string  `gorm:"column:key;check:key<>'';not null"`
 	Secret            string  `gorm:"column:secret;check:secret<>'';not null"`
-	CallbackURL       string  `gorm:"column:callback_url;not null"`
+	CallbackURL       *string `gorm:"column:callback_url;"`
 
 	CreatedAt time.Time `gorm:"column:created_at;type:timestamp;"`
 	UpdatedAt time.Time `gorm:"column:updated_at;type:timestamp;"`
@@ -36,11 +37,11 @@ func (schema ShortCodeSchema) ToEntity() mpesa.ShortCode {
 	shortcode := mpesa.ShortCode{
 		ShortCodeID: schema.ShortCodeID,
 		ShortCode:   schema.ShortCode,
+		Priority:    schema.Priority,
 		Service:     requests.ToPartner(schema.Service),
-		Type:        schema.Type,
+		Type:        mpesa.ToPaymentType(schema.Type),
 		Key:         schema.Key,
 		Secret:      schema.Secret,
-		CallbackURL: schema.CallbackURL,
 	}
 
 	// check if pointer values are nil
@@ -52,6 +53,9 @@ func (schema ShortCodeSchema) ToEntity() mpesa.ShortCode {
 	}
 	if schema.Passphrase != nil {
 		shortcode.Passphrase = *schema.Passphrase
+	}
+	if schema.CallbackURL != nil {
+		shortcode.CallbackURL = *schema.CallbackURL
 	}
 
 	return shortcode
@@ -70,6 +74,9 @@ func (schema *ShortCodeSchema) BeforeCreate(tx *gorm.DB) (err error) {
 	}
 	if sch.Passphrase != nil && *sch.Passphrase == "" {
 		schema.Passphrase = nil
+	}
+	if sch.CallbackURL != nil && *sch.CallbackURL == "" {
+		schema.CallbackURL = nil
 	}
 
 	return
@@ -107,15 +114,26 @@ func (repository ShortCodeRepository) Add(ctx context.Context, shortcode mpesa.S
 
 	record := ShortCodeSchema{
 		ShortCodeID:       shortcode.ShortCodeID,
+		Priority:          shortcode.Priority,
 		Service:           shortcode.Service.String(),
-		Type:              shortcode.Type,
+		Type:              shortcode.Type.String(),
 		ShortCode:         shortcode.ShortCode,
 		InitiatorName:     &shortcode.InitiatorName,
 		InitiatorPassword: &shortcode.InitiatorPassword,
 		Passphrase:        &shortcode.Passphrase,
 		Key:               shortcode.Key,
 		Secret:            shortcode.Secret,
-		CallbackURL:       shortcode.CallbackURL,
+		CallbackURL:       &shortcode.CallbackURL,
+	}
+
+	// if priority is not set, set it to 1
+	if shortcode.Priority == 0 {
+		record.Priority = 1
+	}
+
+	// validate values for Service field
+	if record.Service == requests.PartnerUnknown.String() {
+		record.Service = ""
 	}
 
 	result := repository.db.WithContext(ctx).Create(&record)
