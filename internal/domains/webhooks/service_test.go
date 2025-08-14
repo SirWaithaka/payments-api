@@ -10,10 +10,12 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/oklog/ulid/v2"
 
+	"github.com/SirWaithaka/payments-api/internal/domains/mpesa"
 	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	"github.com/SirWaithaka/payments-api/internal/domains/webhooks"
 	"github.com/SirWaithaka/payments-api/internal/pkg/events"
 	"github.com/SirWaithaka/payments-api/internal/repositories/postgres"
+	"github.com/SirWaithaka/payments-api/internal/testdata"
 )
 
 type FakeWebhookBody struct {
@@ -35,13 +37,15 @@ func (m *MockPublisher) Publish(ctx context.Context, event events.EventType) err
 
 type MockWebhookProcessor struct{}
 
-func (m MockWebhookProcessor) Process(ctx context.Context, result *requests.WebhookResult) (requests.OptionsUpdatePayment, error) {
+func (m MockWebhookProcessor) Process(ctx context.Context, result *requests.WebhookResult, out any) error {
 	var body FakeWebhookBody
 	if err := jsoniter.Unmarshal(result.Bytes(), &body); err != nil {
-		return requests.OptionsUpdatePayment{}, err
+		return err
 	}
 
 	result.Data = body
+
+	opts := out.(*mpesa.OptionsUpdatePayment)
 
 	var status requests.Status
 	if body.ResultCode == "0" {
@@ -51,33 +55,33 @@ func (m MockWebhookProcessor) Process(ctx context.Context, result *requests.Webh
 	}
 
 	// update options
-	opts := requests.OptionsUpdatePayment{
-		PaymentReference: &body.ReceiptID,
-		Status:           &status,
-	}
+	opts.PaymentReference = &body.ReceiptID
+	opts.Status = &status
 
-	return opts, nil
+	return nil
 }
 
 type MockProvider struct{}
 
-func (m MockProvider) GetWebhookClient(service string) requests.WebhookProcessor {
+func (m MockProvider) GetWebhookClient(service requests.Partner) requests.WebhookProcessor {
 	return &MockWebhookProcessor{}
 }
 
 func TestWebhookService_Process(t *testing.T) {
+	defer testdata.ResetTables(inf)
+
 	requestsRepo := postgres.NewRequestRepository(inf.Storage.PG)
-	paymentsRepo := postgres.NewPaymentsRepository(inf.Storage.PG)
+	paymentsRepo := postgres.NewMpesaPaymentsRepository(inf.Storage.PG)
 	webhooksRepo := postgres.NewWebhookRepository(inf.Storage.PG)
 
 	// save a payment
-	payment := requests.Payment{
+	payment := mpesa.Payment{
 		PaymentID:           ulid.Make().String(),
 		ClientTransactionID: ulid.Make().String(),
 		IdempotencyID:       ulid.Make().String(),
 		Status:              "received",
 	}
-	err := paymentsRepo.AddPayment(t.Context(), payment)
+	err := paymentsRepo.Add(t.Context(), payment)
 	if err != nil {
 		t.Errorf("expected nil error, got %v", err)
 	}
@@ -109,8 +113,8 @@ func TestWebhookService_Process(t *testing.T) {
 	}
 
 	// fetch payment and assert its values
-	var record postgres.PaymentSchema
-	result := inf.Storage.PG.Where(postgres.PaymentSchema{PaymentID: payment.PaymentID}).First(&record)
+	var record postgres.MpesaPaymentSchema
+	result := inf.Storage.PG.Where(postgres.MpesaPaymentSchema{PaymentID: payment.PaymentID}).First(&record)
 	if result.Error != nil {
 		t.Errorf("expected nil error, got %v", result.Error)
 	}

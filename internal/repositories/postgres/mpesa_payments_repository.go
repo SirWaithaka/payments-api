@@ -25,7 +25,7 @@ type MpesaPaymentSchema struct {
 	SourceAccountNumber      string  `gorm:"column:source_account_number;not null"`
 	DestinationAccountNumber string  `gorm:"column:destination_account_number;not null"`
 	Beneficiary              *string `gorm:"column:beneficiary;"`
-	Description              string  `gorm:"column:description;check:description<>'';"`
+	Description              *string `gorm:"column:description;check:description<>'';"`
 
 	ShortCodeID *string `gorm:"column:shortcode_id;"`
 
@@ -46,7 +46,6 @@ func (schema MpesaPaymentSchema) ToEntity() mpesa.Payment {
 		Amount:                   schema.Amount,
 		SourceAccountNumber:      schema.SourceAccountNumber,
 		DestinationAccountNumber: schema.DestinationAccountNumber,
-		Description:              schema.Description,
 		Status:                   requests.ToStatus(schema.Status),
 	}
 
@@ -59,6 +58,9 @@ func (schema MpesaPaymentSchema) ToEntity() mpesa.Payment {
 	}
 	if schema.ShortCodeID != nil {
 		payment.ShortCodeID = *schema.ShortCodeID
+	}
+	if schema.Description != nil {
+		payment.Description = *schema.Description
 	}
 
 	return payment
@@ -79,6 +81,9 @@ func (schema *MpesaPaymentSchema) BeforeCreate(tx *gorm.DB) (err error) {
 	}
 	if sch.ShortCodeID != nil && *sch.ShortCodeID == "" {
 		schema.ShortCodeID = nil
+	}
+	if sch.Description != nil && *sch.Description == "" {
+		schema.Description = nil
 	}
 
 	return
@@ -125,7 +130,7 @@ func (repository MpesaPaymentsRepository) Add(ctx context.Context, payment mpesa
 		SourceAccountNumber:      payment.SourceAccountNumber,
 		DestinationAccountNumber: payment.DestinationAccountNumber,
 		Beneficiary:              &payment.Beneficiary,
-		Description:              payment.Description,
+		Description:              &payment.Description,
 		ShortCodeID:              &payment.ShortCodeID,
 	}
 

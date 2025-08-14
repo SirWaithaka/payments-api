@@ -9,6 +9,7 @@ import (
 	"github.com/oklog/ulid/v2"
 
 	"github.com/SirWaithaka/payments-api/clients/quikk"
+	"github.com/SirWaithaka/payments-api/internal/domains/mpesa"
 	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	"github.com/SirWaithaka/payments-api/internal/pkg/types"
 )
@@ -28,47 +29,47 @@ func TestWebhookProcessor_Process(t *testing.T) {
 	testcases := []struct {
 		name     string
 		input    *requests.WebhookResult
-		expected requests.OptionsUpdatePayment
+		expected mpesa.OptionsUpdatePayment
 	}{
 		{
 			name:     "test a successful quikk mpesa charge webhook",
 			input:    requests.NewWebhookResult("test", quikk.OperationCharge, strings.NewReader(fmt.Sprintf(chargeSuccessBody, paymentRef))),
-			expected: requests.OptionsUpdatePayment{PaymentReference: &paymentRef, Status: types.Pointer(requests.StatusSucceeded)},
+			expected: mpesa.OptionsUpdatePayment{PaymentReference: &paymentRef, Status: types.Pointer(requests.StatusSucceeded)},
 		},
 		{
 			name:     "test a failed quikk mpesa charge webhook",
 			input:    requests.NewWebhookResult("test", quikk.OperationCharge, strings.NewReader(chargeFailedBody)),
-			expected: requests.OptionsUpdatePayment{Status: types.Pointer(requests.StatusFailed)},
+			expected: mpesa.OptionsUpdatePayment{Status: types.Pointer(requests.StatusFailed)},
 		},
 		{
 			name:     "test a successful quikk mpesa payout webhook",
 			input:    requests.NewWebhookResult("test", quikk.OperationPayout, strings.NewReader(fmt.Sprintf(payoutSuccessBody, paymentRef))),
-			expected: requests.OptionsUpdatePayment{PaymentReference: &paymentRef, Status: types.Pointer(requests.StatusSucceeded)},
+			expected: mpesa.OptionsUpdatePayment{PaymentReference: &paymentRef, Status: types.Pointer(requests.StatusSucceeded)},
 		},
 		{
 			name:     "test a failed quikk mpesa payout webhook",
 			input:    requests.NewWebhookResult("test", quikk.OperationPayout, strings.NewReader(payoutFailedBody)),
-			expected: requests.OptionsUpdatePayment{Status: types.Pointer(requests.StatusFailed)},
+			expected: mpesa.OptionsUpdatePayment{Status: types.Pointer(requests.StatusFailed)},
 		},
 		{
 			name:     "test a successful quikk mpesa transfer webhook",
 			input:    requests.NewWebhookResult("test", quikk.OperationTransfer, strings.NewReader(fmt.Sprintf(transferSuccessBody, paymentRef))),
-			expected: requests.OptionsUpdatePayment{PaymentReference: &paymentRef, Status: types.Pointer(requests.StatusSucceeded)},
+			expected: mpesa.OptionsUpdatePayment{PaymentReference: &paymentRef, Status: types.Pointer(requests.StatusSucceeded)},
 		},
 		{
 			name:     "test a failed quikk mpesa transfer webhook",
 			input:    requests.NewWebhookResult("test", quikk.OperationTransfer, strings.NewReader(transferFailedBody)),
-			expected: requests.OptionsUpdatePayment{Status: types.Pointer(requests.StatusFailed)},
+			expected: mpesa.OptionsUpdatePayment{Status: types.Pointer(requests.StatusFailed)},
 		},
 		{
 			name:     "test a successful transaction status webhook",
 			input:    requests.NewWebhookResult("test", quikk.OperationSearch, strings.NewReader(fmt.Sprintf(transactionSearchSuccessBody, paymentRef))),
-			expected: requests.OptionsUpdatePayment{Status: types.Pointer(requests.StatusSucceeded), PaymentReference: &paymentRef},
+			expected: mpesa.OptionsUpdatePayment{Status: types.Pointer(requests.StatusSucceeded), PaymentReference: &paymentRef},
 		},
 		{ // the processor should ignore this webhook and not return an error
 			name:     "test a successful balance search webhook",
 			input:    requests.NewWebhookResult("test", quikk.OperationSearch, strings.NewReader(balanceSearchSuccessBody)),
-			expected: requests.OptionsUpdatePayment{},
+			expected: mpesa.OptionsUpdatePayment{},
 		},
 	}
 
@@ -77,7 +78,7 @@ func TestWebhookProcessor_Process(t *testing.T) {
 	for _, tc := range testcases {
 
 		t.Run(tc.name, func(t *testing.T) {
-			opts := requests.OptionsUpdatePayment{}
+			opts := mpesa.OptionsUpdatePayment{}
 			err := processor.Process(t.Context(), tc.input, &opts)
 			if err != nil {
 				t.Errorf("expected nil error, got %v", err)
