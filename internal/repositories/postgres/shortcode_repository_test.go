@@ -10,6 +10,7 @@ import (
 
 	"github.com/SirWaithaka/payments-api/internal/domains/mpesa"
 	"github.com/SirWaithaka/payments-api/internal/domains/requests"
+	pkgerrors "github.com/SirWaithaka/payments-api/internal/pkg/errors"
 	"github.com/SirWaithaka/payments-api/internal/repositories/postgres"
 	"github.com/SirWaithaka/payments-api/internal/testdata"
 )
@@ -23,7 +24,9 @@ func TestShortCodeRepository_Add(t *testing.T) {
 		shortcode := mpesa.ShortCode{
 			ShortCodeID:       ulid.Make().String(),
 			ShortCode:         "000000",
+			Priority:          1,
 			Service:           requests.PartnerDaraja,
+			Type:              mpesa.PaymentTypeCharge,
 			InitiatorName:     "fake name",
 			InitiatorPassword: "fake_password",
 			Passphrase:        "fake_passphrase",
@@ -59,6 +62,7 @@ func TestShortCodeRepository_Add(t *testing.T) {
 					ShortCodeID:       ulid.Make().String(),
 					ShortCode:         "",
 					Service:           requests.PartnerDaraja,
+					Type:              mpesa.PaymentTypeCharge,
 					InitiatorName:     "fake name",
 					InitiatorPassword: "fake_password",
 					Passphrase:        "fake_passphrase",
@@ -73,6 +77,7 @@ func TestShortCodeRepository_Add(t *testing.T) {
 					ShortCodeID: ulid.Make().String(),
 					ShortCode:   "000000",
 					//Service:           "",
+					Type:              mpesa.PaymentTypeCharge,
 					InitiatorName:     "fake name",
 					InitiatorPassword: "fake_password",
 					Passphrase:        "fake_passphrase",
@@ -87,6 +92,7 @@ func TestShortCodeRepository_Add(t *testing.T) {
 					ShortCodeID:       ulid.Make().String(),
 					ShortCode:         "000000",
 					Service:           requests.PartnerDaraja,
+					Type:              mpesa.PaymentTypeCharge,
 					InitiatorName:     "fake name",
 					InitiatorPassword: "fake_password",
 					Passphrase:        "fake_passphrase",
@@ -101,6 +107,7 @@ func TestShortCodeRepository_Add(t *testing.T) {
 					ShortCodeID:       ulid.Make().String(),
 					ShortCode:         "000000",
 					Service:           requests.PartnerDaraja,
+					Type:              mpesa.PaymentTypeCharge,
 					InitiatorName:     "fake name",
 					InitiatorPassword: "fake_password",
 					Passphrase:        "fake_passphrase",
@@ -131,6 +138,85 @@ func TestShortCodeRepository_Add(t *testing.T) {
 		}
 
 	})
+
+	t.Run("test that 2 records with same service and shortcode wont be saved", func(t *testing.T) {
+		defer testdata.ResetTables(inf)
+
+		shortcode1 := mpesa.ShortCode{
+			ShortCodeID: ulid.Make().String(),
+			ShortCode:   "000000",
+			Priority:    1,
+			Service:     requests.PartnerDaraja,
+			Type:        mpesa.PaymentTypeCharge,
+			Key:         "fake_key",
+			Secret:      "fake_secret",
+		}
+		shortcode2 := mpesa.ShortCode{
+			ShortCodeID: ulid.Make().String(),
+			ShortCode:   "000000",
+			Priority:    2,
+			Service:     requests.PartnerDaraja,
+			Type:        mpesa.PaymentTypePayout,
+			Key:         "fake_key",
+			Secret:      "fake_secret",
+		}
+
+		err := repo.Add(t.Context(), shortcode1)
+		if err != nil {
+			t.Errorf("expected nil error, got %v", err)
+		}
+
+		// adding shortcode2 should return an error
+		err = repo.Add(t.Context(), shortcode2)
+		if err == nil {
+			t.Errorf("expected non-nil error")
+		}
+
+		// assert the error implements the duplicate interface
+		if e, ok := err.(pkgerrors.Duplicate); !ok || !e.Duplicate() {
+			t.Errorf("expected duplicate error, got %T %v", err, err)
+		}
+
+	})
+
+	t.Run("test that 2 records with the same priority and type wont be saved", func(t *testing.T) {
+		defer testdata.ResetTables(inf)
+
+		shortcode1 := mpesa.ShortCode{
+			ShortCodeID: ulid.Make().String(),
+			ShortCode:   "000000",
+			Priority:    1,
+			Service:     requests.PartnerDaraja,
+			Type:        mpesa.PaymentTypeCharge,
+			Key:         "fake_key",
+			Secret:      "fake_secret",
+		}
+		shortcode2 := mpesa.ShortCode{
+			ShortCodeID: ulid.Make().String(),
+			ShortCode:   "000001",
+			Priority:    1,
+			Service:     requests.PartnerDaraja,
+			Type:        mpesa.PaymentTypeCharge,
+			Key:         "fake_key",
+			Secret:      "fake_secret",
+		}
+
+		err := repo.Add(t.Context(), shortcode1)
+		if err != nil {
+			t.Errorf("expected nil error, got %v", err)
+		}
+
+		err = repo.Add(t.Context(), shortcode2)
+		if err == nil {
+			t.Errorf("expected non-nil error")
+		}
+
+		// assert the error implements the duplicate interface
+		if e, ok := err.(pkgerrors.Duplicate); !ok || !e.Duplicate() {
+			t.Errorf("expected duplicate error, got %T %v", err, err)
+		}
+
+	})
 }
 
 func TestShortCodeRepository_FindOne(t *testing.T) {
@@ -142,7 +228,9 @@ func TestShortCodeRepository_FindOne(t *testing.T) {
 		shortcode := mpesa.ShortCode{
 			ShortCodeID:       ulid.Make().String(),
 			ShortCode:         "000000",
+			Priority:          1,
 			Service:           requests.PartnerDaraja,
+			Type:              mpesa.PaymentTypeCharge,
 			InitiatorName:     "fake name",
 			InitiatorPassword: "fake_password",
 			Passphrase:        "fake_passphrase",

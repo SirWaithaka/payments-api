@@ -1,6 +1,7 @@
-CREATE TABLE IF NOT EXISTS public."mpesa_shortcodes"
+CREATE TABLE IF NOT EXISTS "mpesa_shortcodes"
 (
     "id"                 text,
+    "priority"           bigint DEFAULT 1,
     "service"            text NOT NULL,
     "type"               text NOT NULL,
     "shortcode"          text NOT NULL,
@@ -9,13 +10,16 @@ CREATE TABLE IF NOT EXISTS public."mpesa_shortcodes"
     "passphrase"         text,
     "key"                text NOT NULL,
     "secret"             text NOT NULL,
-    "callback_url"       text NOT NULL,
+    "callback_url"       text,
     "created_at"         timestamp,
     "updated_at"         timestamp,
     PRIMARY KEY ("id"),
+    CONSTRAINT "chk_mpesa_shortcodes_key" CHECK (key <> ''),
+    CONSTRAINT "chk_mpesa_shortcodes_secret" CHECK (secret <> ''),
+    CONSTRAINT "chk_mpesa_shortcodes_priority" CHECK (priority > 0),
+    CONSTRAINT "chk_mpesa_shortcodes_shortcode" CHECK (shortcode <> ''),
     CONSTRAINT "chk_mpesa_shortcodes_service" CHECK (service <> ''),
     CONSTRAINT "chk_mpesa_shortcodes_type" CHECK (type <> ''),
-    CONSTRAINT "chk_mpesa_shortcodes_shortcode" CHECK (shortcode <> ''),
-    CONSTRAINT "chk_mpesa_shortcodes_key" CHECK (key <> ''),
-    CONSTRAINT "chk_mpesa_shortcodes_secret" CHECK (secret <> '')
-);
+    CONSTRAINT "unique_service_shortcode" UNIQUE ("service", "shortcode"),
+    CONSTRAINT "unique_priority_type" UNIQUE ("priority", "type")
+)
