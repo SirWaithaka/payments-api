@@ -72,8 +72,9 @@ type PaymentRequest struct {
 type ShortCode struct {
 	ShortCodeID       string
 	ShortCode         string           // business pay bill or buy goods account
+	Priority          uint             // low value means higher priority
 	Service           requests.Partner // service can be either daraja or quikk
-	Type              string           // types of payment the shortcode can be used for
+	Type              PaymentType      // types of payment the shortcode can be used for
 	InitiatorName     string           // daraja api initiator name
 	InitiatorPassword string           // daraja api initiator password
 	Passphrase        string           // (optional) passphrase for c2b transfers
