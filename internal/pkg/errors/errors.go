@@ -11,6 +11,11 @@ type NotFounder interface {
 	NotFound() bool
 }
 
+// Duplicate describes an exception where a duplicate value is provided
+type Duplicate interface {
+	Duplicate() bool
+}
+
 // Timeout describes an error that occurs when an operation
 // times out.
 type Timeout interface {
