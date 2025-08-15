@@ -53,9 +53,7 @@ func HTTPClient(client *http.Client) request.Hook {
 		}}
 }
 
-type errResponse struct {
-	*ErrorResponse
-}
+type errResponse ErrorResponse
 
 func (r errResponse) Error() string {
 	return fmt.Sprintf("<%s> %s", r.ErrorCode, r.ErrorMessage)
@@ -63,14 +61,15 @@ func (r errResponse) Error() string {
 
 // ResponseDecoder parse the http.Response body into the property
 // request.Request.Data, if the status code is successful
-// Otherwise for
+// Otherwise for failed requests, it will parse the error response
+// into the property request.Request.Error
 var ResponseDecoder = request.Hook{
 	Name: "daraja.ResponseDecoder",
 	Fn: func(r *request.Request) {
 		// response formats for non-200 status codes follow the same format
 		if r.Response.StatusCode != http.StatusOK {
-			response := &errResponse{ErrorResponse: &ErrorResponse{}}
-			if err := jsoniter.NewDecoder(r.Response.Body).Decode(response.ErrorResponse); err != nil {
+			response := &errResponse{}
+			if err := jsoniter.NewDecoder(r.Response.Body).Decode(response); err != nil {
 				r.Error = err
 				return
 			}
