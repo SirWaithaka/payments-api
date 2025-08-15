@@ -123,6 +123,7 @@ type API interface {
 
 type Provider interface {
 	GetMpesaApi(ShortCode) API
+	GetWebhookProcessor(requests.Partner) requests.WebhookProcessor
 }
 
 type Service interface {
@@ -130,4 +131,5 @@ type Service interface {
 	Payout(ctx context.Context, request PaymentRequest) (Payment, error)
 	Transfer(ctx context.Context, request PaymentRequest) (Payment, error)
 	Status(ctx context.Context, opts OptionsFindPayment) (Payment, error)
+	ProcessWebhook(ctx context.Context, result *requests.WebhookResult) error
 }

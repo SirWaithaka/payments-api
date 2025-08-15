@@ -24,7 +24,6 @@ func DefaultHooks() request.Hooks {
 
 	// create client with default timeout of 5 seconds
 	client := &http.Client{Timeout: 5 * time.Second}
-	hooks.Build.PushBackHook(SetEndpoint(SandboxUrl))
 	hooks.Build.PushBackHook(HTTPClient(client))
 	hooks.Build.PushBackHook(corehooks.EncodeRequestBody)
 	hooks.Unmarshal.PushBackHook(ResponseDecoder)

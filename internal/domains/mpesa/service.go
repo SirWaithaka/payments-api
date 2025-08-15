@@ -5,23 +5,38 @@ import (
 	"errors"
 
 	"github.com/oklog/ulid/v2"
+	"github.com/rs/zerolog"
 
 	"github.com/SirWaithaka/payments-api/internal/domains/requests"
+	"github.com/SirWaithaka/payments-api/internal/events"
+	pkgevents "github.com/SirWaithaka/payments-api/internal/pkg/events"
+	"github.com/SirWaithaka/payments-api/internal/pkg/events/payloads"
+	"github.com/SirWaithaka/payments-api/internal/pkg/events/subjects"
+	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
 	"github.com/SirWaithaka/payments-api/internal/pkg/types"
 )
 
-func NewMpesaService(repository Repository, shortCodeRepository ShortCodeRepository, provider Provider) MpesaService {
+func NewService(repository Repository,
+	shortCodeRepository ShortCodeRepository,
+	requestsRepository requests.Repository,
+	provider Provider,
+	publisher events.Publisher) MpesaService {
+
 	return MpesaService{
 		repository:          repository,
 		shortCodeRepository: shortCodeRepository,
+		requestsRepository:  requestsRepository,
 		provider:            provider,
+		publisher:           publisher,
 	}
 }
 
 type MpesaService struct {
 	repository          Repository
 	shortCodeRepository ShortCodeRepository
+	requestsRepository  requests.Repository
 	provider            Provider
+	publisher           events.Publisher
 }
 
 func (service MpesaService) getShortCode(ctx context.Context, paymentType PaymentType) (ShortCode, error) {
@@ -234,4 +249,67 @@ func (service MpesaService) Status(ctx context.Context, opts OptionsFindPayment)
 
 	// refetch payment, in case the status is updated synchronously from the previous call
 	return service.repository.FindOne(ctx, opts)
+}
+
+func (service MpesaService) ProcessWebhook(ctx context.Context, result *requests.WebhookResult) error {
+	l := zerolog.Ctx(ctx)
+	l.Debug().Any(logger.LData, result).Msg("processing webhook")
+
+	// get the webhook processor for this service
+	processor := service.provider.GetWebhookProcessor(result.Service)
+	if processor == nil {
+		return errors.New("webhook processor not found")
+	}
+
+	// use client to get necessary data to update payment
+	opts := &OptionsUpdatePayment{}
+	err := processor.Process(ctx, result, opts)
+	if err != nil {
+		// if error, do nothing and return
+		l.Warn().Err(err).Msg("error transforming webhook")
+		return err
+	}
+
+	// check if the webhook is tied to a request
+	var in interface{ ExternalID() string }
+	var ok bool
+	if in, ok = result.Data.(interface{ ExternalID() string }); !ok || in.ExternalID() == "" {
+		// TODO: do something else with webhook if its not registered
+		l.Warn().Msg("webhook not registered")
+		return nil
+	}
+
+	// fetch request
+	extID := in.ExternalID()
+	req, err := service.requestsRepository.FindOneRequest(ctx, requests.OptionsFindOneRequest{ExternalID: &extID})
+	if err != nil {
+		// TODO: do something if error is not found
+		l.Error().Err(err).Msg("error fetching request")
+		return err
+	}
+
+	// check if the request has a payment record attached, then update the payment
+	if req.PaymentID == "" {
+		l.Info().Msg("no payment details attached to request")
+		return nil
+	}
+
+	// update payment record
+	err = service.repository.Update(ctx, req.PaymentID, *opts)
+	if err != nil {
+		return err
+	}
+
+	// publish webhook event
+	event := pkgevents.NewEvent(subjects.PaymentCompleted, payloads.PaymentStatusUpdated{
+		PaymentID: req.PaymentID,
+	})
+	err = service.publisher.Publish(ctx, event)
+	if err != nil {
+		l.Error().Err(err).Msg("error publishing event")
+		return err
+	}
+	l.Debug().Msg("webhook event published")
+
+	return nil
 }
