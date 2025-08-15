@@ -1,7 +1,6 @@
 package hooks_test
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -13,7 +12,6 @@ import (
 	"github.com/rs/xid"
 
 	"github.com/SirWaithaka/payments-api/corehooks"
-	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	"github.com/SirWaithaka/payments-api/internal/repositories/postgres"
 	"github.com/SirWaithaka/payments-api/internal/services/hooks"
 	"github.com/SirWaithaka/payments-api/internal/testdata"
@@ -24,24 +22,14 @@ func TestRequestRecorder_RecordRequest(t *testing.T) {
 	defer testdata.ResetTables(inf)
 
 	repository := postgres.NewRequestRepository(inf.Storage.PG)
-	paymentsRepo := postgres.NewPaymentsRepository(inf.Storage.PG)
 	recorder := hooks.NewRequestRecorder(repository)
 
 	// fake payment
-	payment := requests.Payment{
-		PaymentID:           ulid.Make().String(),
-		ClientTransactionID: ulid.Make().String(),
-		IdempotencyID:       ulid.Make().String(),
-		PaymentReference:    ulid.Make().String(),
-	}
-	err := paymentsRepo.AddPayment(t.Context(), payment)
-	if err != nil {
-		t.Errorf("expected nil error, got %v", err)
-	}
+	paymentID := ulid.Make().String()
 
 	requestID := xid.New().String()
 	hooks := request.Hooks{}
-	hooks.Send.PushFrontHook(recorder.RecordRequest(payment.PaymentID, requestID))
+	hooks.Send.PushFrontHook(recorder.RecordRequest(paymentID, requestID))
 
 	// make request
 	cfg := request.Config{ServiceName: "test"}
@@ -87,27 +75,17 @@ func TestRequestRecorder_UpdateRequestResponse(t *testing.T) {
 
 	// create an instance of recorder
 	repository := postgres.NewRequestRepository(inf.Storage.PG)
-	paymentsRepo := postgres.NewPaymentsRepository(inf.Storage.PG)
 	recorder := hooks.NewRequestRecorder(repository)
 
-	// fake payment
-	payment := requests.Payment{
-		PaymentID:           ulid.Make().String(),
-		ClientTransactionID: ulid.Make().String(),
-		IdempotencyID:       ulid.Make().String(),
-		PaymentReference:    ulid.Make().String(),
-	}
-	err := paymentsRepo.AddPayment(context.Background(), payment)
-	if err != nil {
-		t.Errorf("expected nil error, got %v", err)
-	}
-
 	t.Run("test on a success response", func(t *testing.T) {
+
+		// fake payment
+		paymentID := ulid.Make().String()
 
 		requestID := xid.New().String()
 		// create request hooks for
 		hooks := request.Hooks{}
-		hooks.Send.PushFrontHook(recorder.RecordRequest(payment.PaymentID, requestID))
+		hooks.Send.PushFrontHook(recorder.RecordRequest(paymentID, requestID))
 		hooks.Complete.PushFrontHook(recorder.UpdateRequestResponse(requestID))
 
 		// configure the request
@@ -117,7 +95,7 @@ func TestRequestRecorder_UpdateRequestResponse(t *testing.T) {
 
 		// build request
 		req := request.New(cfg, hooks, nil, op, nil, nil)
-		if err = req.Send(); err != nil {
+		if err := req.Send(); err != nil {
 			t.Errorf("expected nil error, got %v", err)
 		}
 
@@ -139,11 +117,13 @@ func TestRequestRecorder_UpdateRequestResponse(t *testing.T) {
 	})
 
 	t.Run("test on an error response", func(t *testing.T) {
+		// fake payment
+		paymentID := ulid.Make().String()
 
 		requestID := xid.New().String()
 		// create request hooks for
 		hooks := request.Hooks{}
-		hooks.Send.PushFrontHook(recorder.RecordRequest(payment.PaymentID, requestID))
+		hooks.Send.PushFrontHook(recorder.RecordRequest(paymentID, requestID))
 		hooks.Complete.PushFrontHook(recorder.UpdateRequestResponse(requestID))
 
 		// configure the request
@@ -167,7 +147,7 @@ func TestRequestRecorder_UpdateRequestResponse(t *testing.T) {
 		// build request
 		var output string
 		req := request.New(cfg, hooks, nil, op, nil, &output)
-		if err = req.Send(); err != nil {
+		if err := req.Send(); err != nil {
 			t.Errorf("expected nil error, got %v", err)
 		}
 
