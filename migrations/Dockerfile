@@ -4,7 +4,7 @@ RUN apk add make
 
 WORKDIR /app
 
-COPY migrations/sql migrations
+COPY migrations migrations
 COPY Makefile .
 
 ENTRYPOINT ["make", "-s"]
