@@ -10,15 +10,9 @@ import (
 func routes(router *gin.Engine, di *dipkg.DI) {
 	webhookRoutes(router, di)
 
-	paymentHandlers := handlers.NewPaymentHandlers(di.Wallets)
 	mpesaHandlers := handlers.NewMpesaHandlers(di.Mpesa)
 
 	group := router.Group("/api")
-
-	group.POST("/charge", paymentHandlers.Charge)
-	group.POST("/payout", paymentHandlers.Payout)
-	group.POST("/transfer", paymentHandlers.Transfer)
-	group.POST("/status", paymentHandlers.PaymentStatus)
 
 	// mpesa routes
 	mpesaGroup := group.Group("/mpesa")

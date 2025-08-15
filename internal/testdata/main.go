@@ -117,7 +117,6 @@ func Setup(cfg *config.Config) (*Infrastructure, error) {
 
 	// migrate schemas to postgres
 	if err = store.PG.Migrator().CreateTable(
-		&postgres.PaymentSchema{},
 		&postgres.RequestSchema{},
 		&postgres.WebhookRequestSchema{},
 		&postgres.ShortCodeSchema{},
@@ -142,7 +141,6 @@ func ResetTables(inf *Infrastructure) {
 
 	// clear tables of any data
 	inf.Storage.PG.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&postgres.RequestSchema{})
-	inf.Storage.PG.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&postgres.PaymentSchema{})
 	inf.Storage.PG.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&postgres.WebhookRequestSchema{})
 	inf.Storage.PG.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&postgres.ShortCodeSchema{})
 	inf.Storage.PG.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&postgres.MpesaPaymentSchema{})

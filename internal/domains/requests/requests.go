@@ -79,43 +79,6 @@ func ToPartner(partner string) Partner {
 	}
 }
 
-type Payment struct {
-	BankCode string
-	// automatically generated unique id
-	PaymentID string
-	// client's transaction reference
-	ClientTransactionID string
-	// client generated unique id identifying the payment request
-	IdempotencyID string
-	// payment reference from the payment processor
-	PaymentReference string
-	// source account
-	SourceAccountNumber string
-	// destination account
-	DestinationAccountNumber string
-	// (optional) - this can be an account number, account name
-	// of the beneficiary for the payment
-	Beneficiary string
-	// amount for payment
-	Amount string
-	// short description for payment
-	Description string
-	// status of the payment, "received", "pending", "completed", "failed", "refunded"
-	Status Status
-}
-
-type OptionsFindOnePayment struct {
-	PaymentID           *string
-	ClientTransactionID *string
-	PaymentReference    *string
-	IdempotencyID       *string
-}
-
-type OptionsUpdatePayment struct {
-	Status           *Status
-	PaymentReference *string
-}
-
 type Request struct {
 	RequestID  string // unique request id
 	PaymentID  string // foreign id tied to the original payment request
