@@ -69,6 +69,14 @@ type PaymentRequest struct {
 	Description           string
 }
 
+type ReversalRequest struct {
+	PaymentID           string
+	IdempotencyID       string
+	ClientTransactionID string
+	Amount              string
+	PaymentReference    string
+}
+
 type ShortCode struct {
 	ShortCodeID       string
 	ShortCode         string           // business pay bill or buy goods account
