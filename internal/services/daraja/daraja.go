@@ -242,7 +242,7 @@ func (api DarajaApi) B2B(ctx context.Context, paymentID string, payment mpesa.Pa
 	return nil
 }
 
-func (api DarajaApi) Reversal(ctx context.Context, payment requests.Payment) error {
+func (api DarajaApi) Reversal(ctx context.Context, payment mpesa.ReversalRequest) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling reversal")
 
