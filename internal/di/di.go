@@ -3,7 +3,6 @@ package di
 import (
 	"github.com/SirWaithaka/payments-api/internal/config"
 	"github.com/SirWaithaka/payments-api/internal/domains/mpesa"
-	"github.com/SirWaithaka/payments-api/internal/domains/payments"
 	"github.com/SirWaithaka/payments-api/internal/domains/webhooks"
 	"github.com/SirWaithaka/payments-api/internal/events"
 	"github.com/SirWaithaka/payments-api/internal/repositories/postgres"
@@ -16,12 +15,10 @@ type DI struct {
 	Publisher events.Publisher
 
 	Mpesa   mpesa.Service
-	Wallets payments.Wallet
 	Webhook webhooks.Service
 }
 
 func New(cfg config.Config, db *storage.Database, pub events.Publisher) *DI {
-	//paymentsRepository := postgres.NewPaymentsRepository(db.PG)
 	requestsRepository := postgres.NewRequestRepository(db.PG)
 	webhooksRepository := postgres.NewWebhookRepository(db.PG)
 	shortcodeRepository := postgres.NewShortCodeRepository(db.PG)
@@ -30,14 +27,12 @@ func New(cfg config.Config, db *storage.Database, pub events.Publisher) *DI {
 	apiProvider := services.NewProvider(requestsRepository, webhooksRepository)
 
 	mpesaService := mpesa.NewService(mpesaPaymentsRepository, shortcodeRepository, requestsRepository, apiProvider, pub)
-	//walletsService := payments.NewWalletService(apiProvider, paymentsRepository)
 	webhooksService := webhooks.NewService(webhooksRepository, mpesaService, pub)
 
 	return &DI{
 		Cfg:       &cfg,
 		Publisher: pub,
 		Mpesa:     mpesaService,
-		//Wallets:   walletsService,
-		Webhook: webhooksService,
+		Webhook:   webhooksService,
 	}
 }
