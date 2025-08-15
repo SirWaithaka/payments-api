@@ -29,7 +29,7 @@ func New(cfg config.Config, db *storage.Database, pub events.Publisher) *DI {
 
 	apiProvider := services.NewProvider(requestsRepository, webhooksRepository)
 
-	mpesaService := mpesa.NewMpesaService(mpesaPaymentsRepository, shortcodeRepository, requestsRepository, apiProvider, pub)
+	mpesaService := mpesa.NewService(mpesaPaymentsRepository, shortcodeRepository, requestsRepository, apiProvider, pub)
 	//walletsService := payments.NewWalletService(apiProvider, paymentsRepository)
 	webhooksService := webhooks.NewService(webhooksRepository, mpesaService, pub)
 

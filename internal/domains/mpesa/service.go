@@ -16,7 +16,7 @@ import (
 	"github.com/SirWaithaka/payments-api/internal/pkg/types"
 )
 
-func NewMpesaService(repository Repository,
+func NewService(repository Repository,
 	shortCodeRepository ShortCodeRepository,
 	requestsRepository requests.Repository,
 	provider Provider,
