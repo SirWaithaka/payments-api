@@ -19,26 +19,6 @@ func debugLogReqError(r *request.Request, name string, err error) {
 		name, r.Operation.Name, err))
 }
 
-// SetEndpoint sets the endpoint used by the client. It will
-// default to sandbox base url if nothing is provided.
-// Should be used as a build hook
-func SetEndpoint(endpoint string) request.Hook {
-	// set default base url as the sandbox url
-	url := SandboxUrl
-
-	// lastly, if base url is not empty, use that instead
-	if endpoint != "" {
-		url = endpoint
-	}
-
-	return request.Hook{
-		Name: "daraja.SetEndpoint",
-		Fn: func(r *request.Request) {
-			r.Config.Endpoint = url
-		},
-	}
-}
-
 // HTTPClient creates an instance of http.Client configured
 // for daraja service.
 func HTTPClient(client *http.Client) request.Hook {
