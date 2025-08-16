@@ -287,3 +287,149 @@ func TestClient_QueryOrgInfoRequest(t *testing.T) {
 }
 
 // TEST SUITES FOR REQUEST EXECUTORS
+func TestClient_C2BExpress(t *testing.T) {
+
+	// create a mock test server
+	mux := http.NewServeMux()
+	mux.HandleFunc(daraja.EndpointC2bExpress, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"ResponseMessage":"Success","ResponseCode":"0"}`))
+	})
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	client := daraja.New(daraja.Config{Endpoint: server.URL})
+	res, err := client.C2BExpress(t.Context(), daraja.RequestC2BExpress{})
+	if err != nil {
+		t.Errorf("expected nil error, got %v", err)
+	}
+
+	assert.Equal(t, res.ResponseCode, daraja.SuccessSubmission)
+}
+
+func TestClient_B2C(t *testing.T) {
+
+	// create a mock test server
+	mux := http.NewServeMux()
+	mux.HandleFunc(daraja.EndpointB2cPayment, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"ResponseMessage":"Success","ResponseCode":"0"}`))
+	})
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	client := daraja.New(daraja.Config{Endpoint: server.URL})
+	res, err := client.B2C(t.Context(), daraja.RequestB2C{})
+	if err != nil {
+		t.Errorf("expected nil error, got %v", err)
+	}
+
+	assert.Equal(t, res.ResponseCode, daraja.SuccessSubmission)
+}
+
+func TestClient_B2B(t *testing.T) {
+
+	// create a mock test server
+	mux := http.NewServeMux()
+	mux.HandleFunc(daraja.EndpointB2bPayment, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"ResponseMessage":"Success","ResponseCode":"0"}`))
+	})
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	client := daraja.New(daraja.Config{Endpoint: server.URL})
+	res, err := client.B2B(t.Context(), daraja.RequestB2B{})
+	if err != nil {
+		t.Errorf("expected nil error, got %v", err)
+	}
+
+	assert.Equal(t, res.ResponseCode, daraja.SuccessSubmission)
+}
+
+func TestClient_Reverse(t *testing.T) {
+
+	// create a mock test server
+	mux := http.NewServeMux()
+	mux.HandleFunc(daraja.EndpointReversal, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"ResponseMessage":"Success","ResponseCode":"0"}`))
+	})
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	client := daraja.New(daraja.Config{Endpoint: server.URL})
+	res, err := client.Reverse(t.Context(), daraja.RequestReversal{})
+	if err != nil {
+		t.Errorf("expected nil error, got %v", err)
+	}
+
+	assert.Equal(t, res.ResponseCode, daraja.SuccessSubmission)
+}
+
+func TestClient_TransactionStatus(t *testing.T) {
+
+	// create a mock test server
+	mux := http.NewServeMux()
+	mux.HandleFunc(daraja.EndpointTransactionStatus, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"ResponseMessage":"Success","ResponseCode":"0"}`))
+	})
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	client := daraja.New(daraja.Config{Endpoint: server.URL})
+	res, err := client.TransactionStatus(t.Context(), daraja.RequestTransactionStatus{})
+	if err != nil {
+		t.Errorf("expected nil error, got %v", err)
+	}
+
+	assert.Equal(t, res.ResponseCode, daraja.SuccessSubmission)
+}
+
+func TestClient_Balance(t *testing.T) {
+
+	// create a mock test server
+	mux := http.NewServeMux()
+	mux.HandleFunc(daraja.EndpointAccountBalance, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"ResponseMessage":"Success","ResponseCode":"0"}`))
+	})
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	client := daraja.New(daraja.Config{Endpoint: server.URL})
+	res, err := client.Balance(t.Context(), daraja.RequestBalance{})
+	if err != nil {
+		t.Errorf("expected nil error, got %v", err)
+	}
+
+	assert.Equal(t, res.ResponseCode, daraja.SuccessSubmission)
+}
+
+func TestClient_QueryOrgInfo(t *testing.T) {
+
+	// create a mock test server
+	mux := http.NewServeMux()
+	mux.HandleFunc(daraja.EndpointQueryOrgInfo, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"ResponseMessage":"Success","ResponseCode":"0"}`))
+	})
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	client := daraja.New(daraja.Config{Endpoint: server.URL})
+	res, err := client.QueryOrgInfo(t.Context(), daraja.RequestOrgInfoQuery{})
+	if err != nil {
+		t.Errorf("expected nil error, got %v", err)
+	}
+
+	assert.Equal(t, res.ResponseCode, daraja.SuccessSubmission)
+}
