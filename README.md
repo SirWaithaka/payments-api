@@ -8,11 +8,25 @@ digital wallets and other fintechs.
 **DISCLAIMER:** This project is currently under heavy development. Features may be incomplete, unstable, or subject to 
 significant changes without notice. Use at your own risk.
 
-_Last updated: May 9, 2025_
+_Last updated: Aug 16, 2025_
 
 ## Roadmap
 - [x] Daraja
-- [ ] Quikk
+  - [x] C2B Stk
+  - [x] B2C
+  - [x] B2B
+  - [x] Transaction Status
+  - [x] Account Balance
+  - [ ] Reversal
+  - [ ] Org Name check
+- [x] Quikk
+  - [x] C2B Stk
+  - [x] B2C
+  - [x] B2B
+  - [x] Transaction Status
+  - [x] Account Balance
+  - [ ] Refund
+- [ ] Tanda
 - [ ] JamboPay
 - [ ] Airtel Money
 - [ ] Pesalink

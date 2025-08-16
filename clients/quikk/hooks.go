@@ -1,6 +1,7 @@
 package quikk
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -14,17 +15,14 @@ import (
 func Sign(key, secret string) request.Hook {
 	return request.Hook{Name: "quikk.SignRequest", Fn: func(r *request.Request) {
 		// get the current time and sign it
-		today := time.Now().UTC().Format(time.RFC1123)
-		signature := signer([]byte(today), []byte(secret))
+		now := time.Now().UTC().Format(time.RFC1123)
+		signature := signer([]byte(now), []byte(secret))
 
 		// build the authorization header
 		authorization := fmt.Sprintf(`keyId=%q,algorithm="hmac-sha256",headers="date",signature=%q`, key, signature)
 
-		r.Request.Header.Set("Date", today)
+		r.Request.Header.Set("Date", now)
 		r.Request.Header.Set("Authorization", authorization)
-
-		//r.Request.Header.Add("accept", "application/vnd.api+json")
-		//r.Request.Header.Add("content-type", "application/vnd.api+json")
 
 	}}
 }
@@ -42,12 +40,14 @@ var ResponseDecoder = request.Hook{
 	Fn: func(r *request.Request) {
 		// response formats for non-200 status codes follow the same format
 		if r.Response.StatusCode != http.StatusOK {
+			statusError := errors.New(fmt.Sprintf("status code: %d", r.Response.StatusCode))
+
 			response := &errorResponse{}
 			if err := jsoniter.NewDecoder(r.Response.Body).Decode(response); err != nil {
-				r.Error = err
+				r.Error = errors.Join(statusError, errors.New("failed to decode response"), err)
 				return
 			}
-			r.Error = response
+			r.Error = errors.Join(statusError, response)
 			return
 		}
 
