@@ -6,6 +6,7 @@ import (
 	clients_daraja "github.com/SirWaithaka/payments-api/clients/daraja"
 	clients_quikk "github.com/SirWaithaka/payments-api/clients/quikk"
 	"github.com/SirWaithaka/payments-api/corehooks"
+	"github.com/SirWaithaka/payments-api/internal/config"
 	"github.com/SirWaithaka/payments-api/internal/domains/mpesa"
 	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	"github.com/SirWaithaka/payments-api/internal/domains/webhooks"
@@ -34,37 +35,50 @@ type ShortCodeConfig struct {
 	CallbackURL       string // callback url for shortcode async responses
 }
 
-func NewProvider(requestsRepo requests.Repository, webhooksRepo webhooks.Repository) *Provider {
-	return &Provider{requestsRepo: requestsRepo, webhooksRepo: webhooksRepo}
+func NewProvider(cfg config.Config, requestsRepo requests.Repository, webhooksRepo webhooks.Repository) *Provider {
+	return &Provider{config: cfg, requestsRepo: requestsRepo, webhooksRepo: webhooksRepo}
 }
 
 type Provider struct {
+	config       config.Config
 	requestsRepo requests.Repository
 	webhooksRepo webhooks.Repository
 }
 
-//func (provider Provider) GetWalletApi(bankCode string, reqType payments.RequestType) payments.WalletApi {
-//
-//	if bankCode == payments.BankMpesa {
-//		shortcodeCfg, _ := provider.GetShortCodeConfig(reqType)
-//		// build the daraja client
-//		client := provider.GetDarajaClient(daraja.SandboxUrl, shortcodeCfg)
-//		return NewDarajaApi(client, shortcodeCfg, provider.requestsRepo)
-//	}
-//
-//	return nil
-//}
-
 func (provider Provider) GetMpesaApi(shortcode mpesa.ShortCode) mpesa.API {
 	// build client depending on service
 	if shortcode.Service == requests.PartnerDaraja {
+		endpoint := clients_daraja.SandboxUrl
+		certificate := clients_daraja.SandboxCertificate
+		// check the environment the shortcode is configured for
+		if shortcode.Environment == "production" {
+			endpoint = clients_daraja.ProductionUrl
+			certificate = clients_daraja.ProductionCertificate
+		}
+
+		// use environment endpoint if set
+		if provider.config.Daraja.Endpoint != "" {
+			endpoint = provider.config.Daraja.Endpoint
+		}
+
 		// build the daraja client
-		client := provider.GetDarajaClient(clients_daraja.SandboxUrl, shortcode)
-		return daraja.NewDarajaApi(client, shortcode, provider.requestsRepo)
+		client := provider.GetDarajaClient(endpoint, shortcode)
+		return daraja.NewDarajaApi(client, certificate, shortcode, provider.requestsRepo)
 	}
 	if shortcode.Service == requests.PartnerQuikk {
+		endpoint := clients_quikk.SandboxUrl
+		// check the environment the shortcode is configured for
+		if shortcode.Environment == "production" {
+			endpoint = clients_quikk.ProductionUrl
+		}
+
+		// use environment endpoint if set
+		if provider.config.Quikk.Endpoint != "" {
+			endpoint = provider.config.Quikk.Endpoint
+		}
+
 		// build the quikk client
-		client := provider.GetQuikkClient(clients_quikk.SandboxUrl, shortcode)
+		client := provider.GetQuikkClient(endpoint, shortcode)
 		return quikk.NewQuikkApi(client, shortcode, provider.requestsRepo)
 	}
 

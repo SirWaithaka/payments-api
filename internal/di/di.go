@@ -24,7 +24,7 @@ func New(cfg config.Config, db *storage.Database, pub events.Publisher) *DI {
 	shortcodeRepository := postgres.NewShortCodeRepository(db.PG)
 	mpesaPaymentsRepository := postgres.NewMpesaPaymentsRepository(db.PG)
 
-	apiProvider := services.NewProvider(requestsRepository, webhooksRepository)
+	apiProvider := services.NewProvider(cfg, requestsRepository, webhooksRepository)
 
 	mpesaService := mpesa.NewService(mpesaPaymentsRepository, shortcodeRepository, requestsRepository, apiProvider, pub)
 	webhooksService := webhooks.NewService(webhooksRepository, mpesaService, pub)
