@@ -79,6 +79,7 @@ type ReversalRequest struct {
 
 type ShortCode struct {
 	ShortCodeID       string
+	Environment       string           // enum of sandbox, production
 	ShortCode         string           // business pay bill or buy goods account
 	Priority          uint             // low value means higher priority
 	Service           requests.Partner // service can be either daraja or quikk
