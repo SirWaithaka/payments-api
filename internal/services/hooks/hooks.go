@@ -61,13 +61,13 @@ func (recorder RequestRecorder) UpdateRequestResponse(requestID string) request.
 
 			// check if it is a timeout error
 			if etimeout, ok := r.Error.(pkgerrors.Timeout); ok && etimeout.Timeout() {
-				s := requests.StatusTimeout.String()
+				s := requests.StatusTimeout
 				opts.Status = &s
 			} else if etemp, ok := r.Error.(pkgerrors.Temporary); ok && etemp.Temporary() {
-				s := "temporary_error"
+				s := requests.StatusError
 				opts.Status = &s
 			} else {
-				s := requests.StatusError.String()
+				s := requests.StatusError
 				opts.Status = &s
 			}
 
@@ -83,7 +83,7 @@ func (recorder RequestRecorder) UpdateRequestResponse(requestID string) request.
 			opts.ExternalID = &id
 		}
 
-		s := "completed"
+		s := requests.StatusSucceeded
 		opts.Status = &s
 		opts.Latency = types.Pointer(time.Now().Sub(r.AttemptTime))
 		opts.Response = resMap
