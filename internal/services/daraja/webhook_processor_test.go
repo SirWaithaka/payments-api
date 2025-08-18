@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-playground/assert/v2"
 	"github.com/gofrs/uuid/v5"
 	"github.com/oklog/ulid/v2"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/SirWaithaka/payments-api/clients/daraja"
 	"github.com/SirWaithaka/payments-api/internal/domains/mpesa"

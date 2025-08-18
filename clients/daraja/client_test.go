@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-playground/assert/v2"
 	"github.com/oklog/ulid/v2"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/SirWaithaka/payments-api/clients/daraja"
 	"github.com/SirWaithaka/payments-api/internal/pkg/types"
@@ -35,14 +35,14 @@ func TestClient_AuthenticationRequest(t *testing.T) {
 	t.Run("test that it parses successful response correctly", func(t *testing.T) {
 		key := "fake_key"
 		secret := "fake_secret"
-		acessToken := "fake_token"
+		accessToken := "fake_token"
 
 		// create a test server
 		mux := http.NewServeMux()
 		mux.HandleFunc(daraja.EndpointAuthentication, func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(fmt.Sprintf(`{"access_token":"%s","expires_in":"3600"}`, acessToken)))
+			w.Write([]byte(fmt.Sprintf(`{"access_token":"%s","expires_in":"3600"}`, accessToken)))
 		})
 		server := httptest.NewServer(mux)
 		defer server.Close()
@@ -56,7 +56,7 @@ func TestClient_AuthenticationRequest(t *testing.T) {
 			t.Errorf("expected nil error, got %v", err)
 		}
 
-		assert.Equal(t, res.AccessToken, acessToken)
+		assert.Equal(t, res.AccessToken, accessToken)
 
 	})
 

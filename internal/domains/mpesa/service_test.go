@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-playground/assert/v2"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/oklog/ulid/v2"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/SirWaithaka/payments-api/internal/domains/mpesa"
 	"github.com/SirWaithaka/payments-api/internal/domains/requests"
@@ -98,7 +98,7 @@ func TestWebhookService_Process(t *testing.T) {
 		PaymentID:  payment.PaymentID,
 		ExternalID: ulid.Make().String(),
 		Partner:    "test",
-		Status:     "completed",
+		Status:     requests.StatusSucceeded,
 	}
 	err = requestsRepo.Add(t.Context(), request)
 	if err != nil {
@@ -126,7 +126,7 @@ func TestWebhookService_Process(t *testing.T) {
 		t.Errorf("expected nil error, got %v", result.Error)
 	}
 
-	assert.Equal(t, paymentReference, record.PaymentReference)
+	assert.Equal(t, paymentReference, *record.PaymentReference)
 	assert.Equal(t, requests.StatusSucceeded.String(), record.Status)
 	// check it call publisher
 	assert.Equal(t, uint(1), publisher.calls)
