@@ -59,11 +59,16 @@ func (recorder RequestRecorder) UpdateRequestResponse(requestID string) request.
 		if r.Error != nil {
 			resMap["error"] = r.Error.Error()
 
-			// check if it is a timeout error
+			// check if it's a 4xx status code
+			if r.Response.StatusCode >= 400 && r.Response.StatusCode < 500 {
+				s := requests.StatusFailed
+				opts.Status = &s
+			} else // check if it is a timeout error
 			if etimeout, ok := r.Error.(pkgerrors.Timeout); ok && etimeout.Timeout() {
 				s := requests.StatusTimeout
 				opts.Status = &s
-			} else if etemp, ok := r.Error.(pkgerrors.Temporary); ok && etemp.Temporary() {
+			} else // check if it is a temporary error
+			if etemp, ok := r.Error.(pkgerrors.Temporary); ok && etemp.Temporary() {
 				s := requests.StatusError
 				opts.Status = &s
 			} else {
