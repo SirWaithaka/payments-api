@@ -48,37 +48,18 @@ type Provider struct {
 func (provider Provider) GetMpesaApi(shortcode mpesa.ShortCode) mpesa.API {
 	// build client depending on service
 	if shortcode.Service == requests.PartnerDaraja {
-		endpoint := clients_daraja.SandboxUrl
 		certificate := clients_daraja.SandboxCertificate
-		// check the environment the shortcode is configured for
 		if shortcode.Environment == "production" {
-			endpoint = clients_daraja.ProductionUrl
 			certificate = clients_daraja.ProductionCertificate
 		}
 
-		// use environment endpoint if set
-		if provider.config.Daraja.Endpoint != "" {
-			endpoint = provider.config.Daraja.Endpoint
-		}
-
 		// build the daraja client
-		client := provider.GetDarajaClient(endpoint, shortcode)
+		client := provider.GetDarajaClient(shortcode)
 		return daraja.NewDarajaApi(client, certificate, shortcode, provider.requestsRepo)
 	}
 	if shortcode.Service == requests.PartnerQuikk {
-		endpoint := clients_quikk.SandboxUrl
-		// check the environment the shortcode is configured for
-		if shortcode.Environment == "production" {
-			endpoint = clients_quikk.ProductionUrl
-		}
-
-		// use environment endpoint if set
-		if provider.config.Quikk.Endpoint != "" {
-			endpoint = provider.config.Quikk.Endpoint
-		}
-
 		// build the quikk client
-		client := provider.GetQuikkClient(endpoint, shortcode)
+		client := provider.GetQuikkClient(shortcode)
 		return quikk.NewQuikkApi(client, shortcode, provider.requestsRepo)
 	}
 
@@ -96,18 +77,39 @@ func (provider Provider) GetWebhookProcessor(service requests.Partner) requests.
 	}
 }
 
-func (provider Provider) GetDarajaClient(endpoint string, cfg mpesa.ShortCode) *clients_daraja.Client {
+func (provider Provider) GetDarajaClient(shortcode mpesa.ShortCode) *clients_daraja.Client {
+	endpoint := clients_daraja.SandboxUrl
+	// check the environment the shortcode is configured for
+	if shortcode.Environment == "production" {
+		endpoint = clients_daraja.ProductionUrl
+	}
+
+	// use environment endpoint if set
+	if provider.config.Daraja.Endpoint != "" {
+		endpoint = provider.config.Daraja.Endpoint
+	}
 
 	client := clients_daraja.New(clients_daraja.Config{Endpoint: endpoint, LogLevel: request.LogError})
 	client.Hooks.Build.PushFront(WithLogger())
-	client.Hooks.Build.PushBackHook(clients_daraja.Authenticate(client.AuthenticationRequest(cfg.Key, cfg.Secret)))
+	client.Hooks.Build.PushBackHook(clients_daraja.Authenticate(client.AuthenticationRequest(shortcode.Key, shortcode.Secret)))
 	client.Hooks.Send.PushFrontHook(corehooks.LogHTTPRequest)
 
 	return &client
 
 }
 
-func (provider Provider) GetQuikkClient(endpoint string, shortcode mpesa.ShortCode) *clients_quikk.Client {
+func (provider Provider) GetQuikkClient(shortcode mpesa.ShortCode) *clients_quikk.Client {
+	endpoint := clients_quikk.SandboxUrl
+	// check the environment the shortcode is configured for
+	if shortcode.Environment == "production" {
+		endpoint = clients_quikk.ProductionUrl
+	}
+
+	// use environment endpoint if set
+	if provider.config.Quikk.Endpoint != "" {
+		endpoint = provider.config.Quikk.Endpoint
+	}
+
 	client := clients_quikk.New(clients_quikk.Config{Endpoint: endpoint, LogLevel: request.LogError})
 	client.Hooks.Build.PushFront(WithLogger())
 	client.Hooks.Build.PushBackHook(clients_quikk.Sign(shortcode.Key, shortcode.Secret))
