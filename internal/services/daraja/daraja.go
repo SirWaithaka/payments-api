@@ -91,13 +91,14 @@ func webhook(baseUrl string, action string) string {
 	return u.String()
 }
 
-func NewDarajaApi(client *daraja.Client, shortcode mpesa.ShortCode, repo requests.Repository) DarajaApi {
-	return DarajaApi{client: client, shortcode: shortcode, requestRepo: repo}
+func NewDarajaApi(client *daraja.Client, certificate string, shortcode mpesa.ShortCode, repo requests.Repository) DarajaApi {
+	return DarajaApi{client: client, certificate: certificate, shortcode: shortcode, requestRepo: repo}
 }
 
 // DarajaApi provides an interface to the mpesa wallet
 // through the daraja platform
 type DarajaApi struct {
+	certificate string
 	client      *daraja.Client
 	shortcode   mpesa.ShortCode
 	requestRepo requests.Repository
@@ -153,7 +154,7 @@ func (api DarajaApi) B2C(ctx context.Context, paymentID string, payment mpesa.Pa
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling b2c payment")
 
-	credential, err := daraja.OpenSSLEncrypt(api.shortcode.InitiatorPassword, daraja.SandboxCertificate)
+	credential, err := daraja.OpenSSLEncrypt(api.shortcode.InitiatorPassword, api.certificate)
 	if err != nil {
 		l.Error().Err(err).Msg("error encrypting password")
 		return err
