@@ -3,11 +3,12 @@ package postgres_test
 import (
 	"testing"
 
-	"github.com/go-playground/assert/v2"
 	"github.com/oklog/ulid/v2"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/SirWaithaka/payments-api/internal/domains/mpesa"
 	"github.com/SirWaithaka/payments-api/internal/domains/requests"
+	"github.com/SirWaithaka/payments-api/internal/pkg/types"
 	"github.com/SirWaithaka/payments-api/internal/repositories/postgres"
 	"github.com/SirWaithaka/payments-api/internal/testdata"
 )
@@ -116,8 +117,8 @@ func TestMpesaPaymentsRepository_Update(t *testing.T) {
 		{
 			name: "test all values provided",
 			input: mpesa.OptionsUpdatePayment{
-				Status:           Ptr(requests.StatusSucceeded),
-				PaymentReference: Ptr(ulid.Make().String()),
+				Status:           types.Pointer(requests.StatusSucceeded),
+				PaymentReference: types.Pointer(ulid.Make().String()),
 			},
 		},
 	}

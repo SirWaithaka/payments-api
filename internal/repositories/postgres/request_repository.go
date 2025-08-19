@@ -148,7 +148,7 @@ func (repository RequestRepository) UpdateRequest(ctx context.Context, id string
 
 	values := RequestSchema{}
 	if opts.Status != nil {
-		values.Status = opts.Status
+		values.Status = types.Pointer(opts.Status.String())
 	}
 	if opts.ExternalID != nil {
 		values.ExternalID = opts.ExternalID

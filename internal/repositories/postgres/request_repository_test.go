@@ -6,18 +6,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-playground/assert/v2"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/oklog/ulid/v2"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/SirWaithaka/payments-api/internal/domains/requests"
+	"github.com/SirWaithaka/payments-api/internal/pkg/types"
 	"github.com/SirWaithaka/payments-api/internal/repositories/postgres"
 	"github.com/SirWaithaka/payments-api/internal/testdata"
 )
-
-func Ptr[T any](s T) *T {
-	return &s
-}
 
 func TestRequestRepository_AddRequest(t *testing.T) {
 	defer testdata.ResetTables(inf)
@@ -172,18 +169,18 @@ func TestRequestRepository_UpdateRequest(t *testing.T) {
 		{
 			name: "test all values provided",
 			input: requests.OptionsUpdateRequest{
-				ExternalID: Ptr(ulid.Make().String()),
-				Status:     Ptr("status"),
+				ExternalID: types.Pointer(ulid.Make().String()),
+				Status:     types.Pointer(requests.StatusSucceeded),
 				Response:   map[string]any{"key": "value"},
 			},
 		},
 		{
 			name:  "test externalID provided",
-			input: requests.OptionsUpdateRequest{ExternalID: Ptr(ulid.Make().String())},
+			input: requests.OptionsUpdateRequest{ExternalID: types.Pointer(ulid.Make().String())},
 		},
 		{
 			name:  "test status provided",
-			input: requests.OptionsUpdateRequest{Status: Ptr("status")},
+			input: requests.OptionsUpdateRequest{Status: types.Pointer(requests.StatusSucceeded)},
 		},
 		{
 			name: "test response provided",
@@ -240,8 +237,12 @@ func TestRequestRepository_UpdateRequest(t *testing.T) {
 			}
 
 			// assert values are equal to expected
+			if tc.input.Status == nil {
+				assert.Nil(t, record.Status)
+			} else {
+				assert.Equal(t, tc.input.Status.String(), *record.Status)
+			}
 			assert.Equal(t, tc.input.ExternalID, record.ExternalID)
-			assert.Equal(t, tc.input.Status, record.Status)
 			assert.Equal(t, tc.input.Response, record.ToEntity().Response)
 
 		})
