@@ -31,6 +31,29 @@ func ToPaymentType(s string) PaymentType {
 	}
 }
 
+type AccountType string
+
+const (
+	AccountTypeMSISDN  AccountType = "msisdn"
+	AccountTypePaybill AccountType = "paybill"
+	AccountTypeTill    AccountType = "till"
+)
+
+func (a AccountType) String() string { return string(a) }
+
+func ToAccountType(s string) AccountType {
+	switch s {
+	case string(AccountTypeMSISDN):
+		return AccountTypeMSISDN
+	case string(AccountTypePaybill):
+		return AccountTypePaybill
+	case string(AccountTypeTill):
+		return AccountTypeTill
+	default:
+		return "unknown"
+	}
+}
+
 type Payment struct {
 	// generate unique id for the payment request
 	PaymentID string
@@ -63,7 +86,7 @@ type PaymentRequest struct {
 	IdempotencyID         string
 	ClientTransactionID   string
 	Amount                string
-	ExternalAccountType   string
+	ExternalAccountType   AccountType
 	ExternalAccountNumber string
 	Beneficiary           string
 	Description           string
