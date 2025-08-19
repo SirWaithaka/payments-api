@@ -47,28 +47,10 @@ type ResponseDefault daraja.ResponseDefault
 
 func (response ResponseDefault) ExternalID() string { return response.OriginatorConversationID }
 
-type ResponseC2BExpressQuery daraja.ResponseC2BExpressQuery
-
-func (response ResponseC2BExpressQuery) ExternalID() string {
-	return response.MerchantRequestID
-}
-
 type ResponseC2BExpress daraja.ResponseC2BExpress
 
 func (response ResponseC2BExpress) ExternalID() string {
 	return response.MerchantRequestID
-}
-
-type ResponseOrgNameCheck daraja.ResponseOrgInfoQuery
-
-func (response ResponseOrgNameCheck) ExternalID() string {
-	return response.ConversationID
-}
-
-type OrgNameCheckResponse daraja.ResponseOrgInfoQuery
-
-func (response OrgNameCheckResponse) ExternalID() string {
-	return response.ConversationID
 }
 
 // adds action to the path of base url
@@ -201,7 +183,7 @@ func (api DarajaApi) B2B(ctx context.Context, paymentID string, payment mpesa.Pa
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling b2b payment")
 
-	credential, err := daraja.OpenSSLEncrypt(api.shortcode.InitiatorPassword, daraja.SandboxCertificate)
+	credential, err := daraja.OpenSSLEncrypt(api.shortcode.InitiatorPassword, api.certificate)
 	if err != nil {
 		l.Error().Err(err).Msg("error encrypting password")
 		return err
