@@ -25,6 +25,7 @@ func TestShortCodeRepository_Add(t *testing.T) {
 			ShortCodeID:       ulid.Make().String(),
 			ShortCode:         "000000",
 			Priority:          1,
+			Environment:       "sandbox",
 			Service:           requests.PartnerDaraja,
 			Type:              mpesa.PaymentTypeCharge,
 			InitiatorName:     "fake name",
@@ -49,7 +50,7 @@ func TestShortCodeRepository_Add(t *testing.T) {
 		assert.Equal(t, shortcode, record.ToEntity())
 	})
 
-	t.Run("test that empty string values are not saved", func(t *testing.T) {
+	t.Run("test that empty string values are not saved on select columns", func(t *testing.T) {
 		defer testdata.ResetTables(inf)
 
 		testcases := []struct {
@@ -61,6 +62,7 @@ func TestShortCodeRepository_Add(t *testing.T) {
 				input: mpesa.ShortCode{
 					ShortCodeID:       ulid.Make().String(),
 					ShortCode:         "",
+					Environment:       "sandbox",
 					Service:           requests.PartnerDaraja,
 					Type:              mpesa.PaymentTypeCharge,
 					InitiatorName:     "fake name",
@@ -77,6 +79,7 @@ func TestShortCodeRepository_Add(t *testing.T) {
 					ShortCodeID: ulid.Make().String(),
 					ShortCode:   "000000",
 					//Service:           "",
+					Environment:       "sandbox",
 					Type:              mpesa.PaymentTypeCharge,
 					InitiatorName:     "fake name",
 					InitiatorPassword: "fake_password",
@@ -91,6 +94,7 @@ func TestShortCodeRepository_Add(t *testing.T) {
 				input: mpesa.ShortCode{
 					ShortCodeID:       ulid.Make().String(),
 					ShortCode:         "000000",
+					Environment:       "sandbox",
 					Service:           requests.PartnerDaraja,
 					Type:              mpesa.PaymentTypeCharge,
 					InitiatorName:     "fake name",
@@ -106,6 +110,7 @@ func TestShortCodeRepository_Add(t *testing.T) {
 				input: mpesa.ShortCode{
 					ShortCodeID:       ulid.Make().String(),
 					ShortCode:         "000000",
+					Environment:       "sandbox",
 					Service:           requests.PartnerDaraja,
 					Type:              mpesa.PaymentTypeCharge,
 					InitiatorName:     "fake name",
@@ -139,13 +144,14 @@ func TestShortCodeRepository_Add(t *testing.T) {
 
 	})
 
-	t.Run("test that 2 records with same service and shortcode wont be saved", func(t *testing.T) {
+	t.Run("test that 2 records with identical service,shortcode,type wont be saved", func(t *testing.T) {
 		defer testdata.ResetTables(inf)
 
 		shortcode1 := mpesa.ShortCode{
 			ShortCodeID: ulid.Make().String(),
-			ShortCode:   "000000",
+			Environment: "sandbox",
 			Priority:    1,
+			ShortCode:   "000000",
 			Service:     requests.PartnerDaraja,
 			Type:        mpesa.PaymentTypeCharge,
 			Key:         "fake_key",
@@ -153,10 +159,11 @@ func TestShortCodeRepository_Add(t *testing.T) {
 		}
 		shortcode2 := mpesa.ShortCode{
 			ShortCodeID: ulid.Make().String(),
-			ShortCode:   "000000",
+			Environment: "sandbox",
 			Priority:    2,
-			Service:     requests.PartnerDaraja,
-			Type:        mpesa.PaymentTypePayout,
+			ShortCode:   "000000",                // same shortcode
+			Service:     requests.PartnerDaraja,  // same service
+			Type:        mpesa.PaymentTypeCharge, // same type
 			Key:         "fake_key",
 			Secret:      "fake_secret",
 		}
@@ -185,6 +192,7 @@ func TestShortCodeRepository_Add(t *testing.T) {
 		shortcode1 := mpesa.ShortCode{
 			ShortCodeID: ulid.Make().String(),
 			ShortCode:   "000000",
+			Environment: "sandbox",
 			Priority:    1,
 			Service:     requests.PartnerDaraja,
 			Type:        mpesa.PaymentTypeCharge,
@@ -194,6 +202,7 @@ func TestShortCodeRepository_Add(t *testing.T) {
 		shortcode2 := mpesa.ShortCode{
 			ShortCodeID: ulid.Make().String(),
 			ShortCode:   "000001",
+			Environment: "sandbox",
 			Priority:    1,
 			Service:     requests.PartnerDaraja,
 			Type:        mpesa.PaymentTypeCharge,
@@ -228,6 +237,7 @@ func TestShortCodeRepository_FindOne(t *testing.T) {
 		shortcode := mpesa.ShortCode{
 			ShortCodeID:       ulid.Make().String(),
 			ShortCode:         "000000",
+			Environment:       "sandbox",
 			Priority:          1,
 			Service:           requests.PartnerDaraja,
 			Type:              mpesa.PaymentTypeCharge,
