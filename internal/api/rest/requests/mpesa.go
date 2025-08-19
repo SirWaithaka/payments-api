@@ -16,3 +16,9 @@ type RequestMpesaPayment struct {
 	// payment description
 	Description string `json:"description"`
 }
+
+type RequestMpesaPaymentStatus struct {
+	PaymentID        string `json:"payment_id"`
+	TransactionID    string `json:"transaction_id"`
+	PaymentReference string `json:"payment_reference"`
+}
