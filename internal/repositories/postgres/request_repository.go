@@ -114,9 +114,10 @@ func (repository RequestRepository) Add(ctx context.Context, req requests.Reques
 	return nil
 }
 
-func (repository RequestRepository) FindOneRequest(ctx context.Context, opts requests.OptionsFindOneRequest) (requests.Request, error) {
+// FindOne selects the most recent record after ordering "created_at" in descending
+func (repository RequestRepository) FindOne(ctx context.Context, opts requests.OptionsFindRequest) (requests.Request, error) {
 	l := zerolog.Ctx(ctx)
-	l.Info().Any(logger.LData, opts).Msg("fetch api request by reference")
+	l.Info().Any(logger.LData, opts).Msg("fetch one api request")
 
 	// configure find options
 	where := RequestSchema{}
@@ -125,6 +126,9 @@ func (repository RequestRepository) FindOneRequest(ctx context.Context, opts req
 	}
 	if opts.ExternalID != nil {
 		where.ExternalID = opts.ExternalID
+	}
+	if opts.PaymentID != nil {
+		where.PaymentID = opts.PaymentID
 	}
 
 	var record RequestSchema

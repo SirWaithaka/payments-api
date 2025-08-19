@@ -117,7 +117,7 @@ func (handler MpesaHandlers) PaymentStatus(c *gin.Context) {
 	l := zerolog.Ctx(c.Request.Context())
 	l.Debug().Msg("mpesa payment status request")
 
-	var params requests.RequestPaymentStatus
+	var params requests.RequestMpesaPaymentStatus
 	if err := c.ShouldBindBodyWithJSON(&params); err != nil {
 		handleRequestParsingError(c, err)
 		return

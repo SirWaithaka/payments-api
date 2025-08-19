@@ -114,7 +114,7 @@ func TestRequestRepository_FindOneRequest(t *testing.T) {
 	//	}
 	//
 	//	// now test the find
-	//	request, err := repo.FindOneRequest(ctx, requests.OptionsFindOneRequest{RequestID: &apiRequest.RequestID})
+	//	request, err := repo.FindOne(ctx, requests.OptionsFindRequest{RequestID: &apiRequest.RequestID})
 	//	if err != nil {
 	//		t.Errorf("expected nil error, got %v", err)
 	//	}
@@ -145,7 +145,7 @@ func TestRequestRepository_FindOneRequest(t *testing.T) {
 			t.Errorf("expected nil error, got %v", err)
 		}
 
-		req, err := repo.FindOneRequest(t.Context(), requests.OptionsFindOneRequest{ExternalID: &apiRequest.ExternalID})
+		req, err := repo.FindOne(t.Context(), requests.OptionsFindRequest{ExternalID: &apiRequest.ExternalID})
 		if err != nil {
 			t.Errorf("expected nil error, got %v", err)
 		}
