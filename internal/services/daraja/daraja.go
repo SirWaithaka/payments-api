@@ -203,6 +203,10 @@ func (api DarajaApi) B2B(ctx context.Context, paymentID string, payment mpesa.Pa
 		ResultURL:              webhook(api.shortcode.CallbackURL, daraja.OperationB2B),
 		Remarks:                payment.Description,
 	}
+	if payment.ExternalAccountType == mpesa.AccountTypeTill {
+		payload.CommandID = daraja.CommandBusinessBuyGoods
+	}
+
 	l.Debug().Any(logger.LData, payload).Msg("request payload")
 
 	// configure and add a hook to record this request attempt
@@ -229,7 +233,7 @@ func (api DarajaApi) Reversal(ctx context.Context, payment mpesa.ReversalRequest
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling reversal")
 
-	credential, err := daraja.OpenSSLEncrypt(api.shortcode.InitiatorPassword, daraja.SandboxCertificate)
+	credential, err := daraja.OpenSSLEncrypt(api.shortcode.InitiatorPassword, api.certificate)
 	if err != nil {
 		l.Error().Err(err).Msg("error encrypting password")
 		return nil
@@ -276,7 +280,7 @@ func (api DarajaApi) Status(ctx context.Context, payment mpesa.Payment) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling transaction status")
 
-	credential, err := daraja.OpenSSLEncrypt(api.shortcode.InitiatorPassword, daraja.SandboxCertificate)
+	credential, err := daraja.OpenSSLEncrypt(api.shortcode.InitiatorPassword, api.certificate)
 	if err != nil {
 		l.Error().Err(err).Msg("error encrypting password")
 		return err
@@ -316,7 +320,7 @@ func (api DarajaApi) Balance(ctx context.Context) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling balance")
 
-	credential, err := daraja.OpenSSLEncrypt(api.shortcode.InitiatorPassword, daraja.SandboxCertificate)
+	credential, err := daraja.OpenSSLEncrypt(api.shortcode.InitiatorPassword, api.certificate)
 	if err != nil {
 		l.Error().Err(err).Msg("error encrypting password")
 		return err
