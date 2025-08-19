@@ -14,10 +14,11 @@ import (
 
 type ShortCodeSchema struct {
 	ShortCodeID       string  `gorm:"column:id;primaryKey;"`
+	Environment       string  `gorm:"column:environment;check:environment<>'';not null"`
 	Priority          uint    `gorm:"column:priority;check:priority>0;default:1;uniqueIndex:unique_priority_type"`
-	Service           string  `gorm:"column:service;check:service<>'';not null;uniqueIndex:unique_service_shortcode"`
-	Type              string  `gorm:"column:type;check:type<>'';not null;uniqueIndex:unique_priority_type"`
-	ShortCode         string  `gorm:"column:shortcode;check:shortcode<>'';not null;uniqueIndex:unique_service_shortcode"`
+	Service           string  `gorm:"column:service;check:service<>'';not null;uniqueIndex:unique_service_shortcode_type"`
+	Type              string  `gorm:"column:type;check:type<>'';not null;uniqueIndex:unique_priority_type;uniqueIndex:unique_service_shortcode_type"`
+	ShortCode         string  `gorm:"column:shortcode;check:shortcode<>'';not null;uniqueIndex:unique_service_shortcode_type"`
 	InitiatorName     *string `gorm:"column:initiator_name;"`
 	InitiatorPassword *string `gorm:"column:initiator_password;"`
 	Passphrase        *string `gorm:"column:passphrase;"`
@@ -37,6 +38,7 @@ func (schema ShortCodeSchema) ToEntity() mpesa.ShortCode {
 	shortcode := mpesa.ShortCode{
 		ShortCodeID: schema.ShortCodeID,
 		ShortCode:   schema.ShortCode,
+		Environment: schema.Environment,
 		Priority:    schema.Priority,
 		Service:     requests.ToPartner(schema.Service),
 		Type:        mpesa.ToPaymentType(schema.Type),
@@ -114,6 +116,7 @@ func (repository ShortCodeRepository) Add(ctx context.Context, shortcode mpesa.S
 
 	record := ShortCodeSchema{
 		ShortCodeID:       shortcode.ShortCodeID,
+		Environment:       shortcode.Environment,
 		Priority:          shortcode.Priority,
 		Service:           shortcode.Service.String(),
 		Type:              shortcode.Type.String(),

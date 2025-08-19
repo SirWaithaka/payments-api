@@ -14,6 +14,9 @@ type envConfig struct {
 	PostgresSchema   string `envconfig:"postgres_schema" default:"public"`
 
 	KafkaBrokers string `envconfig:"kafka_brokers" required:"true"`
+
+	DarajaEndpoint string `envconfig:"daraja_endpoint"` // not required
+	QuikkEndpoint  string `envconfig:"quikk_endpoint"`  // not required
 }
 
 func FromEnv(cfg *Config) error {
@@ -33,6 +36,9 @@ func FromEnv(cfg *Config) error {
 	cfg.Postgres.Schema = c.PostgresSchema
 
 	cfg.Kafka.Host = c.KafkaBrokers
+
+	cfg.Daraja.Endpoint = c.DarajaEndpoint
+	cfg.Quikk.Endpoint = c.QuikkEndpoint
 
 	return nil
 }

@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS "mpesa_shortcodes"
     "priority"           bigint DEFAULT 1,
     "service"            text NOT NULL,
     "type"               text NOT NULL,
+    "environment"        text NOT NULL,
     "shortcode"          text NOT NULL,
     "initiator_name"     text,
     "initiator_password" text,
@@ -20,6 +21,7 @@ CREATE TABLE IF NOT EXISTS "mpesa_shortcodes"
     CONSTRAINT "chk_mpesa_shortcodes_shortcode" CHECK (shortcode <> ''),
     CONSTRAINT "chk_mpesa_shortcodes_service" CHECK (service <> ''),
     CONSTRAINT "chk_mpesa_shortcodes_type" CHECK (type <> ''),
-    CONSTRAINT "unique_service_shortcode" UNIQUE ("service", "shortcode"),
+    CONSTRAINT "chk_mpesa_shortcodes_environment" CHECK (environment <> ''),
+    CONSTRAINT "unique_service_shortcode_type" UNIQUE ("service", "shortcode", "type"),
     CONSTRAINT "unique_priority_type" UNIQUE ("priority", "type")
 )

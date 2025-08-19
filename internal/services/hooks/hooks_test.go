@@ -7,11 +7,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-playground/assert/v2"
 	"github.com/oklog/ulid/v2"
 	"github.com/rs/xid"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/SirWaithaka/payments-api/corehooks"
+	"github.com/SirWaithaka/payments-api/internal/domains/requests"
 	"github.com/SirWaithaka/payments-api/internal/repositories/postgres"
 	"github.com/SirWaithaka/payments-api/internal/services/hooks"
 	"github.com/SirWaithaka/payments-api/internal/testdata"
@@ -51,7 +52,6 @@ func TestRequestRecorder_RecordRequest(t *testing.T) {
 }
 
 func TestRequestRecorder_UpdateRequestResponse(t *testing.T) {
-	defer testdata.ResetTables(inf)
 
 	// create mock server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -78,6 +78,7 @@ func TestRequestRecorder_UpdateRequestResponse(t *testing.T) {
 	recorder := hooks.NewRequestRecorder(repository)
 
 	t.Run("test on a success response", func(t *testing.T) {
+		defer testdata.ResetTables(inf)
 
 		// fake payment
 		paymentID := ulid.Make().String()
@@ -108,7 +109,7 @@ func TestRequestRecorder_UpdateRequestResponse(t *testing.T) {
 
 		// assert values
 		assert.Equal(t, requestID, rq.RequestID)
-		assert.Equal(t, "completed", rq.Status)
+		assert.Equal(t, requests.StatusSucceeded.String(), *rq.Status)
 
 		if rq.Response == nil {
 			t.Errorf("expected non-nil result, got nil")
@@ -117,6 +118,8 @@ func TestRequestRecorder_UpdateRequestResponse(t *testing.T) {
 	})
 
 	t.Run("test on an error response", func(t *testing.T) {
+		defer testdata.ResetTables(inf)
+
 		// fake payment
 		paymentID := ulid.Make().String()
 
@@ -160,7 +163,7 @@ func TestRequestRecorder_UpdateRequestResponse(t *testing.T) {
 
 		// assert values
 		assert.Equal(t, requestID, rq.RequestID)
-		assert.Equal(t, "completed", rq.Status)
+		assert.Equal(t, requests.StatusSucceeded.String(), *rq.Status)
 
 		if rq.Response == nil {
 			t.Errorf("expected non-nil result, got nil")

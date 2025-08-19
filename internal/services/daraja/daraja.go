@@ -47,28 +47,10 @@ type ResponseDefault daraja.ResponseDefault
 
 func (response ResponseDefault) ExternalID() string { return response.OriginatorConversationID }
 
-type ResponseC2BExpressQuery daraja.ResponseC2BExpressQuery
-
-func (response ResponseC2BExpressQuery) ExternalID() string {
-	return response.MerchantRequestID
-}
-
 type ResponseC2BExpress daraja.ResponseC2BExpress
 
 func (response ResponseC2BExpress) ExternalID() string {
 	return response.MerchantRequestID
-}
-
-type ResponseOrgNameCheck daraja.ResponseOrgInfoQuery
-
-func (response ResponseOrgNameCheck) ExternalID() string {
-	return response.ConversationID
-}
-
-type OrgNameCheckResponse daraja.ResponseOrgInfoQuery
-
-func (response OrgNameCheckResponse) ExternalID() string {
-	return response.ConversationID
 }
 
 // adds action to the path of base url
@@ -91,13 +73,14 @@ func webhook(baseUrl string, action string) string {
 	return u.String()
 }
 
-func NewDarajaApi(client *daraja.Client, shortcode mpesa.ShortCode, repo requests.Repository) DarajaApi {
-	return DarajaApi{client: client, shortcode: shortcode, requestRepo: repo}
+func NewDarajaApi(client *daraja.Client, certificate string, shortcode mpesa.ShortCode, repo requests.Repository) DarajaApi {
+	return DarajaApi{client: client, certificate: certificate, shortcode: shortcode, requestRepo: repo}
 }
 
 // DarajaApi provides an interface to the mpesa wallet
 // through the daraja platform
 type DarajaApi struct {
+	certificate string
 	client      *daraja.Client
 	shortcode   mpesa.ShortCode
 	requestRepo requests.Repository
@@ -153,7 +136,7 @@ func (api DarajaApi) B2C(ctx context.Context, paymentID string, payment mpesa.Pa
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling b2c payment")
 
-	credential, err := daraja.OpenSSLEncrypt(api.shortcode.InitiatorPassword, daraja.SandboxCertificate)
+	credential, err := daraja.OpenSSLEncrypt(api.shortcode.InitiatorPassword, api.certificate)
 	if err != nil {
 		l.Error().Err(err).Msg("error encrypting password")
 		return err
@@ -200,7 +183,7 @@ func (api DarajaApi) B2B(ctx context.Context, paymentID string, payment mpesa.Pa
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling b2b payment")
 
-	credential, err := daraja.OpenSSLEncrypt(api.shortcode.InitiatorPassword, daraja.SandboxCertificate)
+	credential, err := daraja.OpenSSLEncrypt(api.shortcode.InitiatorPassword, api.certificate)
 	if err != nil {
 		l.Error().Err(err).Msg("error encrypting password")
 		return err
@@ -220,6 +203,10 @@ func (api DarajaApi) B2B(ctx context.Context, paymentID string, payment mpesa.Pa
 		ResultURL:              webhook(api.shortcode.CallbackURL, daraja.OperationB2B),
 		Remarks:                payment.Description,
 	}
+	if payment.ExternalAccountType == mpesa.AccountTypeTill {
+		payload.CommandID = daraja.CommandBusinessBuyGoods
+	}
+
 	l.Debug().Any(logger.LData, payload).Msg("request payload")
 
 	// configure and add a hook to record this request attempt
@@ -246,7 +233,7 @@ func (api DarajaApi) Reversal(ctx context.Context, payment mpesa.ReversalRequest
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling reversal")
 
-	credential, err := daraja.OpenSSLEncrypt(api.shortcode.InitiatorPassword, daraja.SandboxCertificate)
+	credential, err := daraja.OpenSSLEncrypt(api.shortcode.InitiatorPassword, api.certificate)
 	if err != nil {
 		l.Error().Err(err).Msg("error encrypting password")
 		return nil
@@ -293,7 +280,7 @@ func (api DarajaApi) Status(ctx context.Context, payment mpesa.Payment) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling transaction status")
 
-	credential, err := daraja.OpenSSLEncrypt(api.shortcode.InitiatorPassword, daraja.SandboxCertificate)
+	credential, err := daraja.OpenSSLEncrypt(api.shortcode.InitiatorPassword, api.certificate)
 	if err != nil {
 		l.Error().Err(err).Msg("error encrypting password")
 		return err
@@ -333,7 +320,7 @@ func (api DarajaApi) Balance(ctx context.Context) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling balance")
 
-	credential, err := daraja.OpenSSLEncrypt(api.shortcode.InitiatorPassword, daraja.SandboxCertificate)
+	credential, err := daraja.OpenSSLEncrypt(api.shortcode.InitiatorPassword, api.certificate)
 	if err != nil {
 		l.Error().Err(err).Msg("error encrypting password")
 		return err

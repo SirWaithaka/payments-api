@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-playground/assert/v2"
 	"github.com/oklog/ulid/v2"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/SirWaithaka/payments-api/clients/quikk"
 	"github.com/SirWaithaka/payments-api/internal/domains/mpesa"

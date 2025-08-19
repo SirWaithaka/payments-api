@@ -94,7 +94,7 @@ func (handler MpesaHandlers) Transfer(c *gin.Context) {
 		IdempotencyID:         params.IdempotencyID,
 		ClientTransactionID:   params.TransactionID,
 		Amount:                params.Amount,
-		ExternalAccountType:   params.ExternalAccountType,
+		ExternalAccountType:   mpesa.ToAccountType(params.ExternalAccountType),
 		ExternalAccountNumber: params.ExternalAccountID,
 		Beneficiary:           params.Beneficiary,
 		Description:           params.Description,

@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-playground/assert/v2"
 	"github.com/rs/xid"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/SirWaithaka/payments-api/clients/quikk"
 )
