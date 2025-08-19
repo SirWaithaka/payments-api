@@ -26,14 +26,22 @@ type Data[T any] struct {
 	Attributes T      `json:"attributes"`
 }
 
+// REQUEST MODELS
+
 type RequestDefault[T any] struct {
 	Data Data[T] `json:"data"`
 }
 
+// RequestTransactionStatus describes the payload to perform transaction search.
+// For transactions that are older than 15 days, you can only find it when you use "txn_id"
+// (MPESA transaction / receipt number)
 type RequestTransactionStatus struct {
 	ShortCode string `json:"short_code"`
 	Reference string `json:"q"`
 	// can be one of "resource_id", "response_id" or "txn_id"
+	// resource_id - is the developer generated id from the original payout request
+	// response_id - is the response_id from the original payout request
+	// txn_id - is the MPESA receipt number
 	ReferenceType string `json:"on"`
 }
 
@@ -63,7 +71,7 @@ type RequestTransfer struct {
 	RecipientNo       string  `json:"recipient_no"`
 	AccountNo         string  `json:"reference"`
 	ShortCode         string  `json:"short_code"`
-	RecipientType     string  `json:"recipient_type"`
+	RecipientType     string  `json:"recipient_type"`     // always "short_code"
 	RecipientCategory string  `json:"recipient_category"` // one of "till" or "paybill"
 	PostedAt          string  `json:"posted_at"`
 }

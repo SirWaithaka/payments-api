@@ -85,7 +85,7 @@ func TestDarajaApi_C2B(t *testing.T) {
 		}
 
 		// check request is saved
-		request, err := repository.FindOneRequest(t.Context(), requests.OptionsFindOneRequest{ExternalID: &merchantReqID})
+		request, err := repository.FindOne(t.Context(), requests.OptionsFindRequest{ExternalID: &merchantReqID})
 		// expect no error
 		if err != nil {
 			t.Errorf("expected nil error, got %v", err)
@@ -202,7 +202,7 @@ func TestDarajaApi_B2C(t *testing.T) {
 		}
 
 		// check request is saved
-		request, err := repository.FindOneRequest(t.Context(), requests.OptionsFindOneRequest{ExternalID: &originatorConversationID})
+		request, err := repository.FindOne(t.Context(), requests.OptionsFindRequest{ExternalID: &originatorConversationID})
 		// expect no error
 		if err != nil {
 			t.Errorf("expected nil error, got %v", err)
@@ -319,7 +319,7 @@ func TestDarajaApi_B2B(t *testing.T) {
 		}
 
 		// check request is saved
-		request, err := repository.FindOneRequest(t.Context(), requests.OptionsFindOneRequest{ExternalID: &originatorConversationID})
+		request, err := repository.FindOne(t.Context(), requests.OptionsFindRequest{ExternalID: &originatorConversationID})
 		// expect no error
 		if err != nil {
 			t.Errorf("expected nil error, got %v", err)
@@ -374,7 +374,7 @@ func TestDarajaApi_B2B(t *testing.T) {
 		}
 
 		// check request is saved
-		request, err := repository.FindOneRequest(t.Context(), requests.OptionsFindOneRequest{ExternalID: &originatorConversationID})
+		request, err := repository.FindOne(t.Context(), requests.OptionsFindRequest{ExternalID: &originatorConversationID})
 		// expect no error
 		if err != nil {
 			t.Errorf("expected nil error, got %v", err)

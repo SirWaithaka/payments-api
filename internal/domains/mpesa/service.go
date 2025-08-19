@@ -281,7 +281,7 @@ func (service MpesaService) ProcessWebhook(ctx context.Context, result *requests
 
 	// fetch request
 	extID := in.ExternalID()
-	req, err := service.requestsRepository.FindOneRequest(ctx, requests.OptionsFindOneRequest{ExternalID: &extID})
+	req, err := service.requestsRepository.FindOne(ctx, requests.OptionsFindRequest{ExternalID: &extID})
 	if err != nil {
 		// TODO: do something if error is not found
 		l.Error().Err(err).Msg("error fetching request")

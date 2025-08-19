@@ -90,9 +90,12 @@ type Request struct {
 	CreatedAt  time.Time
 }
 
-type OptionsFindOneRequest struct {
-	RequestID  *string
-	ExternalID *string
+// OptionsFindRequest defines all options that can be used to find
+// one or many requests.
+type OptionsFindRequest struct {
+	RequestID  *string // use to find a single request
+	ExternalID *string // use to find a single request
+	PaymentID  *string // use to find multiple requests
 }
 
 type OptionsUpdateRequest struct {
@@ -135,7 +138,7 @@ func NewWebhookResult(partner string, action string, body io.Reader) *WebhookRes
 // Repository defines methods for managing and interacting with Request entities.
 type Repository interface {
 	Add(ctx context.Context, req Request) error
-	FindOneRequest(ctx context.Context, opts OptionsFindOneRequest) (Request, error)
+	FindOne(ctx context.Context, opts OptionsFindRequest) (Request, error)
 	UpdateRequest(ctx context.Context, id string, opts OptionsUpdateRequest) error
 }
 
