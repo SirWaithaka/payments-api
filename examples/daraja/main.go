@@ -17,22 +17,16 @@ type ShortCodeConfig struct {
 	ConsumerSecret    string // daraja app consumer secret
 }
 
-func main() {
+// example of making a c2b request
+func makeC2bRequest(sCfg ShortCodeConfig) {
 	l := log.New(os.Stdout, "Daraja: ", log.LstdFlags|log.Llongfile)
 
-	sCfg := ShortCodeConfig{
-		ShortCode:         "000000",
-		InitiatorName:     "testapi",
-		InitiatorPassword: "Safaricom999!*!%",
-		Passphrase:        "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919%",
-		ConsumerKey:       "GW0TvN2gUTakps3b1AbAw48no1Yogu92oXI0N55fmlEVK40e",
-		ConsumerSecret:    "CtpMOjvk47jm6A5hmCzaQjQTBOWAwK1LM95awGNLSTGawbGNPsy9f8Eabsr1Lg7P",
-	}
+	// create an instance of daraja client
+	client := daraja.New(daraja.Config{Endpoint: daraja.SandboxUrl})
+	// configure authentication using request hooks
+	client.Hooks.Build.PushBackHook(daraja.Authenticate(client.AuthenticationRequest(sCfg.ConsumerKey, sCfg.ConsumerSecret)))
 
-	endpoint := "http://localhost:9002/daraja"
-	darajaclient := daraja.New(daraja.Config{Endpoint: endpoint})
-	darajaclient.Hooks.Build.PushBackHook(daraja.Authenticate(endpoint, sCfg.InitiatorName, sCfg.InitiatorPassword))
-
+	// encode the shortcode passphrase
 	password := daraja.PasswordEncode(sCfg.ShortCode, sCfg.Passphrase, daraja.NewTimestamp().String())
 	req := daraja.RequestC2BExpress{
 		BusinessShortCode: sCfg.ShortCode,
@@ -43,14 +37,67 @@ func main() {
 		PartyA:            "100100",
 		PartyB:            sCfg.ShortCode,
 		PhoneNumber:       "0720000000",
-		CallBackURL:       "http://localhost:9002/daraja/c2b/callback",
+		CallBackURL:       "http://localhost:8000/daraja/c2b/callback",
 		AccountReference:  "F0000020",
 		TransactionDesc:   "Customer Deposit",
 	}
 
-	res, err := darajaclient.C2BExpress(context.Background(), req)
+	// make the stk push request through daraja
+	res, err := client.C2BExpress(context.Background(), req)
 	if err != nil {
 		l.Fatal(err)
 	}
 	l.Println(res)
+}
+
+func makeB2cRequest(sCfg ShortCodeConfig) {
+	l := log.New(os.Stdout, "Daraja: ", log.LstdFlags|log.Llongfile)
+
+	// create an instance of daraja client
+	client := daraja.New(daraja.Config{Endpoint: daraja.SandboxUrl})
+	// configure authentication using request hooks
+	client.Hooks.Build.PushBackHook(daraja.Authenticate(client.AuthenticationRequest(sCfg.ConsumerKey, sCfg.ConsumerSecret)))
+
+	// build security credential
+	credential, err := daraja.OpenSSLEncrypt(sCfg.InitiatorPassword, daraja.SandboxCertificate)
+	if err != nil {
+		l.Fatal(err)
+	}
+
+	req := daraja.RequestB2C{
+		OriginatorConversationID: "1234567890",
+		InitiatorName:            "initiator_name",
+		SecurityCredential:       credential,
+		CommandID:                daraja.CommandBusinessPayment,
+		Amount:                   "10",
+		PartyA:                   sCfg.ShortCode,
+		PartyB:                   "254712345678",
+		Remarks:                  "test payment",
+		QueueTimeOutURL:          "http://localhost:8000/daraja/b2c/callback",
+		ResultURL:                "http://localhost:8000/daraja/b2c/callback",
+		Occasion:                 "OK",
+	}
+	// make the b2c request through daraja
+	res, err := client.B2C(context.Background(), req)
+	if err != nil {
+		l.Fatal(err)
+	}
+	l.Println(res)
+}
+
+func main() {
+
+	// daraja shortcode config
+	sCfg := ShortCodeConfig{
+		ShortCode:         "000000",
+		InitiatorName:     "initiator_name",
+		InitiatorPassword: "initiator_password",
+		Passphrase:        "passphrase",
+		ConsumerKey:       "consumer_key",
+		ConsumerSecret:    "consumer_secret",
+	}
+
+	makeC2bRequest(sCfg)
+	makeB2cRequest(sCfg)
+
 }
