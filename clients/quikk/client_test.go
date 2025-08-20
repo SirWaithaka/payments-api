@@ -79,7 +79,7 @@ func TestClient_TransactionSearch(t *testing.T) {
 	mux.HandleFunc(quikk.EndpointTransactionSearch, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(fmt.Sprintf(`{"data":{"id":"12345","type":"search","attributes":{"resource_id":"%s"}}}`, resourceID)))
+		_, _ = w.Write([]byte(fmt.Sprintf(`{"data":{"id":"12345","type":"search","attributes":{"resource_id":"%s"}}}`, resourceID)))
 	})
 	server := httptest.NewServer(mux)
 	defer server.Close()

@@ -145,7 +145,3 @@ type Repository interface {
 type WebhookProcessor interface {
 	Process(ctx context.Context, in *WebhookResult, out any) error
 }
-
-type Provider interface {
-	GetWebhookClient(service Partner) WebhookProcessor
-}

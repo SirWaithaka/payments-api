@@ -38,7 +38,7 @@ func (handler MpesaHandlers) Charge(c *gin.Context) {
 		Description:           params.Description,
 	})
 	if err != nil {
-		err = c.Error(err)
+		_ = c.Error(err)
 		return
 	}
 	l.Debug().Any(logger.LData, payment).Msg("payment")
@@ -68,7 +68,7 @@ func (handler MpesaHandlers) Payout(c *gin.Context) {
 		Description:           params.Description,
 	})
 	if err != nil {
-		err = c.Error(err)
+		_ = c.Error(err)
 		return
 	}
 	l.Debug().Any(logger.LData, payment).Msg("payment")
@@ -100,7 +100,7 @@ func (handler MpesaHandlers) Transfer(c *gin.Context) {
 		Description:           params.Description,
 	})
 	if err != nil {
-		err = c.Error(err)
+		_ = c.Error(err)
 		return
 	}
 	l.Debug().Any(logger.LData, payment).Msg("payment")
@@ -136,7 +136,7 @@ func (handler MpesaHandlers) PaymentStatus(c *gin.Context) {
 
 	payment, err := handler.service.Status(c.Request.Context(), opts)
 	if err != nil {
-		err = c.Error(err)
+		_ = c.Error(err)
 		return
 	}
 	l.Debug().Any(logger.LData, payment).Msg("payment")

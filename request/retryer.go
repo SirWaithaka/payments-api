@@ -47,7 +47,7 @@ type RetryConfig struct {
 	// will consider these codes in addition to its built-in cases.
 	RetryErrorCodes []string
 
-	retryable bool
+	//retryable bool
 }
 
 type Retryer interface {

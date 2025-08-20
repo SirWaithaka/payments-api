@@ -26,7 +26,7 @@ func TestAuthenticate(t *testing.T) {
 		mux.HandleFunc(EndpointAuthentication, func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(fmt.Sprintf(`{"access_token":"%s","expires_in":"3600"}`, acessToken)))
+			_, _ = w.Write([]byte(fmt.Sprintf(`{"access_token":"%s","expires_in":"3600"}`, acessToken)))
 		})
 		mux.HandleFunc(EndpointQueryOrgInfo, func(w http.ResponseWriter, r *http.Request) {
 			// check the access token is set
@@ -35,7 +35,7 @@ func TestAuthenticate(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
 			// send fake response
-			w.Write([]byte(`{"ResponseMessage":"Success","ResponseCode":"00"}`))
+			_, _ = w.Write([]byte(`{"ResponseMessage":"Success","ResponseCode":"00"}`))
 		})
 		server := httptest.NewServer(mux)
 		defer server.Close()
@@ -64,7 +64,7 @@ func TestAuthenticate(t *testing.T) {
 			authCalls++
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(fmt.Sprintf(`{"access_token":"%s","expires_in":"3600"}`, acessToken)))
+			_, _ = w.Write([]byte(fmt.Sprintf(`{"access_token":"%s","expires_in":"3600"}`, acessToken)))
 		})
 		mux.HandleFunc(EndpointQueryOrgInfo, func(w http.ResponseWriter, r *http.Request) {
 			// check the access token is set
@@ -73,7 +73,7 @@ func TestAuthenticate(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
 			// send fake response
-			w.Write([]byte(`{"ResponseMessage":"Success","ResponseCode":"00"}`))
+			_, _ = w.Write([]byte(`{"ResponseMessage":"Success","ResponseCode":"00"}`))
 		})
 		server := httptest.NewServer(mux)
 		defer server.Close()
@@ -107,13 +107,13 @@ func TestResponseDecoder(t *testing.T) {
 		// mock successful request
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(fmt.Sprintf(`{"ResponseMessage":"Success","ResponseCode":"0","MerchantRequestID":"%s","CheckoutRequestID":"%s"}`, requestID, requestID)))
+		_, _ = w.Write([]byte(fmt.Sprintf(`{"ResponseMessage":"Success","ResponseCode":"0","MerchantRequestID":"%s","CheckoutRequestID":"%s"}`, requestID, requestID)))
 	})
 	mux.HandleFunc("/error", func(w http.ResponseWriter, r *http.Request) {
 		// mock request failure
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(fmt.Sprintf(`{"requestId":"%s","errorCode":"23","errorMessage":"test failure"}`, requestID)))
+		_, _ = w.Write([]byte(fmt.Sprintf(`{"requestId":"%s","errorCode":"23","errorMessage":"test failure"}`, requestID)))
 	})
 	server := httptest.NewServer(mux)
 	defer server.Close()

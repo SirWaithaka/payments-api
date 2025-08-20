@@ -66,7 +66,7 @@ func TestDarajaApi_C2B(t *testing.T) {
 
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(fmt.Sprintf(`{"ResponseMessage":"Success","ResponseCode":"0","MerchantRequestID":"%s","CheckoutRequestID":"%s"}`, merchantReqID, checkoutReqID)))
+			_, _ = w.Write([]byte(fmt.Sprintf(`{"ResponseMessage":"Success","ResponseCode":"0","MerchantRequestID":"%s","CheckoutRequestID":"%s"}`, merchantReqID, checkoutReqID)))
 		})
 		server := httptest.NewServer(mux)
 		defer server.Close()
@@ -107,7 +107,7 @@ func TestDarajaApi_C2B(t *testing.T) {
 			// mock request failure
 			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(fmt.Sprintf(`{"requestId":"%s","errorCode":"23","errorMessage":"test failure"}`, requestID)))
+			_, _ = w.Write([]byte(fmt.Sprintf(`{"requestId":"%s","errorCode":"23","errorMessage":"test failure"}`, requestID)))
 		})
 		server := httptest.NewServer(mux)
 		defer server.Close()
@@ -184,7 +184,7 @@ func TestDarajaApi_B2C(t *testing.T) {
 
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(fmt.Sprintf(`{"ResponseDescription":"Success","ResponseCode":"0","ConversationID":"%s","OriginatorConversationID":"%s"}`, conversationID, originatorConversationID)))
+			_, _ = w.Write([]byte(fmt.Sprintf(`{"ResponseDescription":"Success","ResponseCode":"0","ConversationID":"%s","OriginatorConversationID":"%s"}`, conversationID, originatorConversationID)))
 		})
 		server := httptest.NewServer(mux)
 		defer server.Close()
@@ -225,7 +225,7 @@ func TestDarajaApi_B2C(t *testing.T) {
 			// mock request failure
 			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(fmt.Sprintf(`{"requestId":"%s","errorCode":"23","errorMessage":"test failure"}`, requestID)))
+			_, _ = w.Write([]byte(fmt.Sprintf(`{"requestId":"%s","errorCode":"23","errorMessage":"test failure"}`, requestID)))
 		})
 		server := httptest.NewServer(mux)
 		defer server.Close()
@@ -301,7 +301,7 @@ func TestDarajaApi_B2B(t *testing.T) {
 
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(fmt.Sprintf(`{"ResponseDescription":"Success","ResponseCode":"0","ConversationID":"%s","OriginatorConversationID":"%s"}`, conversationID, originatorConversationID)))
+			_, _ = w.Write([]byte(fmt.Sprintf(`{"ResponseDescription":"Success","ResponseCode":"0","ConversationID":"%s","OriginatorConversationID":"%s"}`, conversationID, originatorConversationID)))
 		})
 		server := httptest.NewServer(mux)
 		defer server.Close()
@@ -355,7 +355,7 @@ func TestDarajaApi_B2B(t *testing.T) {
 
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(fmt.Sprintf(`{"ResponseDescription":"Success","ResponseCode":"0","ConversationID":"%s","OriginatorConversationID":"%s"}`, conversationID, originatorConversationID)))
+			_, _ = w.Write([]byte(fmt.Sprintf(`{"ResponseDescription":"Success","ResponseCode":"0","ConversationID":"%s","OriginatorConversationID":"%s"}`, conversationID, originatorConversationID)))
 		})
 		server := httptest.NewServer(mux)
 		defer server.Close()
@@ -396,7 +396,7 @@ func TestDarajaApi_B2B(t *testing.T) {
 			// mock request failure
 			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(fmt.Sprintf(`{"requestId":"%s","errorCode":"23","errorMessage":"test failure"}`, requestID)))
+			_, _ = w.Write([]byte(fmt.Sprintf(`{"requestId":"%s","errorCode":"23","errorMessage":"test failure"}`, requestID)))
 		})
 		server := httptest.NewServer(mux)
 		defer server.Close()
@@ -449,7 +449,7 @@ func TestDarajaApi_Status(t *testing.T) {
 		// mock request failure
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(fmt.Sprintf(`{"ResponseDescription":"Success","ResponseCode":"0","ConversationID":"%s","OriginatorConversationID":"%s"}`, conversationID, originatorConversationID)))
+		_, _ = w.Write([]byte(fmt.Sprintf(`{"ResponseDescription":"Success","ResponseCode":"0","ConversationID":"%s","OriginatorConversationID":"%s"}`, conversationID, originatorConversationID)))
 
 	})
 	server := httptest.NewServer(mux)

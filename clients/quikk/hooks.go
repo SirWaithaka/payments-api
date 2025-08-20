@@ -40,7 +40,7 @@ var ResponseDecoder = request.Hook{
 	Fn: func(r *request.Request) {
 		// response formats for non-200 status codes follow the same format
 		if r.Response.StatusCode != http.StatusOK {
-			statusError := errors.New(fmt.Sprintf("status code: %d", r.Response.StatusCode))
+			statusError := fmt.Errorf("status code: %d", r.Response.StatusCode)
 
 			response := &errorResponse{}
 			if err := jsoniter.NewDecoder(r.Response.Body).Decode(response); err != nil {

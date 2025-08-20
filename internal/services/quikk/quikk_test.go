@@ -66,7 +66,7 @@ func TestQuikkApi_C2B(t *testing.T) {
 
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(fmt.Sprintf(`{"data":{"id":"%s","type":"payin","attributes":{"resource_id":"%s"}}}`, requestID, resourceID)))
+			_, _ = w.Write([]byte(fmt.Sprintf(`{"data":{"id":"%s","type":"payin","attributes":{"resource_id":"%s"}}}`, requestID, resourceID)))
 		})
 		server := httptest.NewServer(mux)
 		defer server.Close()
@@ -129,7 +129,7 @@ func TestQuikkApi_B2C(t *testing.T) {
 
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(fmt.Sprintf(`{"data":{"id":"%s","type":"payin","attributes":{"resource_id":"%s"}}}`, requestID, resourceID)))
+			_, _ = w.Write([]byte(fmt.Sprintf(`{"data":{"id":"%s","type":"payin","attributes":{"resource_id":"%s"}}}`, requestID, resourceID)))
 		})
 		server := httptest.NewServer(mux)
 		defer server.Close()
@@ -194,7 +194,7 @@ func TestQuikkApi_B2B(t *testing.T) {
 
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(fmt.Sprintf(`{"data":{"id":"%s","type":"payin","attributes":{"resource_id":"%s"}}}`, requestID, resourceID)))
+			_, _ = w.Write([]byte(fmt.Sprintf(`{"data":{"id":"%s","type":"payin","attributes":{"resource_id":"%s"}}}`, requestID, resourceID)))
 		})
 		server := httptest.NewServer(mux)
 		defer server.Close()
@@ -249,7 +249,7 @@ func TestQuikkApi_B2B(t *testing.T) {
 
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(fmt.Sprintf(`{"data":{"id":"%s","type":"payin","attributes":{"resource_id":"%s"}}}`, requestID, resourceID)))
+			_, _ = w.Write([]byte(fmt.Sprintf(`{"data":{"id":"%s","type":"payin","attributes":{"resource_id":"%s"}}}`, requestID, resourceID)))
 		})
 		server := httptest.NewServer(mux)
 		defer server.Close()
@@ -318,7 +318,7 @@ func TestQuikkApi_Status(t *testing.T) {
 
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(fmt.Sprintf(`{"data":{"id":"%s","type":"payout","attributes":{"resource_id":"%s"}}}`, responseID, resourceID)))
+			_, _ = w.Write([]byte(fmt.Sprintf(`{"data":{"id":"%s","type":"payout","attributes":{"resource_id":"%s"}}}`, responseID, resourceID)))
 		})
 		server := httptest.NewServer(mux)
 		defer server.Close()
@@ -353,7 +353,7 @@ func TestQuikkApi_Status(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
 			// it doesn't matter what we return here
-			w.Write([]byte(`{"data":{"id":"0000","type":"payout","attributes":{"resource_id":"0000"}}}`))
+			_, _ = w.Write([]byte(`{"data":{"id":"0000","type":"payout","attributes":{"resource_id":"0000"}}}`))
 		})
 		server := httptest.NewServer(mux)
 		defer server.Close()

@@ -216,8 +216,8 @@ func (r *Request) Send() error {
 	}()
 
 	// build the request
-	r.Build()
-	if r.Error != nil {
+	err := r.Build()
+	if err != nil {
 		return r.Error
 	}
 
@@ -225,7 +225,7 @@ func (r *Request) Send() error {
 	for {
 		r.Error = nil
 
-		if err := r.sendRequest(); err == nil {
+		if err = r.sendRequest(); err == nil {
 			// return immediately to break loop if we encounter no error
 			return nil
 		}
@@ -301,7 +301,7 @@ func (r *Request) WithContext(ctx context.Context) {
 	}
 
 	r.ctx = ctx
-	r.Request.WithContext(ctx)
+	r.Request = r.Request.WithContext(ctx)
 }
 
 func (r *Request) WithRetryConfig(cfg RetryConfig) {
