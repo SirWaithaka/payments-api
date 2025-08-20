@@ -15,7 +15,7 @@ import (
 	"github.com/SirWaithaka/payments-api/request"
 )
 
-// WithLogger fetches the zerolog logger instance from request context
+// WithLogger fetches the zerolog logger instance from the request context
 // and passes it to the request config
 func WithLogger() request.Option {
 	return func(r *request.Request) {
@@ -113,8 +113,6 @@ func (provider Provider) GetQuikkClient(shortcode mpesa.ShortCode) *clients_quik
 	client := clients_quikk.New(clients_quikk.Config{Endpoint: endpoint, LogLevel: request.LogError})
 	client.Hooks.Build.PushFront(WithLogger())
 	client.Hooks.Build.PushBackHook(clients_quikk.Sign(shortcode.Key, shortcode.Secret))
-	client.Hooks.Build.PushFront(request.WithRequestHeader("accept", "application/vnd.api+json"))
-	client.Hooks.Build.PushFront(request.WithRequestHeader("content-type", "application/vnd.api+json"))
 	client.Hooks.Send.PushFrontHook(corehooks.LogHTTPRequest)
 
 	return &client
