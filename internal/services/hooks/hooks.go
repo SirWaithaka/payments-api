@@ -90,7 +90,7 @@ func (recorder RequestRecorder) UpdateRequestResponse(requestID string) request.
 
 		s := requests.StatusSucceeded
 		opts.Status = &s
-		opts.Latency = types.Pointer(time.Now().Sub(r.AttemptTime))
+		opts.Latency = types.Pointer(time.Since(r.AttemptTime))
 		opts.Response = resMap
 	}}
 }

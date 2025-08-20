@@ -48,6 +48,8 @@ func New(cfg Config) Client {
 
 	// add log level to request config
 	cfg.Hooks.Build.PushFront(request.WithLogLevel(cfg.LogLevel))
+	cfg.Hooks.Build.PushFront(request.WithRequestHeader("accept", "application/vnd.api+json"))
+	cfg.Hooks.Build.PushFront(request.WithRequestHeader("content-type", "application/vnd.api+json"))
 
 	return Client{endpoint: cfg.Endpoint, Hooks: cfg.Hooks}
 }

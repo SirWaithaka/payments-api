@@ -23,7 +23,7 @@ func TestSign(t *testing.T) {
 		// send fake response
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"status":"success"}`))
+		_, _ = w.Write([]byte(`{"status":"success"}`))
 	})
 	server := httptest.NewServer(mux)
 	defer server.Close()
@@ -50,9 +50,6 @@ func TestResponseDecoder(t *testing.T) {
 	type successResponse struct {
 		Status string `json:"status"`
 	}
-	type errorResponse struct {
-		Error string `json:"error"`
-	}
 
 	// create a mock test server
 	mux := http.NewServeMux()
@@ -60,13 +57,13 @@ func TestResponseDecoder(t *testing.T) {
 		// send fake response
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"status":"success"}`))
+		_, _ = w.Write([]byte(`{"status":"success"}`))
 	})
 	mux.HandleFunc("/error", func(w http.ResponseWriter, r *http.Request) {
 		// send fake response
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"errors":[{"status":"failed"}]}`))
+		_, _ = w.Write([]byte(`{"errors":[{"status":"failed"}]}`))
 	})
 	server := httptest.NewServer(mux)
 	defer server.Close()

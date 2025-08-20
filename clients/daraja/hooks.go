@@ -10,15 +10,6 @@ import (
 	"github.com/SirWaithaka/payments-api/request"
 )
 
-func debugLogReqError(r *request.Request, name string, err error) {
-	if !r.Config.LogLevel.AtLeast(request.LogError) {
-		return
-	}
-
-	r.Config.Logger.Log(fmt.Sprintf("DEBUG: %s %s failed, error %v",
-		name, r.Operation.Name, err))
-}
-
 // HTTPClient creates an instance of http.Client configured
 // for daraja service.
 func HTTPClient(client *http.Client) request.Hook {

@@ -42,7 +42,7 @@ func TestClient_AuthenticationRequest(t *testing.T) {
 		mux.HandleFunc(daraja.EndpointAuthentication, func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(fmt.Sprintf(`{"access_token":"%s","expires_in":"3600"}`, accessToken)))
+			_, _ = w.Write([]byte(fmt.Sprintf(`{"access_token":"%s","expires_in":"3600"}`, accessToken)))
 		})
 		server := httptest.NewServer(mux)
 		defer server.Close()
@@ -69,7 +69,7 @@ func TestClient_AuthenticationRequest(t *testing.T) {
 		mux.HandleFunc(daraja.EndpointAuthentication, func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(`{"requestId":"10101","errorCode":"4000","errorMessage":"Invalid credentials"}`))
+			_, _ = w.Write([]byte(`{"requestId":"10101","errorCode":"4000","errorMessage":"Invalid credentials"}`))
 		})
 		server := httptest.NewServer(mux)
 		defer server.Close()
@@ -294,7 +294,7 @@ func TestClient_C2BExpress(t *testing.T) {
 	mux.HandleFunc(daraja.EndpointC2bExpress, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"ResponseMessage":"Success","ResponseCode":"0"}`))
+		_, _ = w.Write([]byte(`{"ResponseMessage":"Success","ResponseCode":"0"}`))
 	})
 	server := httptest.NewServer(mux)
 	defer server.Close()
@@ -315,7 +315,7 @@ func TestClient_B2C(t *testing.T) {
 	mux.HandleFunc(daraja.EndpointB2cPayment, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"ResponseMessage":"Success","ResponseCode":"0"}`))
+		_, _ = w.Write([]byte(`{"ResponseMessage":"Success","ResponseCode":"0"}`))
 	})
 	server := httptest.NewServer(mux)
 	defer server.Close()
@@ -336,7 +336,7 @@ func TestClient_B2B(t *testing.T) {
 	mux.HandleFunc(daraja.EndpointB2bPayment, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"ResponseMessage":"Success","ResponseCode":"0"}`))
+		_, _ = w.Write([]byte(`{"ResponseMessage":"Success","ResponseCode":"0"}`))
 	})
 	server := httptest.NewServer(mux)
 	defer server.Close()
@@ -357,7 +357,7 @@ func TestClient_Reverse(t *testing.T) {
 	mux.HandleFunc(daraja.EndpointReversal, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"ResponseMessage":"Success","ResponseCode":"0"}`))
+		_, _ = w.Write([]byte(`{"ResponseMessage":"Success","ResponseCode":"0"}`))
 	})
 	server := httptest.NewServer(mux)
 	defer server.Close()
@@ -378,7 +378,7 @@ func TestClient_TransactionStatus(t *testing.T) {
 	mux.HandleFunc(daraja.EndpointTransactionStatus, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"ResponseMessage":"Success","ResponseCode":"0"}`))
+		_, _ = w.Write([]byte(`{"ResponseMessage":"Success","ResponseCode":"0"}`))
 	})
 	server := httptest.NewServer(mux)
 	defer server.Close()
@@ -399,7 +399,7 @@ func TestClient_Balance(t *testing.T) {
 	mux.HandleFunc(daraja.EndpointAccountBalance, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"ResponseMessage":"Success","ResponseCode":"0"}`))
+		_, _ = w.Write([]byte(`{"ResponseMessage":"Success","ResponseCode":"0"}`))
 	})
 	server := httptest.NewServer(mux)
 	defer server.Close()
@@ -420,7 +420,7 @@ func TestClient_QueryOrgInfo(t *testing.T) {
 	mux.HandleFunc(daraja.EndpointQueryOrgInfo, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"ResponseMessage":"Success","ResponseCode":"0"}`))
+		_, _ = w.Write([]byte(`{"ResponseMessage":"Success","ResponseCode":"0"}`))
 	})
 	server := httptest.NewServer(mux)
 	defer server.Close()

@@ -53,7 +53,7 @@ func (p *Producer) SendMessage(ctx context.Context, topic string, key, value []b
 
 	var (
 		err          error
-		retryCount   = 0
+		retryCount   int
 		currentDelay = p.retryDelay
 	)
 
