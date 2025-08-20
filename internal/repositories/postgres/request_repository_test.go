@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/SirWaithaka/payments-api/internal/domains/requests"
+	pkgerrors "github.com/SirWaithaka/payments-api/internal/pkg/errors"
 	"github.com/SirWaithaka/payments-api/internal/pkg/types"
 	"github.com/SirWaithaka/payments-api/internal/repositories/postgres"
 	"github.com/SirWaithaka/payments-api/internal/testdata"
@@ -78,56 +79,10 @@ func TestRequestRepository_AddRequest(t *testing.T) {
 	})
 }
 
-func TestRequestRepository_FindOneRequest(t *testing.T) {
+func TestRequestRepository_FindOne(t *testing.T) {
 	ctx := context.Background()
 
 	repo := postgres.NewRequestRepository(inf.Storage.PG)
-
-	//t.Run("test that it appends payment details to api request", func(t *testing.T) {
-	//	defer testdata.ResetTables(inf)
-	//
-	//	record := requests.Payment{
-	//		PaymentID:           ulid.Make().String(),
-	//		PaymentReference:    ulid.Make().String(),
-	//		ClientTransactionID: ulid.Make().String(),
-	//		IdempotencyID:       ulid.Make().String(),
-	//	}
-	//
-	//	apiRequest := requests.Request{
-	//		RequestID:  ulid.Make().String(),
-	//		ExternalID: ulid.Make().String(),
-	//		Partner:    "fake_partner",
-	//		Status:     "received",
-	//		Latency:    1000,
-	//		Response:   nil,
-	//		PaymentID:  record.PaymentID,
-	//	}
-	//
-	//	err := paymentsRepo.AddPayment(ctx, record)
-	//	if err != nil {
-	//		t.Errorf("expected nil error, got %v", err)
-	//	}
-	//
-	//	err = repo.Add(ctx, apiRequest)
-	//	if err != nil {
-	//		t.Errorf("expected nil error, got %v", err)
-	//	}
-	//
-	//	// now test the find
-	//	request, err := repo.FindOne(ctx, requests.OptionsFindRequest{RequestID: &apiRequest.RequestID})
-	//	if err != nil {
-	//		t.Errorf("expected nil error, got %v", err)
-	//	}
-	//
-	//	if request.Payment == nil {
-	//		t.Errorf("expected non-nil value")
-	//	}
-	//
-	//	if request.Payment.PaymentReference != record.PaymentReference {
-	//		t.Errorf("expected %s, got %s", request.Payment.PaymentReference, record.PaymentReference)
-	//	}
-	//
-	//})
 
 	t.Run("test that it finds by external id", func(t *testing.T) {
 		defer testdata.ResetTables(inf)
@@ -153,6 +108,73 @@ func TestRequestRepository_FindOneRequest(t *testing.T) {
 		assert.Equal(t, apiRequest.RequestID, req.RequestID)
 		assert.Equal(t, apiRequest.ExternalID, req.ExternalID)
 
+	})
+
+	t.Run("test that it finds by request id", func(t *testing.T) {
+		defer testdata.ResetTables(inf)
+
+		apiRequest := requests.Request{
+			RequestID:  ulid.Make().String(),
+			ExternalID: ulid.Make().String(),
+			Partner:    "fake_partner",
+			Status:     "received",
+			Latency:    1000,
+			Response:   nil,
+		}
+		err := repo.Add(ctx, apiRequest)
+		if err != nil {
+			t.Errorf("expected nil error, got %v", err)
+		}
+
+		req, err := repo.FindOne(t.Context(), requests.OptionsFindRequest{RequestID: &apiRequest.RequestID})
+		if err != nil {
+			t.Errorf("expected nil error, got %v", err)
+		}
+
+		assert.Equal(t, apiRequest.RequestID, req.RequestID)
+		assert.Equal(t, apiRequest.ExternalID, req.ExternalID)
+
+	})
+
+	t.Run("test that it finds by payment id", func(t *testing.T) {
+		defer testdata.ResetTables(inf)
+
+		apiRequest := requests.Request{
+			RequestID:  ulid.Make().String(),
+			ExternalID: ulid.Make().String(),
+			PaymentID:  ulid.Make().String(),
+			Partner:    "fake_partner",
+			Status:     "received",
+			Latency:    1000,
+			Response:   nil,
+		}
+		err := repo.Add(ctx, apiRequest)
+		if err != nil {
+			t.Errorf("expected nil error, got %v", err)
+		}
+
+		req, err := repo.FindOne(t.Context(), requests.OptionsFindRequest{PaymentID: &apiRequest.PaymentID})
+		if err != nil {
+			t.Errorf("expected nil error, got %v", err)
+		}
+
+		assert.Equal(t, apiRequest.RequestID, req.RequestID)
+		assert.Equal(t, apiRequest.ExternalID, req.ExternalID)
+
+	})
+
+	t.Run("test that it returns not found error if record does not exist", func(t *testing.T) {
+		// fetch a non-existent record
+		req, err := repo.FindOne(t.Context(), requests.OptionsFindRequest{RequestID: types.Pointer(ulid.Make().String())})
+		if err == nil {
+			t.Errorf("expected non-nil error")
+		}
+
+		// check err implements pkgerrors.NotFoundError
+		e, ok := err.(pkgerrors.NotFounder)
+		assert.True(t, ok)
+		assert.True(t, e.NotFound())
+		assert.Empty(t, req)
 	})
 }
 
