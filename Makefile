@@ -18,6 +18,9 @@ install-deps: install-tools
 	export GOPRIVATE=github.com/SirWaithaka && \
 	go mod download
 
+install-linters:
+	GO111MODULE=on go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
 generate: install-tools
 	go generate ./...
 
