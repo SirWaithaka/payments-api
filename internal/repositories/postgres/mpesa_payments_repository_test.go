@@ -8,6 +8,7 @@ import (
 
 	"github.com/SirWaithaka/payments-api/internal/domains/mpesa"
 	"github.com/SirWaithaka/payments-api/internal/domains/requests"
+	pkgerrors "github.com/SirWaithaka/payments-api/internal/pkg/errors"
 	"github.com/SirWaithaka/payments-api/internal/pkg/types"
 	"github.com/SirWaithaka/payments-api/internal/repositories/postgres"
 	"github.com/SirWaithaka/payments-api/internal/testdata"
@@ -104,6 +105,20 @@ func TestMpesaPaymentsRepository_FindOne(t *testing.T) {
 				assert.Equal(t, record.PaymentReference, payment.PaymentReference)
 			})
 		}
+	})
+
+	t.Run("test that it returns not found error if record does not exist", func(t *testing.T) {
+		// fetch a non-existent record
+		req, err := repo.FindOne(t.Context(), mpesa.OptionsFindPayment{PaymentReference: types.Pointer(ulid.Make().String())})
+		if err == nil {
+			t.Errorf("expected non-nil error")
+		}
+
+		// check err implements pkgerrors.NotFoundError
+		e, ok := err.(pkgerrors.NotFounder)
+		assert.True(t, ok)
+		assert.True(t, e.NotFound())
+		assert.Empty(t, req)
 	})
 }
 
