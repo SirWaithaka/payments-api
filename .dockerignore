@@ -2,3 +2,6 @@ examples/
 
 go.work
 go.work.sum
+
+# ignore doc markdown
+README.md
