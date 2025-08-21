@@ -59,6 +59,8 @@ func newServer(di *dipkg.DI, logger *zerolog.Logger) *http.Server {
 	engine.Use(gin.Recovery())
 	engine.Use(ginzerolog.New(ginzerolog.Config{Logger: logger}))
 	engine.Use(middlewares.ErrorHandler())
+	// add health check route
+	engine.GET("/health", middlewares.Healthcheck)
 
 	routes(engine, di)
 
