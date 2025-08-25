@@ -22,9 +22,9 @@ jobs:
         image: postgres:16
         # Provide the password for postgres
         env:
-          POSTGRES_USER: ${{ env.PG_USER }}
-          POSTGRES_PASSWORD: ${{ env.PG_PASSWORD }}
-          POSTGRES_DB: ${{ env.PG_DATABASE }}
+          POSTGRES_USER: ${{ vars.PG_USER }}
+          POSTGRES_PASSWORD: ${{ vars.PG_PASSWORD }}
+          POSTGRES_DB: ${{ vars.PG_DATABASE }}
         # Set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
@@ -51,9 +51,9 @@ jobs:
 
       - name: Run migrations
         env:
-          POSTGRES_USER: ${{ env.PG_USER }}
-          POSTGRES_PASSWORD: ${{ env.PG_PASSWORD }}
-          POSTGRES_DATABASE: ${{ env.PG_DATABASE }}
+          POSTGRES_USER: ${{ vars.PG_USER }}
+          POSTGRES_PASSWORD: ${{ vars.PG_PASSWORD }}
+          POSTGRES_DATABASE: ${{ vars.PG_DATABASE }}
           POSTGRES_HOST: postgres
           POSTGRES_PORT: 5432
         run: make migrate
@@ -70,9 +70,9 @@ jobs:
         image: postgres:16
         # Provide the password for postgres
         env:
-          POSTGRES_USER: ${{ env.PG_USER }}
-          POSTGRES_PASSWORD: ${{ env.PG_PASSWORD }}
-          POSTGRES_DB: ${{ env.PG_DATABASE }}
+          POSTGRES_USER: ${{ vars.PG_USER }}
+          POSTGRES_PASSWORD: ${{ vars.PG_PASSWORD }}
+          POSTGRES_DB: ${{ vars.PG_DATABASE }}
         # Set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
