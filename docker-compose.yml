@@ -46,6 +46,8 @@ services:
     depends_on:
       migrations:
         condition: service_completed_successfully
+      seeds:
+        condition: service_completed_successfully
 
 networks:
   apps:
