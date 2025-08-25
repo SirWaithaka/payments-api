@@ -13,7 +13,7 @@ jobs:
   migrations:
     name: Test migrations
     runs-on: ubuntu-latest
-    container: postgres:16
+    container: golang:1.24
 
     # Service containers to run with `runner-job`
     services:
@@ -40,10 +40,10 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.24'
+#      - name: Setup Go
+#        uses: actions/setup-go@v5
+#        with:
+#          go-version: '1.24'
 
       - name: Setup go-migrate
         run: |
