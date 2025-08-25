@@ -8,7 +8,17 @@ on:
     branches: [ "main" ]
     types: [ "opened", "synchronize", "reopened" ]
 
+
+# workflow variables
+env:
+  POSTGRES_USER: ${{ vars.PG_USER }}
+  POSTGRES_PASSWORD: ${{ vars.PG_PASSWORD }}
+  POSTGRES_DATABASE: ${{ vars.PG_DATABASE }}
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: 5432
+
 jobs:
+
   # test migrations
   migrations:
     name: Test migrations
@@ -40,11 +50,6 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-#      - name: Setup Go
-#        uses: actions/setup-go@v5
-#        with:
-#          go-version: '1.24'
-
       - name: Setup go-migrate
         run: |
           # install go-migrate binary
@@ -60,9 +65,9 @@ jobs:
         run: make migrate
 
   test:
-    name: build and test
+    name: Run tests
     runs-on: ubuntu-latest
-    container: postgres:16
+    container: golang:1.24
 
     # Service containers to run with `runner-job`
     services:
@@ -83,12 +88,8 @@ jobs:
           --health-retries 5
 
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.24'
+    - name: Checkout repo
+      uses: actions/checkout@v4
 
     - name: Generate
       run: make generate
