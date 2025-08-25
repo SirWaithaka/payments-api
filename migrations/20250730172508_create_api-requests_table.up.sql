@@ -11,7 +11,6 @@ CREATE TABLE IF NOT EXISTS public."api_requests"
     "created_at"  timestamptz,
     "updated_at"  timestamptz,
     PRIMARY KEY ("id"),
-    CONSTRAINT "fk_api_requests_payment" FOREIGN KEY ("payment_id") REFERENCES "payment_requests" ("payment_id"),
     CONSTRAINT "uni_api_requests_request_id" UNIQUE ("request_id"),
     CONSTRAINT "chk_api_requests_request_id" CHECK (request_id <> ''),
     CONSTRAINT "chk_api_requests_partner" CHECK (partner <> ''),
