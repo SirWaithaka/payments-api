@@ -56,12 +56,6 @@ jobs:
           go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 
       - name: Run migrations
-        env:
-          POSTGRES_USER: ${{ vars.PG_USER }}
-          POSTGRES_PASSWORD: ${{ vars.PG_PASSWORD }}
-          POSTGRES_DATABASE: ${{ vars.PG_DATABASE }}
-          POSTGRES_HOST: postgres
-          POSTGRES_PORT: 5432
         run: make migrate
 
   test:
