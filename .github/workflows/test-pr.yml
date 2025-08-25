@@ -1,0 +1,95 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Test PR
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    types: [ "opened", "synchronize", "reopened" ]
+
+
+# workflow variables
+env:
+  POSTGRES_USER: ${{ vars.PG_USER }}
+  POSTGRES_PASSWORD: ${{ vars.PG_PASSWORD }}
+  POSTGRES_DATABASE: ${{ vars.PG_DATABASE }}
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: 5432
+
+jobs:
+
+  # test migrations
+  migrations:
+    name: Test migrations
+    runs-on: ubuntu-latest
+    container: golang:1.24
+
+    # Service containers to run with `runner-job`
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres:16
+        # Provide the password for postgres
+        env:
+          POSTGRES_USER: ${{ vars.PG_USER }}
+          POSTGRES_PASSWORD: ${{ vars.PG_PASSWORD }}
+          POSTGRES_DB: ${{ vars.PG_DATABASE }}
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      # fetch source code
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup go-migrate
+        run: |
+          # install go-migrate binary
+          go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+
+      - name: Run migrations
+        run: make migrate
+
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    container: golang:1.24
+
+    # Service containers to run with `runner-job`
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres:16
+        # Provide the password for postgres
+        env:
+          POSTGRES_USER: ${{ vars.PG_USER }}
+          POSTGRES_PASSWORD: ${{ vars.PG_PASSWORD }}
+          POSTGRES_DB: ${{ vars.PG_DATABASE }}
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Generate
+      run: make generate
+
+    - name: Build
+      run: make build
+
+    - name: Test
+      run: make test.cover
