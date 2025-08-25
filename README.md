@@ -33,8 +33,17 @@ _Last updated: Aug 16, 2025_
 
 ## Getting Started with the API
 
-The API can be deployed as a container or using Makefile as a binary. It has a dependency on Kafka and Postgres. You can
-find an example compose file to configure a test Kafka and Postgres instance.
+The API can be deployed as a container or using Makefile as a binary. It has a dependency on Kafka and Postgres. 
+
+### Setting up Kafka and Postgres
+Use `docker-compose.infra.yml` file to configure and deploy kafka and postgres. It will start a zookeeper instance and expose
+port 2181, a kafka instance on port 9092 and a postgres instance on port 5432. It will also create a docker network called
+`apps` which is used by the payments api to connect to kafka and postgres.
+
+```bash
+# deploy kafka and postgres
+docker compose -f docker-compose.infra.yml up -d
+```
 
 ### Docker Compose
 The compose file has 3 services:
@@ -52,7 +61,6 @@ POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 POSTGRES_DATABASE=payments
 POSTGRES_SCHEMA=public
-
 ```
 
 Build the necessary images and run the application
