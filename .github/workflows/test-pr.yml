@@ -13,6 +13,7 @@ jobs:
   migrations:
     name: Test migrations
     runs-on: ubuntu-latest
+    container: postgres:16
 
     # Service containers to run with `runner-job`
     services:
@@ -61,6 +62,7 @@ jobs:
   test:
     name: build and test
     runs-on: ubuntu-latest
+    container: postgres:16
 
     # Service containers to run with `runner-job`
     services:
