@@ -94,6 +94,13 @@ func WithRequestID(id string) Option {
 	}
 }
 
+// WithHTTPClient sets the http client used to send the request
+func WithHTTPClient(client *http.Client) Option {
+	return func(r *Request) {
+		r.Config.HTTPClient = client
+	}
+}
+
 // ApplyOptions will apply each option to the request calling them in the order
 // they were provided.
 func (r *Request) ApplyOptions(opts ...Option) {
