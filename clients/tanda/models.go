@@ -106,7 +106,7 @@ type RequestPayment struct {
 	Reference string `json:"reference"`
 	// Object array containing additional request details
 	//
-	// Valid values for PaymentRequestParameter.Id are:
+	// Valid values for PaymentRequestParameter.ID are:
 	// When CommandID is "CustomerToMerchantMobileMoneyPayment" or
 	// "MerchantToCustomerMobileMoneyPayment"
 	// -> amount, shortCode, accountNumber, narration, ipnUrl
@@ -137,7 +137,7 @@ type RequestPayment struct {
 }
 
 type PaymentRequestParameter struct {
-	Id    ParameterID `json:"id"`
+	ID    ParameterID `json:"id"`
 	Value string      `json:"value"`
 	Label string      `json:"label"`
 }
