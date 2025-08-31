@@ -7,7 +7,7 @@ import (
 type (
 	Hook struct {
 		Name string
-		Fn   func(*Request)
+		Fn   Option
 	}
 
 	HookList struct {
@@ -45,7 +45,7 @@ func (l *HookList) Len() int {
 }
 
 // PushBack pushes hook f to the back of the hook list.
-func (l *HookList) PushBack(f func(*Request)) {
+func (l *HookList) PushBack(f Option) {
 	l.PushBackHook(Hook{Fn: f, Name: "__anon"})
 }
 
@@ -57,7 +57,7 @@ func (l *HookList) PushBackHook(h Hook) {
 	l.list = append(l.list, h)
 }
 
-func (l *HookList) PushFront(f func(*Request)) {
+func (l *HookList) PushFront(f Option) {
 	l.PushFrontHook(Hook{Fn: f, Name: "__anon"})
 }
 
