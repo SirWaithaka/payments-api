@@ -37,7 +37,7 @@ The sdk is a Go wrapper around the listed payments apis, which provides a simple
 It has the following unique features:
 - **Request Hooks**: powerful request hook design which unlocks the ability to extend the sdk with custom hooks that 
 that meet unique business cases. Build custom hooks to intercept and modify requests before they are sent as well as hooks
-intercept and modify responses.
+to intercept and modify responses.
 - **Request Retrier**: ready to use retrier with exponential backoff and jitter.
 
 ### Installation
@@ -123,7 +123,7 @@ This is attributed to compliance. Due to M-Pesa dominating the Kenyan market, a 
 through M-Pesa, hence, some finance companies have partnerships with such companies as well as in-built legacy apis 
 integrating with M-Pesa. This means, payment flows for products such as M-Pesa C2B Stk, B2C, B2B would be calling different APIs internally.
 
-One example, is a requirement to enable support B2B transactions for a bank via the Daraja API, while keeping C2B and B2C
+One example, is a requirement to enable support of B2B transactions for a bank via the Daraja API, while keeping C2B and B2C
 transactions going to a legacy API, and provide a unified interface for all of them. This poses a couple of challenges:
 - How to handle different M-Pesa shortcodes for the different payment types
 - How to handle transaction status calls to the different APIs and mapping the responses.
