@@ -136,6 +136,14 @@ type RequestPayment struct {
 	Request []PaymentRequestParameter `json:"request"`
 }
 
+// AddParameter appends a new parameter to RequestPayment.Request
+func (r *RequestPayment) AddParameter(id ParameterID, value string) {
+	r.Request = append(r.Request, PaymentRequestParameter{
+		ID:    id,
+		Value: value,
+	})
+}
+
 type PaymentRequestParameter struct {
 	ID    ParameterID `json:"id"`
 	Value string      `json:"value"`
