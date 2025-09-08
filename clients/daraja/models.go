@@ -30,7 +30,7 @@ type ReplyCode string
 
 const (
 	ReplyCodeC2B00011 ReplyCode = "C2B00011" // C2B00011 - Invalid MSISDN
-	ReplyCodeC2B00012 ReplyCode = "C2B00012" // C2B00012 -  Invalid Account Number
+	ReplyCodeC2B00012 ReplyCode = "C2B00012" // C2B00012 - Invalid Account Number
 	ReplyCodeC2B00013 ReplyCode = "C2B00013" // C2B00013 - Invalid Amount
 	ReplyCodeC2B00014 ReplyCode = "C2B00014" // C2B00014 - Invalid KYC Details
 	ReplyCodeC2B00015 ReplyCode = "C2B00015" // C2B00015 - Invalid Shortcode
@@ -75,7 +75,7 @@ const (
 
 //go:generate stringer -type=ResponseCode -linecomment -output=models_string.go
 
-// ResponseCode represents synchronous error notification gotten from the Daraja API
+// ResponseCode represents a synchronous error notification gotten from the Daraja API
 type ResponseCode int
 
 const UnknownResponseCode ResponseCode = -1 // 9999
@@ -85,7 +85,7 @@ const (
 	SuccessSubmission ResponseCode = iota + 1 // 0
 	//InvalidAccountReference means an invalid value was passed for AccountReference field in transaction
 	InvalidAccountReference // 23
-	// EmptyAccountReference means no value was passed for AccountReference field in transaction
+	// EmptyAccountReference means no value was passed for the AccountReference field in transaction
 	EmptyAccountReference // 1005
 	// CheckSuccess means an org query request was successful
 	CheckSuccess // 4000
@@ -98,11 +98,11 @@ const (
 	BadRequest // 400.003.02
 	// InvalidRequestPayload Your request body is not properly drafted
 	InvalidRequestPayload // 400.002.05
-	// InvalidGrantType means Invalid grant type passed. Select grant type as client credentials
+	// InvalidGrantType means Invalid grant type passed. Select grant_type as client_credentials
 	InvalidGrantType // 400.008.02
 	// InvalidAuthType means Invalid Authentication passed. Select type as Basic Auth
 	InvalidAuthType // 400.008.01
-	// InvalidAuthHeader If you’ve possibly misplaced the headers you will get the error
+	// InvalidAuthHeader If you’ve possibly misplaced the headers, you will get the error
 	InvalidAuthHeader // 404.001.04
 	// ResourceNotFound means the requested resource could not be found but may be available in the future. Subsequent requests by the client are permissible
 	ResourceNotFound // 404.003.01
@@ -217,7 +217,7 @@ func (t *Timestamp) UnmarshalJSON(b []byte) error {
 	return err
 }
 
-// Password type represents the daraja platform password format which is a
+// Password represents the daraja platform password format, which is a
 // concatenation of shortcode, passphrase and the current timestamp
 type Password struct {
 	shortCode  string
@@ -362,7 +362,7 @@ type RequestB2C struct {
 	//This is the value obtained after encrypting the API initiator password
 	SecurityCredential string `json:"SecurityCredential"`
 
-	//This is a unique command that specifies B2C transaction type
+	//This is a unique command that specifies the B2C transaction type
 	CommandID Command `json:"CommandID"`
 
 	//The amount of money being sent to the customer
@@ -375,8 +375,8 @@ type RequestB2C struct {
 	//The number should have the country code (254) without the plus sign
 	PartyB string `json:"PartyB"`
 
-	//Any additional information to be associated with the transaction
-	//string upto 100 characters
+	//Any additional information to be associated with the transaction.
+	//String up to 100 characters
 	Remarks string `json:"Remarks"`
 
 	//This is the URL to be specified in your request that will be used by API Proxy
@@ -446,7 +446,7 @@ type RequestTransactionStatus struct {
 	TransactionID *string `json:"TransactionID,omitempty"`
 
 	//This is a global unique identifier for the transaction request returned by the API proxy upon
-	//successful request submission. If you don’t have the M-PESA transaction ID you can use this to query
+	//successful request submission. If you don’t have the M-PESA transaction ID, you can use this to query
 	OriginatorConversationID *string `json:"OriginalConversationID,omitempty"`
 
 	//Organization/MSISDN receiving the transaction
@@ -473,7 +473,7 @@ type RequestBalance struct {
 	Initiator string `json:"Initiator"`
 
 	//Base64 encoded string of the M-PESA short code and password, which is encrypted
-	//using M-PESA public key and validates the transaction on M-PESA Core system.
+	//using the M-PESA public key and validates the transaction on the M-PESA Core system.
 	//It indicates the Encrypted credential of the initiator getting the account balance.
 	//Its value must match the inputted value of the parameter IdentifierType
 	SecurityCredential string `json:"SecurityCredential"`
@@ -543,7 +543,7 @@ type ResponseC2BExpress struct {
 	CheckoutRequestID string `json:"CheckoutRequestID"`
 
 	//This is a Numeric status code that indicates the status of the transaction submission.
-	//0 means successful submission and any other code means an error occurred
+	//0 means successful submission, and any other code means an error occurred
 	ResponseCode ResponseCode `json:"ResponseCode"`
 
 	//Response description is an acknowledgment message from the API
@@ -557,7 +557,7 @@ type ResponseC2BExpress struct {
 
 type ResponseC2BExpressQuery struct {
 	//This is a Numeric status code that indicates the status of the transaction submission.
-	//0 means successful submission and any other code means an error occurred
+	//0 means successful submission, and any other code means an error occurred
 	ResponseCode ResponseCode `json:"ResponseCode"`
 
 	//Response description is an acknowledgment message from the API
@@ -571,7 +571,7 @@ type ResponseC2BExpressQuery struct {
 	CheckoutRequestID string `json:"CheckoutRequestID"`
 
 	//This is a numeric status code that indicates the status of the transaction processing.
-	//0 means successful processing and any other code means an error occurred or the transaction failed
+	//0 means successful processing, and any other code means an error occurred or the transaction failed
 	ResultCode string `json:"ResultCode"`
 
 	//The result description is a message from the API that gives the status of the request processing.
@@ -581,7 +581,7 @@ type ResponseC2BExpressQuery struct {
 
 type ResponseOrgInfoQuery struct {
 	ConversationID string `json:"ConversationID"`
-	//0 or 4000 means successful request
+	//0 or 4000 means a successful request
 	ResponseCode ResponseCode `json:"ResponseCode"`
 	//Text description of the response code
 	ResponseMessage string `json:"ResponseMessage"`
@@ -624,7 +624,7 @@ type WebhookRequestDirectC2B struct {
 	//InvoiceNumber     string `json:"InvoiceNumber"`
 
 	//The current utility account balance of the payment-receiving organization shortcode.
-	//For validation requests, this field is usually blank whereas, for the confirmation message,
+	//For validation requests, this field is usually blank, whereas, for the confirmation message,
 	//the value represents the new balance after the payment has been received
 	OrgAccountBalance string `json:"OrgAccountBalance"`
 
@@ -655,7 +655,7 @@ type WebhookRequestC2BExpress struct {
 			MerchantRequestID string `json:"MerchantRequestID"`
 
 			//This is a numeric status code that indicates the status of the transaction processing.
-			//0 means successful processing and any other code means an error occurred or the transaction failed
+			//0 means successful processing, and any other code means an error occurred or the transaction failed
 			ResultCode ResultCode `json:"ResultCode"`
 
 			//The result description is a message from the API that gives the status of the request processing
@@ -682,7 +682,7 @@ type WebhookRequestC2BExpress struct {
 	} `json:"Body"`
 }
 
-// WebhookRequestDefault model represents result structure returned by some common
+// WebhookRequestDefault model represents the result structure returned by some common
 // apis e.g. b2c, reversal and balance.
 //
 // Example results sent in Result.ResultParameters.ResultParameter[n].Key
@@ -743,7 +743,7 @@ type WebhookRequestDefault struct {
 		ResultType int `json:"ResultType"`
 
 		//This is a numeric status code that indicates the status of the transaction processing.
-		//0 means success and any other code means an error occurred or the transaction failed
+		//0 means success, and any other code means an error occurred or the transaction failed
 		ResultCode ResultCode `json:"ResultCode"`
 
 		//This is a message from the API that gives the status of the request processing
@@ -759,7 +759,7 @@ type WebhookRequestDefault struct {
 		ConversationID string `json:"ConversationID"`
 
 		//This is a unique M-PESA transaction ID for every payment request.
-		//Same value is sent to customer over SMS upon successful processing
+		//The same value is sent to the customer over SMS upon successful processing
 		TransactionID string `json:"TransactionID"`
 
 		//This is a JSON object that holds more details for the transaction/result
@@ -789,7 +789,7 @@ type WebhookRequestB2B struct {
 		ResultType int `json:"ResultType"`
 
 		//This is a numeric status code that indicates the status of the transaction processing.
-		//0 means success and any other code means an error occurred or the transaction failed
+		//0 means success, and any other code means an error occurred or the transaction failed
 		ResultCode ResultCode `json:"ResultCode"`
 
 		//This is a message from the API that gives the status of the request processing
@@ -805,7 +805,7 @@ type WebhookRequestB2B struct {
 		ConversationID string `json:"ConversationID"`
 
 		//This is a unique M-PESA transaction ID for every payment request.
-		//Same value is sent to customer over SMS upon successful processing
+		//The same value is sent to the customer over SMS upon successful processing
 		TransactionID string `json:"TransactionID"`
 
 		//This is a JSON object that holds more details for the transaction/result
