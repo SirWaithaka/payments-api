@@ -27,6 +27,8 @@ _Last updated: Aug 16, 2025_
   - [x] Account Balance
   - [ ] Refund
 - [ ] Tanda
+  - [x] Payment Requests
+  - [x] Transaction Status
 - [ ] JamboPay
 - [ ] Airtel Money
 - [ ] Pesalink
