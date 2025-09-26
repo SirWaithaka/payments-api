@@ -10,13 +10,13 @@ import (
 	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/SirWaithaka/payments-api/internal/api/rest"
-	"github.com/SirWaithaka/payments-api/internal/config"
-	dipkg "github.com/SirWaithaka/payments-api/internal/di"
-	"github.com/SirWaithaka/payments-api/internal/events/listener"
-	"github.com/SirWaithaka/payments-api/internal/events/publisher"
-	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
-	"github.com/SirWaithaka/payments-api/internal/storage"
+	"github.com/SirWaithaka/payments-api/pkg/logger"
+	"github.com/SirWaithaka/payments-api/src/api/rest"
+	"github.com/SirWaithaka/payments-api/src/config"
+	dipkg "github.com/SirWaithaka/payments-api/src/di"
+	"github.com/SirWaithaka/payments-api/src/events/listener"
+	"github.com/SirWaithaka/payments-api/src/events/publisher"
+	"github.com/SirWaithaka/payments-api/src/storage"
 )
 
 func main() {
