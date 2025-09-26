@@ -8,10 +8,10 @@ import (
 	"github.com/oklog/ulid/v2"
 	"gorm.io/gorm"
 
-	"github.com/SirWaithaka/payments-api/internal/config"
-	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
-	"github.com/SirWaithaka/payments-api/internal/repositories/postgres"
-	"github.com/SirWaithaka/payments-api/internal/storage"
+	"github.com/SirWaithaka/payments-api/pkg/logger"
+	"github.com/SirWaithaka/payments-api/src/config"
+	"github.com/SirWaithaka/payments-api/src/repositories/postgres"
+	"github.com/SirWaithaka/payments-api/src/storage"
 )
 
 var (

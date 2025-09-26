@@ -7,7 +7,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog"
 
-	"github.com/SirWaithaka/payments-api/internal/repositories/postgres"
+	"github.com/SirWaithaka/payments-api/src/repositories/postgres"
 )
 
 // ErrorHandler provides a customer error handling mechanism for gin framework

@@ -10,8 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"github.com/SirWaithaka/payments-api/internal/pkg/http/middlewares"
-	"github.com/SirWaithaka/payments-api/internal/repositories/postgres"
+	"github.com/SirWaithaka/payments-api/pkg/http/middlewares"
+	"github.com/SirWaithaka/payments-api/src/repositories/postgres"
 )
 
 func assertEquals(t *testing.T, exp any, val any) {

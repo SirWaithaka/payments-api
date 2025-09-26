@@ -9,7 +9,7 @@ import (
 	"github.com/rs/xid"
 	"github.com/rs/zerolog"
 
-	"github.com/SirWaithaka/payments-api/internal/pkg/logger"
+	"github.com/SirWaithaka/payments-api/pkg/logger"
 )
 
 type responseWriter struct {
