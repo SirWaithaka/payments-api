@@ -1,10 +1,10 @@
 module github.com/SirWaithaka/payments-api
 
-go 1.23.0
-
-toolchain go1.24.0
+go 1.24.0
 
 require (
+	github.com/SirWaithaka/gorequest v1.1.0
+	github.com/SirWaithaka/payments v0.0.3
 	github.com/gin-gonic/gin v1.10.1
 	github.com/go-playground/validator/v10 v10.20.0
 	github.com/gofrs/uuid/v5 v5.3.2
@@ -16,7 +16,7 @@ require (
 	github.com/rs/xid v1.6.0
 	github.com/rs/zerolog v1.34.0
 	github.com/segmentio/kafka-go v0.4.48
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.11.1
 	golang.org/x/sync v0.15.0
 	gorm.io/datatypes v1.2.6
 	gorm.io/driver/postgres v1.6.0
