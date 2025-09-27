@@ -16,7 +16,7 @@ import (
 	"github.com/SirWaithaka/payments-api/src/repositories/postgres"
 	"github.com/SirWaithaka/payments-api/src/services/quikk"
 	"github.com/SirWaithaka/payments-api/testdata"
-	quikk2 "github.com/SirWaithaka/payments/quikk"
+	quikk_sdk "github.com/SirWaithaka/payments/quikk"
 )
 
 const (
@@ -50,9 +50,9 @@ func TestQuikkApi_C2B(t *testing.T) {
 
 		// create a mock test server
 		mux := http.NewServeMux()
-		mux.HandleFunc(quikk2.EndpointCharge, func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc(quikk_sdk.EndpointCharge, func(w http.ResponseWriter, r *http.Request) {
 			// parse request body
-			var req quikk2.RequestDefault[quikk2.RequestCharge]
+			var req quikk_sdk.RequestDefault[quikk_sdk.RequestCharge]
 			if err := jsoniter.NewDecoder(r.Body).Decode(&req); err != nil {
 				t.Errorf("expected nil error, got %v", err)
 			}
@@ -71,7 +71,7 @@ func TestQuikkApi_C2B(t *testing.T) {
 		server := httptest.NewServer(mux)
 		defer server.Close()
 
-		client := quikk2.New(quikk2.Config{Endpoint: server.URL})
+		client := quikk_sdk.New(quikk_sdk.Config{Endpoint: server.URL})
 		// create instance of quikk service
 		service := quikk.NewQuikkApi(&client, shortcode, repository)
 		// make request
@@ -113,9 +113,9 @@ func TestQuikkApi_B2C(t *testing.T) {
 
 		// create a mock test server
 		mux := http.NewServeMux()
-		mux.HandleFunc(quikk2.EndpointPayout, func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc(quikk_sdk.EndpointPayout, func(w http.ResponseWriter, r *http.Request) {
 			// parse request body
-			var req quikk2.RequestDefault[quikk2.RequestPayout]
+			var req quikk_sdk.RequestDefault[quikk_sdk.RequestPayout]
 			if err := jsoniter.NewDecoder(r.Body).Decode(&req); err != nil {
 				t.Errorf("expected nil error, got %v", err)
 			}
@@ -134,7 +134,7 @@ func TestQuikkApi_B2C(t *testing.T) {
 		server := httptest.NewServer(mux)
 		defer server.Close()
 
-		client := quikk2.New(quikk2.Config{Endpoint: server.URL})
+		client := quikk_sdk.New(quikk_sdk.Config{Endpoint: server.URL})
 		// create instance of quikk service
 		service := quikk.NewQuikkApi(&client, shortcode, repository)
 		paymentID := ulid.Make().String()
@@ -177,9 +177,9 @@ func TestQuikkApi_B2B(t *testing.T) {
 
 		// create a mock test server
 		mux := http.NewServeMux()
-		mux.HandleFunc(quikk2.EndpointTransfer, func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc(quikk_sdk.EndpointTransfer, func(w http.ResponseWriter, r *http.Request) {
 			// parse request body
-			var req quikk2.RequestDefault[quikk2.RequestTransfer]
+			var req quikk_sdk.RequestDefault[quikk_sdk.RequestTransfer]
 			if err := jsoniter.NewDecoder(r.Body).Decode(&req); err != nil {
 				t.Errorf("expected nil error, got %v", err)
 			}
@@ -199,7 +199,7 @@ func TestQuikkApi_B2B(t *testing.T) {
 		server := httptest.NewServer(mux)
 		defer server.Close()
 
-		client := quikk2.New(quikk2.Config{Endpoint: server.URL})
+		client := quikk_sdk.New(quikk_sdk.Config{Endpoint: server.URL})
 		// create instance of quikk service
 		service := quikk.NewQuikkApi(&client, shortcode, repository)
 		paymentID := ulid.Make().String()
@@ -232,9 +232,9 @@ func TestQuikkApi_B2B(t *testing.T) {
 
 		// create a mock test server
 		mux := http.NewServeMux()
-		mux.HandleFunc(quikk2.EndpointTransfer, func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc(quikk_sdk.EndpointTransfer, func(w http.ResponseWriter, r *http.Request) {
 			// parse request body
-			var req quikk2.RequestDefault[quikk2.RequestTransfer]
+			var req quikk_sdk.RequestDefault[quikk_sdk.RequestTransfer]
 			if err := jsoniter.NewDecoder(r.Body).Decode(&req); err != nil {
 				t.Errorf("expected nil error, got %v", err)
 			}
@@ -254,7 +254,7 @@ func TestQuikkApi_B2B(t *testing.T) {
 		server := httptest.NewServer(mux)
 		defer server.Close()
 
-		client := quikk2.New(quikk2.Config{Endpoint: server.URL})
+		client := quikk_sdk.New(quikk_sdk.Config{Endpoint: server.URL})
 		// create instance of quikk service
 		service := quikk.NewQuikkApi(&client, shortcode, repository)
 		paymentID := ulid.Make().String()
@@ -305,9 +305,9 @@ func TestQuikkApi_Status(t *testing.T) {
 
 		// create a mock test server
 		mux := http.NewServeMux()
-		mux.HandleFunc(quikk2.EndpointTransactionSearch, func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc(quikk_sdk.EndpointTransactionSearch, func(w http.ResponseWriter, r *http.Request) {
 			// parse request body
-			var req quikk2.RequestDefault[quikk2.RequestTransactionStatus]
+			var req quikk_sdk.RequestDefault[quikk_sdk.RequestTransactionStatus]
 			if err := jsoniter.NewDecoder(r.Body).Decode(&req); err != nil {
 				t.Errorf("expected nil error, got %v", err)
 			}
@@ -323,7 +323,7 @@ func TestQuikkApi_Status(t *testing.T) {
 		server := httptest.NewServer(mux)
 		defer server.Close()
 
-		client := quikk2.New(quikk2.Config{Endpoint: server.URL})
+		client := quikk_sdk.New(quikk_sdk.Config{Endpoint: server.URL})
 		// create instance of quikk service
 		service := quikk.NewQuikkApi(&client, shortcode, repository)
 		err = service.Status(t.Context(), payment)
@@ -339,9 +339,9 @@ func TestQuikkApi_Status(t *testing.T) {
 
 		// create a mock test server
 		mux := http.NewServeMux()
-		mux.HandleFunc(quikk2.EndpointTransactionSearch, func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc(quikk_sdk.EndpointTransactionSearch, func(w http.ResponseWriter, r *http.Request) {
 			// parse request body
-			var req quikk2.RequestDefault[quikk2.RequestTransactionStatus]
+			var req quikk_sdk.RequestDefault[quikk_sdk.RequestTransactionStatus]
 			if err := jsoniter.NewDecoder(r.Body).Decode(&req); err != nil {
 				t.Errorf("expected nil error, got %v", err)
 			}
@@ -358,7 +358,7 @@ func TestQuikkApi_Status(t *testing.T) {
 		server := httptest.NewServer(mux)
 		defer server.Close()
 
-		client := quikk2.New(quikk2.Config{Endpoint: server.URL})
+		client := quikk_sdk.New(quikk_sdk.Config{Endpoint: server.URL})
 		// create instance of quikk service
 		service := quikk.NewQuikkApi(&client, shortcode, repository)
 		err = service.Status(t.Context(), payment)

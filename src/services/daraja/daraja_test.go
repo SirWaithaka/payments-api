@@ -15,7 +15,7 @@ import (
 	"github.com/SirWaithaka/payments-api/src/repositories/postgres"
 	"github.com/SirWaithaka/payments-api/src/services/daraja"
 	"github.com/SirWaithaka/payments-api/testdata"
-	daraja2 "github.com/SirWaithaka/payments/daraja"
+	daraja_sdk "github.com/SirWaithaka/payments/daraja"
 )
 
 const (
@@ -51,15 +51,15 @@ func TestDarajaApi_C2B(t *testing.T) {
 		checkoutReqID := ulid.Make().String()
 		// create a mock test server
 		mux := http.NewServeMux()
-		mux.HandleFunc(daraja2.EndpointC2bExpress, func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc(daraja_sdk.EndpointC2bExpress, func(w http.ResponseWriter, r *http.Request) {
 			// parse request body
-			var req daraja2.RequestC2BExpress
+			var req daraja_sdk.RequestC2BExpress
 			if err := jsoniter.NewDecoder(r.Body).Decode(&req); err != nil {
 				t.Errorf("expected nil error, got %v", err)
 			}
 			// assert request values
 			assert.Equal(t, shortcode.ShortCode, req.BusinessShortCode)
-			assert.Equal(t, daraja2.TypeCustomerPayBillOnline, req.TransactionType)
+			assert.Equal(t, daraja_sdk.TypeCustomerPayBillOnline, req.TransactionType)
 			assert.Equal(t, testPayment.Amount, req.Amount)
 			assert.Equal(t, testPayment.ExternalAccountNumber, req.PartyA)
 			assert.Equal(t, shortcode.ShortCode, req.PartyB)
@@ -72,9 +72,9 @@ func TestDarajaApi_C2B(t *testing.T) {
 		defer server.Close()
 
 		// build daraja client
-		client := daraja2.New(daraja2.Config{Endpoint: server.URL})
+		client := daraja_sdk.New(daraja_sdk.Config{Endpoint: server.URL})
 		// create instance of daraja service
-		service := daraja.NewDarajaApi(&client, daraja2.SandboxCertificate, shortcode, repository)
+		service := daraja.NewDarajaApi(&client, daraja_sdk.SandboxCertificate, shortcode, repository)
 
 		// make request
 		paymentID := ulid.Make().String()
@@ -103,7 +103,7 @@ func TestDarajaApi_C2B(t *testing.T) {
 		requestID := ulid.Make().String()
 		// create a mock test server
 		mux := http.NewServeMux()
-		mux.HandleFunc(daraja2.EndpointC2bExpress, func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc(daraja_sdk.EndpointC2bExpress, func(w http.ResponseWriter, r *http.Request) {
 			// mock request failure
 			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
@@ -113,9 +113,9 @@ func TestDarajaApi_C2B(t *testing.T) {
 		defer server.Close()
 
 		// build daraja client
-		client := daraja2.New(daraja2.Config{Endpoint: server.URL})
+		client := daraja_sdk.New(daraja_sdk.Config{Endpoint: server.URL})
 		// create instance of daraja service
-		service := daraja.NewDarajaApi(&client, daraja2.SandboxCertificate, shortcode, repository)
+		service := daraja.NewDarajaApi(&client, daraja_sdk.SandboxCertificate, shortcode, repository)
 		// make request
 		paymentID := ulid.Make().String()
 		err := service.C2B(t.Context(), paymentID, testPayment)
@@ -168,16 +168,16 @@ func TestDarajaApi_B2C(t *testing.T) {
 
 		// create a mock test server
 		mux := http.NewServeMux()
-		mux.HandleFunc(daraja2.EndpointB2cPayment, func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc(daraja_sdk.EndpointB2cPayment, func(w http.ResponseWriter, r *http.Request) {
 			// parse request body
-			var req daraja2.RequestB2C
+			var req daraja_sdk.RequestB2C
 			if err := jsoniter.NewDecoder(r.Body).Decode(&req); err != nil {
 				t.Errorf("expected nil error, got %v", err)
 			}
 			// assert request values
 			assert.Equal(t, testPayment.ClientTransactionID, req.OriginatorConversationID)
 			assert.Equal(t, shortcode.InitiatorName, req.InitiatorName)
-			assert.Equal(t, daraja2.CommandBusinessPayment, req.CommandID)
+			assert.Equal(t, daraja_sdk.CommandBusinessPayment, req.CommandID)
 			assert.Equal(t, testPayment.Amount, req.Amount)
 			assert.Equal(t, shortcode.ShortCode, req.PartyA)
 			assert.Equal(t, testPayment.ExternalAccountNumber, req.PartyB)
@@ -190,9 +190,9 @@ func TestDarajaApi_B2C(t *testing.T) {
 		defer server.Close()
 
 		// build daraja client
-		client := daraja2.New(daraja2.Config{Endpoint: server.URL})
+		client := daraja_sdk.New(daraja_sdk.Config{Endpoint: server.URL})
 		// create instance of daraja service
-		service := daraja.NewDarajaApi(&client, daraja2.SandboxCertificate, shortcode, repository)
+		service := daraja.NewDarajaApi(&client, daraja_sdk.SandboxCertificate, shortcode, repository)
 		// make request
 		paymentID := ulid.Make().String()
 		err := service.B2C(t.Context(), paymentID, testPayment)
@@ -221,7 +221,7 @@ func TestDarajaApi_B2C(t *testing.T) {
 		requestID := ulid.Make().String()
 		// create a mock test server
 		mux := http.NewServeMux()
-		mux.HandleFunc(daraja2.EndpointB2cPayment, func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc(daraja_sdk.EndpointB2cPayment, func(w http.ResponseWriter, r *http.Request) {
 			// mock request failure
 			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
@@ -231,9 +231,9 @@ func TestDarajaApi_B2C(t *testing.T) {
 		defer server.Close()
 
 		// build daraja client
-		client := daraja2.New(daraja2.Config{Endpoint: server.URL})
+		client := daraja_sdk.New(daraja_sdk.Config{Endpoint: server.URL})
 		// create instance of daraja service
-		service := daraja.NewDarajaApi(&client, daraja2.SandboxCertificate, shortcode, repository)
+		service := daraja.NewDarajaApi(&client, daraja_sdk.SandboxCertificate, shortcode, repository)
 		// make request
 		paymentID := ulid.Make().String()
 		err := service.B2C(t.Context(), paymentID, testPayment)
@@ -285,15 +285,15 @@ func TestDarajaApi_B2B(t *testing.T) {
 
 		// create a mock test server
 		mux := http.NewServeMux()
-		mux.HandleFunc(daraja2.EndpointB2bPayment, func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc(daraja_sdk.EndpointB2bPayment, func(w http.ResponseWriter, r *http.Request) {
 			// parse request body
-			var req daraja2.RequestB2B
+			var req daraja_sdk.RequestB2B
 			if err := jsoniter.NewDecoder(r.Body).Decode(&req); err != nil {
 				t.Errorf("expected nil error, got %v", err)
 			}
 			// assert request values
 			assert.Equal(t, shortcode.InitiatorName, req.Initiator)
-			assert.Equal(t, daraja2.CommandBusinessPayBill, req.CommandID)
+			assert.Equal(t, daraja_sdk.CommandBusinessPayBill, req.CommandID)
 			assert.Equal(t, testPayment.Amount, req.Amount)
 			assert.Equal(t, shortcode.ShortCode, req.PartyA)
 			assert.Equal(t, testPayment.ExternalAccountNumber, req.PartyB)
@@ -307,9 +307,9 @@ func TestDarajaApi_B2B(t *testing.T) {
 		defer server.Close()
 
 		// build daraja client
-		client := daraja2.New(daraja2.Config{Endpoint: server.URL})
+		client := daraja_sdk.New(daraja_sdk.Config{Endpoint: server.URL})
 		// create instance of daraja service
-		service := daraja.NewDarajaApi(&client, daraja2.SandboxCertificate, shortcode, repository)
+		service := daraja.NewDarajaApi(&client, daraja_sdk.SandboxCertificate, shortcode, repository)
 		// make request
 		paymentID := ulid.Make().String()
 		err := service.B2B(t.Context(), paymentID, testPayment)
@@ -339,15 +339,15 @@ func TestDarajaApi_B2B(t *testing.T) {
 
 		// create a mock test server
 		mux := http.NewServeMux()
-		mux.HandleFunc(daraja2.EndpointB2bPayment, func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc(daraja_sdk.EndpointB2bPayment, func(w http.ResponseWriter, r *http.Request) {
 			// parse request body
-			var req daraja2.RequestB2B
+			var req daraja_sdk.RequestB2B
 			if err := jsoniter.NewDecoder(r.Body).Decode(&req); err != nil {
 				t.Errorf("expected nil error, got %v", err)
 			}
 			// assert request values
 			assert.Equal(t, shortcode.InitiatorName, req.Initiator)
-			assert.Equal(t, daraja2.CommandBusinessBuyGoods, req.CommandID)
+			assert.Equal(t, daraja_sdk.CommandBusinessBuyGoods, req.CommandID)
 			assert.Equal(t, testPayment.Amount, req.Amount)
 			assert.Equal(t, shortcode.ShortCode, req.PartyA)
 			assert.Equal(t, testPayment.ExternalAccountNumber, req.PartyB)
@@ -361,9 +361,9 @@ func TestDarajaApi_B2B(t *testing.T) {
 		defer server.Close()
 
 		// build daraja client
-		client := daraja2.New(daraja2.Config{Endpoint: server.URL})
+		client := daraja_sdk.New(daraja_sdk.Config{Endpoint: server.URL})
 		// create instance of daraja service
-		service := daraja.NewDarajaApi(&client, daraja2.SandboxCertificate, shortcode, repository)
+		service := daraja.NewDarajaApi(&client, daraja_sdk.SandboxCertificate, shortcode, repository)
 		// make request
 		testPayment.ExternalAccountType = mpesa.AccountTypeTill
 		paymentID := ulid.Make().String()
@@ -392,7 +392,7 @@ func TestDarajaApi_B2B(t *testing.T) {
 		requestID := ulid.Make().String()
 		// create a mock test server
 		mux := http.NewServeMux()
-		mux.HandleFunc(daraja2.EndpointB2bPayment, func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc(daraja_sdk.EndpointB2bPayment, func(w http.ResponseWriter, r *http.Request) {
 			// mock request failure
 			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
@@ -402,9 +402,9 @@ func TestDarajaApi_B2B(t *testing.T) {
 		defer server.Close()
 
 		// build daraja client
-		client := daraja2.New(daraja2.Config{Endpoint: server.URL})
+		client := daraja_sdk.New(daraja_sdk.Config{Endpoint: server.URL})
 		// create instance of daraja service
-		service := daraja.NewDarajaApi(&client, daraja2.SandboxCertificate, shortcode, repository)
+		service := daraja.NewDarajaApi(&client, daraja_sdk.SandboxCertificate, shortcode, repository)
 		// make request
 		paymentID := ulid.Make().String()
 		err := service.B2B(t.Context(), paymentID, testPayment)
@@ -445,7 +445,7 @@ func TestDarajaApi_Status(t *testing.T) {
 	originatorConversationID := ulid.Make().String()
 	// create a mock test server
 	mux := http.NewServeMux()
-	mux.HandleFunc(daraja2.EndpointTransactionStatus, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(daraja_sdk.EndpointTransactionStatus, func(w http.ResponseWriter, r *http.Request) {
 		// mock request failure
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
@@ -456,9 +456,9 @@ func TestDarajaApi_Status(t *testing.T) {
 	defer server.Close()
 
 	// build daraja client
-	client := daraja2.New(daraja2.Config{Endpoint: server.URL})
+	client := daraja_sdk.New(daraja_sdk.Config{Endpoint: server.URL})
 	// create instance of daraja service
-	service := daraja.NewDarajaApi(&client, daraja2.SandboxCertificate, shortcode, repository)
+	service := daraja.NewDarajaApi(&client, daraja_sdk.SandboxCertificate, shortcode, repository)
 
 	t.Run("test transaction status parameters", func(t *testing.T) {
 		testcases := []struct {

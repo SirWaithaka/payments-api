@@ -11,8 +11,8 @@ import (
 	"github.com/rs/xid"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/SirWaithaka/payments-api/corehooks"
-	"github.com/SirWaithaka/payments-api/request"
+	"github.com/SirWaithaka/gorequest"
+	"github.com/SirWaithaka/gorequest/corehooks"
 
 	"github.com/SirWaithaka/payments-api/src/domains/requests"
 	"github.com/SirWaithaka/payments-api/src/repositories/postgres"
@@ -30,12 +30,12 @@ func TestRequestRecorder_RecordRequest(t *testing.T) {
 	paymentID := ulid.Make().String()
 
 	requestID := xid.New().String()
-	hooks := request.Hooks{}
-	hooks.Send.PushFrontHook(recorder.RecordRequest(paymentID, requestID))
+	reqHooks := gorequest.Hooks{}
+	reqHooks.Send.PushFrontHook(recorder.RecordRequest(paymentID, requestID))
 
 	// make request
-	cfg := request.Config{ServiceName: "test"}
-	req := request.New(cfg, hooks, nil, nil, nil, nil)
+	cfg := gorequest.Config{ServiceName: "test"}
+	req := gorequest.New(cfg, gorequest.Operation{}, reqHooks, nil, nil, nil)
 	if err := req.Send(); err != nil {
 		t.Errorf("expected nil error, got %v", err)
 	}
@@ -86,17 +86,17 @@ func TestRequestRecorder_UpdateRequestResponse(t *testing.T) {
 
 		requestID := xid.New().String()
 		// create request hooks for
-		hooks := request.Hooks{}
-		hooks.Send.PushFrontHook(recorder.RecordRequest(paymentID, requestID))
-		hooks.Complete.PushFrontHook(recorder.UpdateRequestResponse(requestID))
+		reqHooks := gorequest.Hooks{}
+		reqHooks.Send.PushFrontHook(recorder.RecordRequest(paymentID, requestID))
+		reqHooks.Complete.PushFrontHook(recorder.UpdateRequestResponse(requestID))
 
 		// configure the request
-		cfg := request.Config{Endpoint: server.URL, DisableSSL: true, HTTPClient: http.DefaultClient, ServiceName: "test"}
-		op := &request.Operation{Name: "FooBar", Path: "/"}
-		hooks.Send.PushBackHook(corehooks.SendHook)
+		cfg := gorequest.Config{Endpoint: server.URL, DisableSSL: true, HTTPClient: http.DefaultClient, ServiceName: "test"}
+		op := gorequest.Operation{Name: "FooBar", Path: "/"}
+		reqHooks.Send.PushBackHook(corehooks.SendHook)
 
 		// build request
-		req := request.New(cfg, hooks, nil, op, nil, nil)
+		req := gorequest.New(cfg, op, reqHooks, nil, nil, nil)
 		if err := req.Send(); err != nil {
 			t.Errorf("expected nil error, got %v", err)
 		}
@@ -126,15 +126,15 @@ func TestRequestRecorder_UpdateRequestResponse(t *testing.T) {
 
 		requestID := xid.New().String()
 		// create request hooks for
-		hooks := request.Hooks{}
-		hooks.Send.PushFrontHook(recorder.RecordRequest(paymentID, requestID))
-		hooks.Complete.PushFrontHook(recorder.UpdateRequestResponse(requestID))
+		reqHooks := gorequest.Hooks{}
+		reqHooks.Send.PushFrontHook(recorder.RecordRequest(paymentID, requestID))
+		reqHooks.Complete.PushFrontHook(recorder.UpdateRequestResponse(requestID))
 
 		// configure the request
-		cfg := request.Config{Endpoint: server.URL, DisableSSL: true, HTTPClient: http.DefaultClient, ServiceName: "test", RequestID: xid.New().String()}
-		op := &request.Operation{Name: "FooBar", Path: "/error"}
-		hooks.Send.PushBackHook(corehooks.SendHook)
-		hooks.Unmarshal.PushFront(func(r *request.Request) {
+		cfg := gorequest.Config{Endpoint: server.URL, DisableSSL: true, HTTPClient: http.DefaultClient, ServiceName: "test", RequestID: xid.New().String()}
+		op := gorequest.Operation{Name: "FooBar", Path: "/error"}
+		reqHooks.Send.PushBackHook(corehooks.SendHook)
+		reqHooks.Unmarshal.PushFront(func(r *gorequest.Request) {
 			// the mock server returns non 200 status code and "error" in response body
 			if r.Response.StatusCode != http.StatusOK {
 				// read the response body and assert the value
@@ -150,7 +150,7 @@ func TestRequestRecorder_UpdateRequestResponse(t *testing.T) {
 
 		// build request
 		var output string
-		req := request.New(cfg, hooks, nil, op, nil, &output)
+		req := gorequest.New(cfg, op, reqHooks, nil, nil, &output)
 		if err := req.Send(); err != nil {
 			t.Errorf("expected nil error, got %v", err)
 		}

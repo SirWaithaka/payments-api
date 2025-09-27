@@ -3,7 +3,7 @@ package hooks
 import (
 	"time"
 
-	"github.com/SirWaithaka/payments-api/request"
+	"github.com/SirWaithaka/gorequest"
 
 	pkgerrors "github.com/SirWaithaka/payments-api/pkg/errors"
 	"github.com/SirWaithaka/payments-api/pkg/types"
@@ -20,8 +20,8 @@ type RequestRecorder struct {
 
 // RecordRequest hooks saves all outgoing requests before the http request is sent to the
 // external api.
-func (recorder RequestRecorder) RecordRequest(paymentID, requestID string) request.Hook {
-	return request.Hook{Name: "RequestRecorder.RecordRequest", Fn: func(r *request.Request) {
+func (recorder RequestRecorder) RecordRequest(paymentID, requestID string) gorequest.Hook {
+	return gorequest.Hook{Name: "RequestRecorder.RecordRequest", Fn: func(r *gorequest.Request) {
 
 		req := requests.Request{
 			RequestID: requestID,
@@ -42,8 +42,8 @@ func (recorder RequestRecorder) RecordRequest(paymentID, requestID string) reque
 
 // UpdateRequestResponse updates a request record after the http request is made and a response
 // is/is not received.
-func (recorder RequestRecorder) UpdateRequestResponse(requestID string) request.Hook {
-	return request.Hook{Name: "RequestRecorder.UpdateRequestResponse", Fn: func(r *request.Request) {
+func (recorder RequestRecorder) UpdateRequestResponse(requestID string) gorequest.Hook {
+	return gorequest.Hook{Name: "RequestRecorder.UpdateRequestResponse", Fn: func(r *gorequest.Request) {
 		opts := requests.OptionsUpdateRequest{}
 
 		defer func() {

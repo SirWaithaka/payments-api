@@ -12,28 +12,28 @@ import (
 	"github.com/SirWaithaka/payments-api/src/domains/mpesa"
 	"github.com/SirWaithaka/payments-api/src/domains/requests"
 	"github.com/SirWaithaka/payments-api/src/services/hooks"
-	quikk2 "github.com/SirWaithaka/payments/quikk"
+	"github.com/SirWaithaka/payments/quikk"
 
-	"github.com/SirWaithaka/payments-api/request"
+	"github.com/SirWaithaka/gorequest"
 )
 
 const (
 	serviceName = requests.PartnerQuikk
 )
 
-type ResponseDefault quikk2.ResponseDefault
+type ResponseDefault quikk.ResponseDefault
 
 func (response ResponseDefault) ExternalID() string { return response.Data.ID }
 
 // QUIKK MPESA API SERVICE
 
 // NewQuikkApi creates a new instance of QuikkApi
-func NewQuikkApi(client *quikk2.Client, shortcode mpesa.ShortCode, repo requests.Repository) QuikkApi {
+func NewQuikkApi(client *quikk.Client, shortcode mpesa.ShortCode, repo requests.Repository) QuikkApi {
 	return QuikkApi{client: client, shortcode: shortcode, requestRepo: repo}
 }
 
 type QuikkApi struct {
-	client      *quikk2.Client
+	client      *quikk.Client
 	shortcode   mpesa.ShortCode
 	requestRepo requests.Repository
 }
@@ -49,7 +49,7 @@ func (api QuikkApi) C2B(ctx context.Context, paymentID string, payment mpesa.Pay
 		return err
 	}
 
-	payload := quikk2.RequestCharge{
+	payload := quikk.RequestCharge{
 		Amount:       amount,
 		CustomerNo:   payment.ExternalAccountNumber,
 		Reference:    paymentID,
@@ -65,7 +65,7 @@ func (api QuikkApi) C2B(ctx context.Context, paymentID string, payment mpesa.Pay
 	// create an instance of request and add the request recorder hook
 	requestID := xid.New().String()
 	out := &ResponseDefault{}
-	req, _ := api.client.ChargeRequest(payload, requestID, request.WithServiceName(serviceName.String()))
+	req, _ := api.client.ChargeRequest(payload, requestID, gorequest.WithServiceName(serviceName.String()))
 	req.WithContext(ctx)
 	req.Data = out
 	req.Hooks.Send.PushFrontHook(recorder.RecordRequest(paymentID, requestID))
@@ -91,7 +91,7 @@ func (api QuikkApi) B2C(ctx context.Context, paymentID string, payment mpesa.Pay
 		return err
 	}
 
-	payload := quikk2.RequestPayout{
+	payload := quikk.RequestPayout{
 		Amount:        amount,
 		RecipientNo:   payment.ExternalAccountNumber,
 		RecipientType: mpesa.AccountTypeMSISDN.String(),
@@ -106,7 +106,7 @@ func (api QuikkApi) B2C(ctx context.Context, paymentID string, payment mpesa.Pay
 	// create an instance of request and add the request recorder hook
 	requestID := xid.New().String()
 	out := &ResponseDefault{}
-	req, _ := api.client.PayoutRequest(payload, requestID, request.WithServiceName(serviceName.String()))
+	req, _ := api.client.PayoutRequest(payload, requestID, gorequest.WithServiceName(serviceName.String()))
 	req.WithContext(ctx)
 	req.Data = out
 	req.Hooks.Send.PushFrontHook(recorder.RecordRequest(paymentID, requestID))
@@ -133,7 +133,7 @@ func (api QuikkApi) B2B(ctx context.Context, paymentID string, payment mpesa.Pay
 		return err
 	}
 
-	payload := quikk2.RequestTransfer{
+	payload := quikk.RequestTransfer{
 		Amount:            amount,
 		RecipientNo:       payment.ExternalAccountNumber,
 		AccountNo:         payment.Beneficiary,
@@ -150,7 +150,7 @@ func (api QuikkApi) B2B(ctx context.Context, paymentID string, payment mpesa.Pay
 	// create an instance of request and add the request recorder hook
 	requestID := xid.New().String()
 	out := &ResponseDefault{}
-	req, _ := api.client.TransferRequest(payload, requestID, request.WithServiceName(serviceName.String()))
+	req, _ := api.client.TransferRequest(payload, requestID, gorequest.WithServiceName(serviceName.String()))
 	req.WithContext(ctx)
 	req.Data = out
 	req.Hooks.Send.PushFrontHook(recorder.RecordRequest(paymentID, requestID))
@@ -170,7 +170,7 @@ func (api QuikkApi) Status(ctx context.Context, payment mpesa.Payment) error {
 	l := zerolog.Ctx(ctx)
 	l.Debug().Msg("handling transaction status")
 
-	payload := quikk2.RequestTransactionStatus{
+	payload := quikk.RequestTransactionStatus{
 		ShortCode: api.shortcode.ShortCode,
 	}
 

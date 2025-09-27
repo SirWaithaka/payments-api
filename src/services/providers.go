@@ -3,7 +3,7 @@ package services
 import (
 	"github.com/rs/zerolog"
 
-	"github.com/SirWaithaka/payments-api/corehooks"
+	"github.com/SirWaithaka/gorequest/corehooks"
 
 	"github.com/SirWaithaka/payments-api/src/config"
 	"github.com/SirWaithaka/payments-api/src/domains/mpesa"
@@ -14,13 +14,13 @@ import (
 	daraja2 "github.com/SirWaithaka/payments/daraja"
 	quikk2 "github.com/SirWaithaka/payments/quikk"
 
-	"github.com/SirWaithaka/payments-api/request"
+	"github.com/SirWaithaka/gorequest"
 )
 
 // WithLogger fetches the zerolog logger instance from the request context
 // and passes it to the request config
-func WithLogger() request.Option {
-	return func(r *request.Request) {
+func WithLogger() gorequest.Option {
+	return func(r *gorequest.Request) {
 		l := zerolog.Ctx(r.Context()).With().CallerWithSkipFrameCount(3).Logger()
 		lg := NewLogger(&l, r.Config.LogLevel)
 		r.Config.Logger = lg
@@ -91,7 +91,7 @@ func (provider Provider) GetDarajaClient(shortcode mpesa.ShortCode) *daraja2.Cli
 		endpoint = provider.config.Daraja.Endpoint
 	}
 
-	client := daraja2.New(daraja2.Config{Endpoint: endpoint, LogLevel: request.LogError})
+	client := daraja2.New(daraja2.Config{Endpoint: endpoint, LogLevel: gorequest.LogError})
 	client.Hooks.Build.PushFront(WithLogger())
 	client.Hooks.Build.PushBackHook(daraja2.Authenticate(client.AuthenticationRequest(shortcode.Key, shortcode.Secret)))
 	client.Hooks.Send.PushFrontHook(corehooks.LogHTTPRequest)
@@ -112,7 +112,7 @@ func (provider Provider) GetQuikkClient(shortcode mpesa.ShortCode) *quikk2.Clien
 		endpoint = provider.config.Quikk.Endpoint
 	}
 
-	client := quikk2.New(quikk2.Config{Endpoint: endpoint, LogLevel: request.LogError})
+	client := quikk2.New(quikk2.Config{Endpoint: endpoint, LogLevel: gorequest.LogError})
 	client.Hooks.Build.PushFront(WithLogger())
 	client.Hooks.Build.PushBackHook(quikk2.Sign(shortcode.Key, shortcode.Secret))
 	client.Hooks.Send.PushFrontHook(corehooks.LogHTTPRequest)
