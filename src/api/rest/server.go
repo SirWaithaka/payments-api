@@ -15,19 +15,34 @@ import (
 	dipkg "github.com/SirWaithaka/payments-api/src/di"
 )
 
-func New(c context.Context, di *dipkg.DI) *Server {
+func New(di *dipkg.DI) *Server {
 	l := logger.New(&logger.Config{})
+
+	engine := gin.New()
+	gin.SetMode(gin.ReleaseMode)
+
+	// add middlewares to server
+	engine.Use(gin.Recovery())
+	engine.Use(ginzerolog2.New(ginzerolog2.Config{Logger: &l}))
+	engine.Use(middlewares2.ErrorHandler())
+	// add health check route
+	engine.GET("/health", middlewares2.Healthcheck)
+
+	routes(engine, di)
+
+	server := &http.Server{
+		Addr:    fmt.Sprintf(":%s", di.Cfg.HTTPPort),
+		Handler: engine.Handler(),
+	}
 
 	return &Server{
 		logger: l,
-		ctx:    c,
-		server: newServer(di, &l),
+		server: server,
 	}
 }
 
 type Server struct {
 	server *http.Server
-	ctx    context.Context
 	logger zerolog.Logger
 }
 
@@ -43,29 +58,10 @@ func (server *Server) Start() error {
 }
 
 // Stop listens for an os signal and shuts down the server
-func (server *Server) Stop() error {
+func (server *Server) Stop(ctx context.Context) error {
 	defer server.logger.Info().Msg("server stopped")
 
-	<-server.ctx.Done()
+	<-ctx.Done()
 	server.logger.Info().Msg("stopping http server ...")
-	return server.server.Shutdown(server.ctx)
-}
-
-func newServer(di *dipkg.DI, logger *zerolog.Logger) *http.Server {
-	engine := gin.New()
-	gin.SetMode(gin.ReleaseMode)
-
-	// add middlewares to server
-	engine.Use(gin.Recovery())
-	engine.Use(ginzerolog2.New(ginzerolog2.Config{Logger: logger}))
-	engine.Use(middlewares2.ErrorHandler())
-	// add health check route
-	engine.GET("/health", middlewares2.Healthcheck)
-
-	routes(engine, di)
-
-	return &http.Server{
-		Addr:    fmt.Sprintf(":%s", di.Cfg.HTTPPort),
-		Handler: engine.Handler(),
-	}
+	return server.server.Shutdown(ctx)
 }

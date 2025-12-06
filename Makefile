@@ -55,7 +55,7 @@ seed.down: ## Execute all *.down.sql files to tear down seeded data
 
 build:
 	mkdir -p bin
-	go build -o bin/main cmd/main.go
+	go build -o bin/payments main.go
 
 run:
 	go run cmd/main.go
