@@ -1,4 +1,4 @@
-package cmd
+package payments
 
 import (
 	"github.com/spf13/cobra"
