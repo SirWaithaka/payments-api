@@ -27,15 +27,11 @@ RUN make build
 # Start the second image
 FROM alpine:3
 
-RUN apk add make
-
 # set the working director in the container
 WORKDIR /app
 
-COPY Makefile .
-
 # copy binary
-COPY --from=builder /app/bin/main .
+COPY --from=builder --chown=nonroot:nonroot /app/bin/payments /usr/bin/payments
 
-ENTRYPOINT ["make", "-s"]
-CMD ["run.prod"]
+ENTRYPOINT ["payments"]
+CMD ["serve"]
