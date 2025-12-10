@@ -22,3 +22,15 @@ type RequestMpesaPaymentStatus struct {
 	TransactionID    string `json:"transaction_id"`
 	PaymentReference string `json:"payment_reference"`
 }
+
+type RequestAddShortCode struct {
+	Environment       string `json:"environment" validate:"required,oneof=sandbox production"`
+	Service           string `json:"service" validate:"required,oneof=daraja quikk"`
+	Type              string `json:"type" validate:"required,oneof=charge payout transfer"`
+	ShortCode         string `json:"shortcode" validate:"required"`
+	InitiatorName     string `json:"initiator_name" validate:"required"`
+	InitiatorPassword string `json:"initiator_password" validate:"required"`
+	Key               string `json:"key" validate:"required"`
+	Secret            string `json:"secret" validate:"required"`
+	Passphrase        string `json:"passphrase"`
+}
