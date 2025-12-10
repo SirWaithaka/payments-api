@@ -10,7 +10,7 @@ import (
 func routes(router *gin.Engine, di *dipkg.DI) {
 	webhookRoutes(router, di)
 
-	mpesaHandlers := handlers.NewMpesaHandlers(di.Mpesa)
+	mpesaHandlers := handlers.NewMpesaHandlers(di.Mpesa, di.ShortCode)
 
 	group := router.Group("/api")
 
@@ -20,6 +20,8 @@ func routes(router *gin.Engine, di *dipkg.DI) {
 	mpesaGroup.POST("/payout", mpesaHandlers.Payout)
 	mpesaGroup.POST("/transfer", mpesaHandlers.Transfer)
 	mpesaGroup.POST("/status", mpesaHandlers.PaymentStatus)
+
+	mpesaGroup.POST("/shortcode", mpesaHandlers.AddShortCode)
 }
 
 func webhookRoutes(router *gin.Engine, di *dipkg.DI) {

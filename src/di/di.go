@@ -14,8 +14,9 @@ type DI struct {
 	Cfg       *config.Config
 	Publisher events.Publisher
 
-	Mpesa   mpesa.Service
-	Webhook webhooks.Service
+	Mpesa     mpesa.Service
+	ShortCode mpesa.ShortCodeService
+	Webhook   webhooks.Service
 }
 
 func New(cfg config.Config, db *storage.Database, pub events.Publisher) *DI {
@@ -26,6 +27,7 @@ func New(cfg config.Config, db *storage.Database, pub events.Publisher) *DI {
 
 	apiProvider := services.NewProvider(cfg, requestsRepository, webhooksRepository)
 
+	shortcodeService := mpesa.NewServiceShortCode(shortcodeRepository)
 	mpesaService := mpesa.NewService(mpesaPaymentsRepository, shortcodeRepository, requestsRepository, apiProvider, pub)
 	webhooksService := webhooks.NewService(webhooksRepository, mpesaService, pub)
 
@@ -33,6 +35,7 @@ func New(cfg config.Config, db *storage.Database, pub events.Publisher) *DI {
 		Cfg:       &cfg,
 		Publisher: pub,
 		Mpesa:     mpesaService,
+		ShortCode: shortcodeService,
 		Webhook:   webhooksService,
 	}
 }
