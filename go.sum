@@ -1,7 +1,7 @@
 filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=
 filippo.io/edwards25519 v1.1.0/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
-github.com/SirWaithaka/gorequest v1.1.0 h1:/x82w2fL7U9FGAp0Aqb6j2uM4jjVbSb/IqFdWQwpuA0=
-github.com/SirWaithaka/gorequest v1.1.0/go.mod h1:4FceI72URIWNkTaNGQ36SNeNI3FFMIQxKE6IJ/5dako=
+github.com/SirWaithaka/gorequest v1.2.0 h1:DsWjyLVqTmOl6MFb3FBDRh7XEN2U8IYl9T13RLnYu24=
+github.com/SirWaithaka/gorequest v1.2.0/go.mod h1:4FceI72URIWNkTaNGQ36SNeNI3FFMIQxKE6IJ/5dako=
 github.com/SirWaithaka/payments v0.0.3 h1:1vpsXgG+KyKYNTSy1KGIhQnfPOnJDnx0AMXgtuFAsMk=
 github.com/SirWaithaka/payments v0.0.3/go.mod h1:3T7ADhWdCaCnWMAXWV0prNT6JObyrsqAykAmpiFCAoA=
 github.com/bytedance/sonic v1.11.6 h1:oUp34TzMlL+OY1OUWxHqsdkgC/Zfc85zGqw9siXjrc0=
