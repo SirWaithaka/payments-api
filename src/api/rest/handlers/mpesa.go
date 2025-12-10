@@ -10,14 +10,16 @@ import (
 	"github.com/SirWaithaka/payments-api/src/api/rest/requests"
 	"github.com/SirWaithaka/payments-api/src/api/rest/responses"
 	"github.com/SirWaithaka/payments-api/src/domains/mpesa"
+	requestsd "github.com/SirWaithaka/payments-api/src/domains/requests"
 )
 
-func NewMpesaHandlers(service mpesa.Service) MpesaHandlers {
-	return MpesaHandlers{service}
+func NewMpesaHandlers(service mpesa.Service, shortcode mpesa.ShortCodeService) MpesaHandlers {
+	return MpesaHandlers{service: service, shortcode: shortcode}
 }
 
 type MpesaHandlers struct {
-	service mpesa.Service
+	service   mpesa.Service
+	shortcode mpesa.ShortCodeService
 }
 
 func (handler MpesaHandlers) Charge(c *gin.Context) {
@@ -142,4 +144,36 @@ func (handler MpesaHandlers) PaymentStatus(c *gin.Context) {
 	l.Debug().Any(logger.LData, payment).Msg("payment")
 
 	c.JSON(http.StatusOK, payment)
+}
+
+func (handler MpesaHandlers) AddShortCode(c *gin.Context) {
+	l := zerolog.Ctx(c.Request.Context())
+	l.Debug().Msg("mpesa add shortcode request")
+
+	var params requests.RequestAddShortCode
+	if err := c.ShouldBindBodyWithJSON(&params); err != nil {
+		handleRequestParsingError(c, err)
+		return
+	}
+
+	shortcode := mpesa.ShortCode{
+		Environment:       params.Environment,
+		Service:           requestsd.ToPartner(params.Service),
+		Type:              mpesa.ToPaymentType(params.Type),
+		ShortCode:         params.ShortCode,
+		Key:               params.Key,
+		Secret:            params.Secret,
+		Passphrase:        params.Passphrase,
+		InitiatorName:     params.InitiatorName,
+		InitiatorPassword: params.InitiatorPassword,
+	}
+
+	err := handler.shortcode.Add(c.Request.Context(), shortcode)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	c.Status(http.StatusCreated)
+
 }

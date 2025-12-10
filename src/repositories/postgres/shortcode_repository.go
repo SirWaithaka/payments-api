@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/gofrs/uuid/v5"
 	"github.com/rs/zerolog"
 	"gorm.io/gorm"
 
@@ -64,6 +65,9 @@ func (schema ShortCodeSchema) ToEntity() mpesa.ShortCode {
 }
 
 func (schema *ShortCodeSchema) BeforeCreate(tx *gorm.DB) (err error) {
+	if schema.ShortCodeID == "" {
+		schema.ShortCodeID = uuid.Must(uuid.NewV7()).String()
+	}
 
 	// validate that nullable columns should be nil instead of zero values
 	sch := *schema
