@@ -18,6 +18,10 @@ func (p PaymentType) String() string {
 	return string(p)
 }
 
+func (p PaymentType) Valid() bool {
+	return p == PaymentTypeCharge || p == PaymentTypePayout || p == PaymentTypeTransfer
+}
+
 func ToPaymentType(s string) PaymentType {
 	switch s {
 	case string(PaymentTypeCharge):
@@ -67,7 +71,7 @@ type Payment struct {
 	PaymentReference string
 	// amount to be charged
 	Amount string
-	// for charge payments, this is the account of customer that will be charged
+	// for charge payments, this is the account of the customer that will be charged
 	SourceAccountNumber string
 	// for charge payments, this is the account where funds will be credited
 	DestinationAccountNumber string
@@ -104,7 +108,7 @@ type ShortCode struct {
 	ShortCodeID       string
 	Environment       string           // enum of sandbox, production
 	ShortCode         string           // business pay bill or buy goods account
-	Priority          uint             // low value means higher priority
+	Priority          uint             // low value means higher priority, min=1
 	Service           requests.Partner // service can be either daraja or quikk
 	Type              PaymentType      // types of payment the shortcode can be used for
 	InitiatorName     string           // daraja api initiator name
@@ -164,4 +168,8 @@ type Service interface {
 	Transfer(ctx context.Context, request PaymentRequest) (Payment, error)
 	Status(ctx context.Context, opts OptionsFindPayment) (Payment, error)
 	ProcessWebhook(ctx context.Context, result *requests.WebhookResult) error
+}
+
+type ShortCodeService interface {
+	Add(ctx context.Context, shortcode ShortCode) error
 }
