@@ -33,8 +33,9 @@ type Consumer struct {
 }
 
 // NewConsumer creates a new consumer instance.
-func NewConsumer(cCfg ConsumerConfig) *Consumer {
+func NewConsumer(cCfg ConsumerConfig, handler events.Handler) *Consumer {
 	return &Consumer{
+		handler: handler,
 		reader: kafka.NewReader(kafka.ReaderConfig{
 			Brokers:        cCfg.Brokers,
 			Topic:          cCfg.Topic,
@@ -93,10 +94,6 @@ loop:
 	}
 
 	return nil
-}
-
-func (c *Consumer) SetHandler(handler events.Handler) {
-	c.handler = handler
 }
 
 // Close closes the consumer reader.
