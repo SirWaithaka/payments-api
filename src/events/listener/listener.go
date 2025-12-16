@@ -14,32 +14,29 @@ import (
 	"github.com/SirWaithaka/payments-api/pkg/events/subjects"
 	"github.com/SirWaithaka/payments-api/pkg/logger"
 	kafkaclient "github.com/SirWaithaka/payments-api/src/clients/kafka"
-	"github.com/SirWaithaka/payments-api/src/config"
 	dipkg "github.com/SirWaithaka/payments-api/src/di"
 	"github.com/SirWaithaka/payments-api/src/events"
 	"github.com/SirWaithaka/payments-api/src/events/handlers"
 )
 
-func New(c context.Context, cfg config.KafkaConfig, di *dipkg.DI) *Listener {
+func New(c context.Context, di *dipkg.DI) *Listener {
 	// create instance of consumers
 	consumers := make(map[string][]*kafkaclient.Consumer)
 
-	return &Listener{ctx: c, kafkaCfg: cfg, di: di, consumers: consumers}
+	return &Listener{di: di, consumers: consumers}
 }
 
 type Listener struct {
 	di        *dipkg.DI
-	ctx       context.Context
-	kafkaCfg  config.KafkaConfig
 	consumers map[string][]*kafkaclient.Consumer
 
 	// a wait group for running consumer goroutines
 	waitGroup *errgroup.Group
 }
 
-func (listener *Listener) newConsumer(topic string) *kafkaclient.Consumer {
+func (listener *Listener) newConsumer(topic string, handler events.Handler) *kafkaclient.Consumer {
 	// kafka client config
-	brokers := strings.Split(listener.kafkaCfg.Host, ",")
+	brokers := strings.Split(listener.di.Cfg.Kafka.Host, ",")
 	// Define consumer-specific configuration
 	cCfg := kafkaclient.ConsumerConfig{
 		Topic:   topic,
@@ -54,7 +51,12 @@ func (listener *Listener) newConsumer(topic string) *kafkaclient.Consumer {
 	}
 
 	// Initialize the consumer
-	return kafkaclient.NewConsumer(cCfg)
+	return kafkaclient.NewConsumer(cCfg, handler)
+}
+
+func (listener *Listener) context() context.Context {
+	ctx := context.Background()
+	return ctx
 }
 
 // RegisterHandler adds a handler to a topic/event name
@@ -62,8 +64,7 @@ func (listener *Listener) RegisterHandler(name string, handler events.Handler) {
 	// get all consumers for a particular event name/topic
 	consumers := listener.consumers[name]
 	// create new consumer with given handler
-	consumer := listener.newConsumer(name)
-	consumer.SetHandler(handler)
+	consumer := listener.newConsumer(name, handler)
 	// add new consumer to the list of consumers
 	consumers = append(consumers, consumer)
 	// update registered consumers
@@ -71,7 +72,7 @@ func (listener *Listener) RegisterHandler(name string, handler events.Handler) {
 }
 
 func (listener *Listener) Listen() error {
-	l := zerolog.Ctx(listener.ctx)
+	l := listener.di.Cfg.Logger()
 	l.Info().Msg("starting listener")
 
 	handler := handlers.NewHandler(listener.di.Webhook)
@@ -79,7 +80,9 @@ func (listener *Listener) Listen() error {
 	// register event handlers
 	listener.RegisterHandler(subjects.WebhookReceived, handler.WebhookReceived)
 
-	g, ctx := errgroup.WithContext(listener.ctx)
+	// build consumer context
+	g, ctx := errgroup.WithContext(context.Background())
+	ctx = listener.di.Cfg.Logger().WithContext(ctx)
 	listener.waitGroup = g
 
 	// loop through consumers and start them
@@ -103,12 +106,10 @@ func (listener *Listener) Listen() error {
 	return nil
 }
 
-func (listener *Listener) Close() error {
-	l := zerolog.Ctx(listener.ctx)
+func (listener *Listener) Close(ctx context.Context) error {
+	l := listener.di.Cfg.Logger()
 	defer l.Info().Msg("listener closed")
 
-	// wait for the done event from context
-	<-listener.ctx.Done()
 	l.Info().Msg("stopping listener")
 
 	var errs []error
