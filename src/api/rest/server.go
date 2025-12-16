@@ -11,19 +11,18 @@ import (
 
 	"github.com/SirWaithaka/payments-api/pkg/http/middlewares"
 	"github.com/SirWaithaka/payments-api/pkg/http/middlewares/ginzerolog"
-	"github.com/SirWaithaka/payments-api/pkg/logger"
 	dipkg "github.com/SirWaithaka/payments-api/src/di"
 )
 
 func New(c context.Context, di *dipkg.DI) *Server {
-	l := logger.New(&logger.Config{})
+	l := di.Cfg.Logger()
 
 	engine := gin.New()
 	gin.SetMode(gin.ReleaseMode)
 
 	// add middlewares to server
 	engine.Use(gin.Recovery())
-	engine.Use(ginzerolog.New(ginzerolog.Config{Logger: &l}))
+	engine.Use(ginzerolog.New(ginzerolog.Config{Logger: l}))
 	engine.Use(middlewares.ErrorHandler())
 	// add health check route
 	engine.GET("/health", middlewares.Healthcheck)
@@ -37,7 +36,7 @@ func New(c context.Context, di *dipkg.DI) *Server {
 
 	return &Server{
 		ctx:    c,
-		logger: l,
+		logger: *l,
 		server: server,
 	}
 }

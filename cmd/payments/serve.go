@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/SirWaithaka/payments-api/pkg/logger"
+	"github.com/SirWaithaka/payments-api/pkg/graceful"
 	"github.com/SirWaithaka/payments-api/src/api/rest"
 	"github.com/SirWaithaka/payments-api/src/config"
 	dipkg "github.com/SirWaithaka/payments-api/src/di"
@@ -27,12 +27,13 @@ func NewServeCmd() *cobra.Command {
 				return errors.Wrap(err, "env configs could not be loaded")
 			}
 
-			// set default logger
-			l := logger.New(&logger.Config{LogMode: cfg.LogLevel, Service: cfg.ServiceName})
-			logger.SetDefaultLogger(l)
-			zerolog.DefaultContextLogger = &l
-			// add logger to context
-			mCtx := l.WithContext(cmd.Context())
+			//// set default logger
+			//logger.SetDefaultLogger(l)
+			//zerolog.DefaultContextLogger = &l
+			//// add logger to context
+			//mCtx := l.WithContext(cmd.Context())
+
+			l := cfg.Logger()
 
 			// create db connection
 			db, err := storage.NewDatabase(cfg)
@@ -49,7 +50,7 @@ func NewServeCmd() *cobra.Command {
 			di := dipkg.New(cfg, db, pub)
 
 			// create an error group
-			g, gCtx := errgroup.WithContext(mCtx)
+			g, gCtx := errgroup.WithContext(cmd.Context())
 
 			// create an instance of http rest server
 			app := rest.New(gCtx, di)
@@ -57,9 +58,10 @@ func NewServeCmd() *cobra.Command {
 			g.Go(app.Stop)
 
 			// create an instance of listener and start
-			ln := listener.New(gCtx, cfg.Kafka, di)
-			g.Go(ln.Listen)
-			g.Go(ln.Close)
+			ln := listener.New(gCtx, di)
+			if err = graceful.GracefulContext(cmd.Context(), ln.Listen, ln.Close); err != nil {
+				return err
+			}
 
 			// wait for all goroutines in a g group
 			if err = g.Wait(); err != nil {
